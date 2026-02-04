@@ -7,7 +7,6 @@ gå til ny branch:
     git checkout Tobias
 
 hente main:
-    git fetch
     git rebase main
 
     hvis konflikt: 
@@ -24,3 +23,6 @@ bytt over til main og pull inn endringene fra branchen din
     git pull
     git merge Tobias
     git push
+
+
+test
