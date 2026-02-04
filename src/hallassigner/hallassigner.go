@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
-	"runtime"
 )
 
 // --------------------
@@ -19,8 +18,8 @@ type ElevatorState struct {
 }
 
 type AssignerInput struct {
-	HallRequests [][2]bool                 `json:"hallRequests"`
-	States       map[string]ElevatorState  `json:"states"`
+	HallRequests [][2]bool                `json:"hallRequests"`
+	States       map[string]ElevatorState `json:"states"`
 }
 
 // --------------------
