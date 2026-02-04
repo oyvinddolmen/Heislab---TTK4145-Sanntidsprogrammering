@@ -4,27 +4,22 @@ Bombesikkert system for tre heiser
 Hvordan jobbe i branches og merge:
 
 gå til ny branch:
-    git checkout Tobias
+- git checkout Tobias
 
 hente main:
-    git rebase main
+- git rebase main
 
-    hvis konflikt: 
-        løs konfliktene i filene
-        git add . 
-        git rebase --continue
+hvis konflikt: 
+- løs konfliktene i filene
+- git add .
+- git rebase --continue
 
 gjør arbeid .... deretter legge til endringene i main:
-    git add .
-    git commit -m meldingen din
+- git add .
+- git commit -m meldingen din
 
 bytt over til main og pull inn endringene fra branchen din
-    git checkout main
-    git pull
-    git merge Tobias
-    git push
-
-
-test
-
-Endring for test
+- git checkout main
+- git pull
+- git merge Tobias
+- git push
