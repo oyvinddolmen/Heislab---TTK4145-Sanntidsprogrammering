@@ -8,6 +8,8 @@ import (
 	"./elevio"
 	"./peer_to_peer_network"
 	"./final_state_machine"
+	"./elevator"
 )
+
 
 
