@@ -1,10 +1,16 @@
 package elevator
 
+// ---------------------------------------------------------------------------------------------------------------------
+// In charge of controlling the elevator
+// ---------------------------------------------------------------------------------------------------------------------
+
 import (
-	"fmt"
 	"heislab/elevio"
-	"time"
 )
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Datatypes
+// ---------------------------------------------------------------------------------------------------------------------
 
 type Direction int
 
@@ -14,28 +20,37 @@ const (
 	Dir_Up   Direction = 1
 )
 
-func ElevatorInit(elevID int, adress string, numFloors int) {
-	elevio.Init(adress, numFloors) // To run several simulators, change adress
+type ElevChannels struct {
+	MotorDirection chan int
+	FloorReached   chan int
+	// will be more
+}
 
-	elevator := Elevator{
-		State: ElevState{
-			ID:        elevID,
-			direction: Dir_Down,
-			floor:     0,
-			available: false},
+// ---------------------------------------------------------------------------------------------------------------------
+// Initalize elevator and lights
+// ---------------------------------------------------------------------------------------------------------------------
 
-		orders: OrderMatrix{
-			placeholder: 1},
-
-		lights: LightMatrix{
-			placeholder2: 2},
+func lightInit(numFloors int) {
+	for i := range numFloors {
+		elevio.SetButtonLamp(elevio.BT_Cab, i, false)
 	}
+}
 
-	fmt.Println("ElevID", elevator.State.ID)
-	fmt.Println("Going Up")
+func goToGroundFloor() {
 	elevio.SetMotorDirection(elevio.MD_Down)
-
-	time.Sleep(5 * time.Second)
+	for elevio.GetFloor() != 0 {
+	}
 	elevio.SetMotorDirection(elevio.MD_Stop)
-	fmt.Println("Stopper")
+	elevio.SetFloorIndicator(0)
+}
+
+func ElevatorInit(elevID int, adress string, numFloors int) {
+	elevio.Init(adress, numFloors) // To run several simulators, each terminal/simulator needs unique adress
+	goToGroundFloor()
+	lightInit(numFloors)
+	InitFSM(elevID, numFloors)
+}
+
+func RunElevator(channels ElevChannels) {
+	
 }

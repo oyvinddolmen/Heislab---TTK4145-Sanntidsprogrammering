@@ -2,17 +2,11 @@ package main
 
 import (
 	"fmt"
+	"heislab/elevator"
+	"heislab/network"
 	"os"
 	"strconv"
-	"heislab/elevator"
 )
-
-// -------------------------------------------------------------------------------------------
-// Varaiables
-// -------------------------------------------------------------------------------------------
-
-// const
-// const port = 20000 ?
 
 // -------------------------------------------------------------------------------------------
 // Main
@@ -20,7 +14,10 @@ import (
 
 func main() {
 
-	// Elevator ID
+	// -------------------------------------------------------------------------------------------
+	// Retrieving ID and network ports on startup
+	// -------------------------------------------------------------------------------------------
+
 	if len(os.Args) != 2 {
 		fmt.Println("Forgot to ID the elevator")
 		fmt.Println("Id the elevator by adding an argument: go run main.go <ID>")
@@ -33,15 +30,26 @@ func main() {
 		return
 	}
 
-	fmt.Println((elevID))
+	elevChannels := elevator.ElevChannels{
+		MotorDirection: make(chan int),
+		FloorReached:   make(chan int),
+	}
 
-	// Network channels
-		// channels for Receiving and broadcasting
+	networkChannels := network.NetworkChannels{
+		RcvChannel:   make(chan network.ElevTransferData),
+		BcastChannel: make(chan network.ElevTransferData),
+	}
 
-	// FSM
-		// initalise finite state machine
+	// -------------------------------------------------------------------------------------------
+	// Network
+	// -------------------------------------------------------------------------------------------
 
-	// Elevator
+	// -------------------------------------------------------------------------------------------
+	// Initialise elevator and state-machine
+	// -------------------------------------------------------------------------------------------
 	elevator.ElevatorInit(elevID, "localhost:15657", 4)
 
+	go elevator.RunElevator(elevChannels)
+	go network.RunNetwork(networkChannels)
+	select {}
 }
