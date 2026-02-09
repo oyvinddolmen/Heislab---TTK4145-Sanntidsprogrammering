@@ -12,7 +12,7 @@ Main features:
 
 Running the simulator on Windows
 ===========
-In terminal: 
+In terminal inside Simulator folder: 
 dmd -w -g src\sim_server.d src\timer_event.d -ofSimElevatorServer.exe
 .\SimElevatorServer.exe
  

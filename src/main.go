@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-
 	"heislab/elevator"
 )
 
@@ -43,9 +42,6 @@ func main() {
 		// initalise finite state machine
 
 	// Elevator
-		// Run elevator
+	elevator.ElevatorInit(elevID, "localhost:15657", 4)
 
-	elevator.Drive()
-
-	select {}
 }
