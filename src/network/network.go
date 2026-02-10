@@ -1,23 +1,20 @@
 package network
 
-import(
-	"heislab/orderManagment"
+import (
 	"heislab/elevator"
+	"time"
 )
 
-type ElevTransferData struct {
-	Id           int
-	Floor        int
-	CurrentOrder orderManagment.Order
-	State        int
-	Orders       [elevator.NumFloors][elevator.NumButtons]orderManagment.Order
-}
-
 type NetworkChannels struct {
-	RcvChannel   chan ElevTransferData
-	BcastChannel chan ElevTransferData
+	RcvChannel   chan elevator.Elevator
+	BcastChannel chan elevator.Elevator
 }
 
 func RunNetwork(channels NetworkChannels) {
 	// Funksjonen er bare en placeholder. Bare å endre navn og det den gjør
+}
+
+func BcastElevInfo(BcastChannel chan elevator.Elevator) {
+	time.Sleep(2 * time.Millisecond)
+	BcastChannel <- elevator.Elev
 }

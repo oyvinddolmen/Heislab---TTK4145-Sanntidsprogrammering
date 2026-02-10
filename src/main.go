@@ -33,11 +33,12 @@ func main() {
 	elevChannels := elevator.ElevChannels{
 		MotorDirection: make(chan int),
 		FloorReached:   make(chan int),
+		// trenger sikkert flere
 	}
 
 	networkChannels := network.NetworkChannels{
-		RcvChannel:   make(chan network.ElevTransferData),
-		BcastChannel: make(chan network.ElevTransferData),
+		RcvChannel:   make(chan elevator.Elevator),
+		BcastChannel: make(chan elevator.Elevator),
 	}
 
 	// -------------------------------------------------------------------------------------------

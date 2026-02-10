@@ -22,6 +22,7 @@ type Elevator struct {
 	Orders       [NumFloors][3]ordermanagment.Order
 }
 
+var Elev Elevator
 
 // -------------------------------------------------------------------------------------------
 // Initialize state-machine
@@ -29,13 +30,20 @@ type Elevator struct {
 
 func InitFSM(elevID int, numFloors int) {
 	noOrder := ordermanagment.Order{Floor: -1, ButtonType: -1, Status: -1, Finished: false}
-	elev := Elevator{
-		ID:           elevID,
-		Floor:        -1,
-		MoveDir:      Dir_Down,
-		CurrentOrder: noOrder,
+	Elev.ID = elevID
+	Elev.Floor = -1
+	Elev.MoveDir = Dir_Down
+	Elev.CurrentOrder = noOrder
+	for i := range numFloors {
+		for j := range NumButtons {
+			Elev.Orders[i][j].Floor = i
+			Elev.Orders[i][j].ButtonType = j
+			Elev.Orders[i][j].Status = -1
+			Elev.Orders[i][j].Finished = false
+			Elev.Orders[i][j].Confirm = false
+		}
 	}
 
-	fmt.Println("elevID: ", elev.ID)
+	fmt.Println("elevID: ", Elev.ID)
 
 }
