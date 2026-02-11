@@ -1,8 +1,7 @@
 package elevator
 
 import (
-	"fmt"
-	ordermanagment "heislab/orderManagment"
+	"heislab/orderManagment"
 )
 
 // -------------------------------------------------------------------------------------------
@@ -14,12 +13,21 @@ const (
 	NumButtons = 3
 )
 
+type State int
+
+const (
+	INIT      = 1
+	IDLE      = 2
+	EXECUTING = 3
+)
+
 type Elevator struct {
+	State
 	ID           int
 	Floor        int
 	MoveDir      Direction
-	CurrentOrder ordermanagment.Order
-	Orders       [NumFloors][3]ordermanagment.Order
+	CurrentOrder orderManagment.Order
+	Orders       [NumFloors][3]orderManagment.Order
 }
 
 var Elev Elevator
@@ -29,7 +37,8 @@ var Elev Elevator
 // -------------------------------------------------------------------------------------------
 
 func InitFSM(elevID int, numFloors int) {
-	noOrder := ordermanagment.Order{Floor: -1, ButtonType: -1, Status: -1, Finished: false}
+	noOrder := orderManagment.Order{Floor: -1, ButtonType: -1, Status: -1, Finished: false}
+	Elev.State = INIT
 	Elev.ID = elevID
 	Elev.Floor = -1
 	Elev.MoveDir = Dir_Down
@@ -43,7 +52,4 @@ func InitFSM(elevID int, numFloors int) {
 			Elev.Orders[i][j].Confirm = false
 		}
 	}
-
-	fmt.Println("elevID: ", Elev.ID)
-
 }

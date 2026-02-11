@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"heislab/elevator"
+	"heislab/elevio"
 	"heislab/network"
+	"heislab/orderManagment"
 	"os"
 	"strconv"
 )
@@ -13,7 +15,6 @@ import (
 // -------------------------------------------------------------------------------------------
 
 func main() {
-
 	// -------------------------------------------------------------------------------------------
 	// Retrieving ID and network ports on startup
 	// -------------------------------------------------------------------------------------------
@@ -31,9 +32,12 @@ func main() {
 	}
 
 	elevChannels := elevator.ElevChannels{
-		MotorDirection: make(chan int),
-		FloorReached:   make(chan int),
-		// trenger sikkert flere
+		MotorDirection:   make(chan int),
+		LastFloor:        make(chan int),
+		ObstructionLight: make(chan int),
+		LightControl:     make(chan elevio.CabFloorLights),
+		ButtonPresses:    make(chan elevio.ButtonEvent),
+		NewOrder:         make(chan orderManagment.Order),
 	}
 
 	networkChannels := network.NetworkChannels{
@@ -48,7 +52,7 @@ func main() {
 	// -------------------------------------------------------------------------------------------
 	// Initialise elevator and run go-functions
 	// -------------------------------------------------------------------------------------------
-	elevator.ElevatorInit(elevID, "localhost:15657", 4)
+	elevator.ElevatorInit(elevID, "localhost:15657", 4) // localhost:15657" for simulatoren
 
 	go elevator.RunElevator(elevChannels)
 	go network.RunNetwork(networkChannels)

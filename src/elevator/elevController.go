@@ -6,6 +6,7 @@ package elevator
 
 import (
 	"heislab/elevio"
+	"heislab/orderManagment"
 )
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -21,9 +22,12 @@ const (
 )
 
 type ElevChannels struct {
-	MotorDirection chan int
-	FloorReached   chan int
-	// will be more
+	MotorDirection   chan int
+	LastFloor        chan int
+	ObstructionLight chan int
+	LightControl     chan elevio.CabFloorLights // writing to lights for cab- and floor panel
+	ButtonPresses    chan elevio.ButtonEvent    // getting buttonpresses on the physical control box
+	NewOrder         chan orderManagment.Order  // getting new orders locally (somebody places and order on your own elevator)
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -52,5 +56,8 @@ func ElevatorInit(elevID int, adress string, numFloors int) {
 }
 
 func RunElevator(channels ElevChannels) {
+	go elevio.PollFloorSensor(channels.LastFloor)
+	go elevio.PollButtons(channels.ButtonPresses)
+
 	
 }
