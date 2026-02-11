@@ -1,6 +1,16 @@
 # Heislab---TTK4145-Sanntidsprogrammering
 Bombesikkert system for tre heiser
 
+for å starte på opp den fysiske heisen skriv: 
+    "elevatorserver" i terminalen
+
+for å starte opp simulatoren: 
+    In terminal inside Simulator folder: 
+    dmd -w -g src\sim_server.d src\timer_event.d -ofSimElevatorServer.exe
+    .\SimElevatorServer.exe
+ 
+
+
 Hvordan jobbe i branches og merge:
 
 gå til ny branch:
