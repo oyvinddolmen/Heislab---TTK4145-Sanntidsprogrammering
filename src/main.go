@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"heislab/elevator"
+	"Network-go/bcast"
 	"heislab/elevio"
-	"heislab/network"
 	"heislab/orderManagment"
 	"os"
 	"strconv"
@@ -40,6 +40,8 @@ func main() {
 		ButtonPresses:  make(chan elevio.ButtonEvent),
 		NewOrder:       make(chan orderManagment.Order),
 	}
+
+	
 
 	networkChannels := network.NetworkChannels{
 		RcvChannel:   make(chan elevator.Elevator),
