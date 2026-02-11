@@ -5,7 +5,7 @@ package elevator
 // ---------------------------------------------------------------------------------------------------------------------
 
 import (
-	"Driver-go"
+	elevio "Driver-go"
 	"heislab/orderManagment"
 )
 
@@ -61,7 +61,6 @@ func RunElevator(channels ElevChannels) {
 	go elevio.PollButtons(channels.ButtonPresses)
 	go elevio.PollStopButton(channels.StopBtn)
 	go elevio.PollObstructionSwitch(channels.Obstruction)
-	go elevio.SetLights(channels)
 }
 
 // function that sets all lights on elevatorbox
