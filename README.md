@@ -13,6 +13,9 @@ for å starte opp simulatoren:
 
 Hvordan jobbe i branches og merge:
 
+VIKtIG: start med å hente nye endringer i main
+- git pull main
+
 gå til ny branch:
 - git checkout Tobias
 
