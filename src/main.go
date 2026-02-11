@@ -32,12 +32,13 @@ func main() {
 	}
 
 	elevChannels := elevator.ElevChannels{
-		MotorDirection:   make(chan int),
-		LastFloor:        make(chan int),
-		ObstructionLight: make(chan int),
-		LightControl:     make(chan elevio.CabFloorLights),
-		ButtonPresses:    make(chan elevio.ButtonEvent),
-		NewOrder:         make(chan orderManagment.Order),
+		MotorDirection: make(chan int),
+		LastFloor:      make(chan int),
+		Obstruction:    make(chan bool),
+		StopBtn:        make(chan bool),
+		LightControl:   make(chan elevio.CabFloorLights),
+		ButtonPresses:  make(chan elevio.ButtonEvent),
+		NewOrder:       make(chan orderManagment.Order),
 	}
 
 	networkChannels := network.NetworkChannels{
