@@ -19,10 +19,11 @@ const (
 	INIT      = 1
 	IDLE      = 2
 	EXECUTING = 3
+	ALONE     = 4 // in case offline or no other elevators active
 )
 
 type Elevator struct {
-	State
+	State        int
 	ID           int
 	Floor        int
 	MoveDir      Direction
@@ -30,11 +31,11 @@ type Elevator struct {
 	Orders       [NumFloors][NumButtons]orderManagment.Order
 }
 
-var Elev Elevator
-
 // -------------------------------------------------------------------------------------------
 // Initialize state-machine
 // -------------------------------------------------------------------------------------------
+
+var Elev Elevator
 
 func InitFSM(elevID int, NumFloors int) {
 	noOrder := orderManagment.Order{Floor: -1, ButtonType: -1, Status: -1, Finished: false}

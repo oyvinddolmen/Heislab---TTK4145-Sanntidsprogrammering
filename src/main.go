@@ -3,10 +3,8 @@ package main
 import (
 	"fmt"
 	"heislab/elevator"
-
-	//"Network-go/bcast"
-	elevio "Driver-go"
-	network "Network-go"
+	"heislab/elevio"
+	"heislab/network"
 	"heislab/orderManagment"
 	"os"
 	"strconv"
@@ -33,13 +31,17 @@ func main() {
 		return
 	}
 
+	// -------------------------------------------------------------------------------------------
+	// Initializing channels
+	// -------------------------------------------------------------------------------------------
+
 	elevChannels := elevator.ElevChannels{
 		MotorDirection: make(chan int),
 		LastFloor:      make(chan int),
 		Obstruction:    make(chan bool),
 		StopBtn:        make(chan bool),
 		LightControl:   make(chan elevio.CabFloorLights),
-		ButtonPresses:  make(chan elevio.ButtonEvent),
+		BtnPresses:     make(chan elevio.ButtonEvent),
 		NewOrder:       make(chan orderManagment.Order),
 	}
 
@@ -47,10 +49,6 @@ func main() {
 		RcvChannel:   make(chan elevator.Elevator),
 		BcastChannel: make(chan elevator.Elevator),
 	}
-
-	// -------------------------------------------------------------------------------------------
-	// Network
-	// -------------------------------------------------------------------------------------------
 
 	// -------------------------------------------------------------------------------------------
 	// Initialise elevator and run go-functions
