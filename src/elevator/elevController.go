@@ -1,12 +1,13 @@
 package elevator
 
 // ---------------------------------------------------------------------------------------------------------------------
-// In charge of controlling the elevator
+// In charge of driving and setting lights
 // ---------------------------------------------------------------------------------------------------------------------
 
 import (
 	"fmt"
 	"heislab/elevio"
+	"heislab/managment"
 	"heislab/orderManagment"
 )
 
@@ -14,22 +15,13 @@ import (
 // Datatypes
 // ---------------------------------------------------------------------------------------------------------------------
 
-type Direction int
-
-const (
-	Dir_Down Direction = -1
-	Dir_Idle Direction = 0
-	Dir_Up   Direction = 1
-)
-
 type ElevChannels struct {
 	MotorDirection chan int
 	LastFloor      chan int
 	Obstruction    chan bool
 	StopBtn        chan bool
-	LightControl   chan elevio.CabFloorLights // writing to lights for cab- and floor panel
-	BtnPresses     chan elevio.ButtonEvent    // getting buttonpresses on the physical control box
-	NewOrder       chan orderManagment.Order  // getting new orders locally (somebody places and order on your own elevator)
+	BtnPresses     chan elevio.ButtonEvent // getting buttonpresses on the physical control box
+	NewOrder       chan managment.Order    // getting new orders locally (somebody places an order on your own elevator)
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -58,14 +50,32 @@ func RunElevator(channels ElevChannels) {
 	go elevio.PollObstructionSwitch(channels.Obstruction)
 	go setLights(channels)
 
-	select {}
+	for {
+		switch managment.Elev.State {
+
+		case managment.IDLE:
+			select {
+			case currentOrder := <-channels.NewOrder:
+				// maybe switch out with a functon findMoveDir() to make it cleaner
+				moveDir := findMovingDirection(currentOrder.Floor, managment.Elev.LastFloor, managment.Elev.Floor)
+				elevio.SetMotorDirection(moveDir)
+
+				if currentOrder.Floor > managment.Elev.LastFloor {
+					elevio.SetMotorDirection(elevio.MD_Up)
+				}
+
+				// TODO - finish
+			}
+
+		}
+	}
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Initalize lights
 // ---------------------------------------------------------------------------------------------------------------------
 
-// function that sets all lights on elevatorbox
+// function that sets all lights on the elevator controll panel
 func setLights(channels ElevChannels) {
 
 	for {
@@ -89,7 +99,7 @@ func setLights(channels ElevChannels) {
 			elevio.SetButtonLamp(elevio.BT_HallDown, lastFloor, false)
 
 		case btnPress := <-channels.BtnPresses:
-			if orderConfirmed(btnPress) {
+			if orderManagment.OrderConfirmed(btnPress) {
 				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 			}
 
@@ -115,8 +125,13 @@ func lightInit(numFloors int) {
 	}
 }
 
-// function that sends order to other elevators and wait for confirmed from the other elevators
-// should maybe be moved to network module, but then we get import cycle :(
-func orderConfirmed(elevio.ButtonEvent) bool {
-	return true
+// ---------------------------------------------------------------------------------------------------------------------
+// Driving logic
+// ---------------------------------------------------------------------------------------------------------------------
+
+func findMovingDirection(floorDestination int, lastFloor int, currentFloor int) elevio.MotorDirection {
+	// ...
+	// logic for direction
+	// ...
+	return elevio.MD_Up
 }

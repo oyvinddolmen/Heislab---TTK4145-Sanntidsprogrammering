@@ -1,13 +1,35 @@
 package orderManagment
 
 // -------------------------------------------------------------------------------------------
-// Struct and variables
+// Functions for handling and distributing orders
 // -------------------------------------------------------------------------------------------
 
-type Order struct {
-	Floor      int
-	ButtonType int
-	Status     int
-	Finished   bool
-	Confirm    bool
+import (
+	"heislab/elevio"
+	"heislab/managment"
+)
+
+// -------------------------------------------------------------------------------------------
+// Functions
+// -------------------------------------------------------------------------------------------
+
+// function that sends order to other elevators and wait for confirmed from the other elevators
+func OrderConfirmed(elevio.ButtonEvent) bool {
+	// ....
+	// ....
+	return true
+}
+
+// checks if any other elevators is attending this order
+func OrderNotTaken(order managment.Order) bool {
+	if order.Status == 0 {
+		return true
+	} else {
+		return false
+	}
+}
+
+// changes the state currentOrder of given elevator. elevID is the elevator which will get the order
+func distributeOrder(order managment.Order, elevID int, localElevId int) {
+	// must change the currentOrder of the correct elevator
 }

@@ -1,20 +1,25 @@
 package network
 
+// ---------------------------------------------------------------------------------------------------------------------
+// Calling of communication functions in network-folder
+// ---------------------------------------------------------------------------------------------------------------------
+
+
 import (
-	"heislab/elevator"
+	"heislab/managment"
 	"time"
 )
 
 type NetworkChannels struct {
-	RcvChannel   chan elevator.Elevator
-	BcastChannel chan elevator.Elevator
+	RcvChannel   chan managment.Elevator
+	BcastChannel chan managment.Elevator
 }
 
 func RunNetwork(channels NetworkChannels) {
 	// Funksjonen er bare en placeholder. Bare å endre navn og det den gjør
 }
 
-func BcastElevInfo(BcastChannel chan elevator.Elevator) {
+func BcastElevInfo(BcastChannel chan managment.Elevator) {
 	time.Sleep(2 * time.Millisecond)
-	BcastChannel <- elevator.Elev
+	BcastChannel <- managment.Elev
 }

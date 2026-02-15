@@ -1,56 +1,31 @@
 package elevator
 
 import (
-	"heislab/orderManagment"
+	"heislab/managment"
 )
 
 // -------------------------------------------------------------------------------------------
-// Struct and variables
+// Struct and variables can be found in managment.go
 // -------------------------------------------------------------------------------------------
-
-const (
-	NumFloors  = 4
-	NumButtons = 3
-)
-
-type State int
-
-const (
-	INIT      = 1
-	IDLE      = 2
-	EXECUTING = 3
-	ALONE     = 4 // in case offline or no other elevators active
-)
-
-type Elevator struct {
-	State        int
-	ID           int
-	Floor        int
-	MoveDir      Direction
-	CurrentOrder orderManagment.Order
-	Orders       [NumFloors][NumButtons]orderManagment.Order
-}
 
 // -------------------------------------------------------------------------------------------
 // Initialize state-machine
 // -------------------------------------------------------------------------------------------
 
-var Elev Elevator
 
 func InitFSM(elevID int, NumFloors int) {
-	noOrder := orderManagment.Order{Floor: -1, ButtonType: -1, Status: -1, Finished: false}
-	Elev.State = INIT
-	Elev.ID = elevID
-	Elev.Floor = -1
-	Elev.MoveDir = Dir_Down
-	Elev.CurrentOrder = noOrder
+	noOrder := managment.Order{Floor: -1, ButtonType: -1, Status: -1, Finished: false}
+	managment.Elev.State = managment.INIT
+	managment.Elev.ID = elevID
+	managment.Elev.Floor = -1
+	managment.Elev.MoveDir = managment.Dir_Down
+	managment.Elev.CurrentOrder = noOrder
 	for i := 0; i < NumFloors; i++ {
-		for j := 0; j < NumButtons; j++ {
-			Elev.Orders[i][j].Floor = i
-			Elev.Orders[i][j].ButtonType = j
-			Elev.Orders[i][j].Status = -1
-			Elev.Orders[i][j].Finished = false
-			Elev.Orders[i][j].Confirm = false
+		for j := 0; j < managment.NumButtons; j++ {
+			managment.Elev.Orders[i][j].Floor = i
+			managment.Elev.Orders[i][j].ButtonType = j
+			managment.Elev.Orders[i][j].Status = -1
+			managment.Elev.Orders[i][j].Finished = false
 		}
 	}
 }

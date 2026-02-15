@@ -5,7 +5,7 @@ import (
 	"heislab/elevator"
 	"heislab/elevio"
 	"heislab/network"
-	"heislab/orderManagment"
+	"heislab/managment"
 	"os"
 	"strconv"
 )
@@ -40,14 +40,13 @@ func main() {
 		LastFloor:      make(chan int),
 		Obstruction:    make(chan bool),
 		StopBtn:        make(chan bool),
-		LightControl:   make(chan elevio.CabFloorLights),
 		BtnPresses:     make(chan elevio.ButtonEvent),
-		NewOrder:       make(chan orderManagment.Order),
+		NewOrder:       make(chan managment.Order),
 	}
 
 	networkChannels := network.NetworkChannels{
-		RcvChannel:   make(chan elevator.Elevator),
-		BcastChannel: make(chan elevator.Elevator),
+		RcvChannel:   make(chan managment.Elevator),
+		BcastChannel: make(chan managment.Elevator),
 	}
 
 	// -------------------------------------------------------------------------------------------
