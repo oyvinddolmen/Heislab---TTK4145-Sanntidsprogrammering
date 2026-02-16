@@ -5,10 +5,12 @@ package managment
 // -------------------------------------------------------------------------------------------
 
 type Order struct {
-	Floor      int
-	ButtonType int
-	Status     int // -1 if no elevator is assigned
-	Finished   bool
+	OrderPlaced bool
+	Floor       int
+	ButtonType  int
+	Status      int       // -1 if no elevator is assigned, else the ID of the elevator assigned
+	Direction   Direction // Dir_Idle if cab call
+	Finished    bool
 }
 
 const (
@@ -22,7 +24,7 @@ const (
 	INIT      = 1
 	IDLE      = 2
 	EXECUTING = 3
-	DOOROPEN  = 4
+	DOOROPEN  = 4 // need this??
 )
 
 type Direction int
@@ -34,7 +36,7 @@ const (
 )
 
 type Elevator struct {
-	State        int
+	State        State
 	ID           int
 	Floor        int
 	LastFloor    int

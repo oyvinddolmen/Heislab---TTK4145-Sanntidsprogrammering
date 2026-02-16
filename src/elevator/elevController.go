@@ -25,7 +25,7 @@ type ElevChannels struct {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Initalize elevator
+// Initalize elevator functions
 // ---------------------------------------------------------------------------------------------------------------------
 
 func goToGroundFloor() {
@@ -34,6 +34,7 @@ func goToGroundFloor() {
 	}
 	elevio.SetMotorDirection(elevio.MD_Stop)
 	elevio.SetFloorIndicator(0)
+	managment.Elev.State = managment.IDLE
 }
 
 func ElevatorInit(elevID int, adress string, numFloors int) {
@@ -43,36 +44,8 @@ func ElevatorInit(elevID int, adress string, numFloors int) {
 	InitFSM(elevID, numFloors)
 }
 
-func RunElevator(channels ElevChannels) {
-	go elevio.PollFloorSensor(channels.LastFloor)
-	go elevio.PollButtons(channels.BtnPresses)
-	go elevio.PollStopButton(channels.StopBtn)
-	go elevio.PollObstructionSwitch(channels.Obstruction)
-	go setLights(channels)
-
-	for {
-		switch managment.Elev.State {
-
-		case managment.IDLE:
-			select {
-			case currentOrder := <-channels.NewOrder:
-				// maybe switch out with a functon findMoveDir() to make it cleaner
-				moveDir := findMovingDirection(currentOrder.Floor, managment.Elev.LastFloor, managment.Elev.Floor)
-				elevio.SetMotorDirection(moveDir)
-
-				if currentOrder.Floor > managment.Elev.LastFloor {
-					elevio.SetMotorDirection(elevio.MD_Up)
-				}
-
-				// TODO - finish
-			}
-
-		}
-	}
-}
-
 // ---------------------------------------------------------------------------------------------------------------------
-// Initalize lights
+// Initalize lights functions
 // ---------------------------------------------------------------------------------------------------------------------
 
 // function that sets all lights on the elevator controll panel
@@ -129,9 +102,20 @@ func lightInit(numFloors int) {
 // Driving logic
 // ---------------------------------------------------------------------------------------------------------------------
 
-func findMovingDirection(floorDestination int, lastFloor int, currentFloor int) elevio.MotorDirection {
-	// ...
-	// logic for direction
-	// ...
-	return elevio.MD_Up
+func findMovingDirection(dest int, lastFloor int, currentFloor int) elevio.MotorDirection {
+	floor := currentFloor
+	if floor == -1 {
+		floor = lastFloor
+	}
+
+	switch {
+	case dest > currentFloor:
+		return elevio.MD_Up
+
+	case dest < currentFloor:
+		return elevio.MD_Down
+
+	default:
+		return elevio.MD_Stop
+	}
 }
