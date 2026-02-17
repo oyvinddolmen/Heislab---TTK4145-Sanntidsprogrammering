@@ -1,6 +1,6 @@
 package orderManagment
 
-/*
+
 import (
 	"encoding/json"
 	"fmt"
@@ -44,7 +44,7 @@ func AssignHallRequests(
 		return nil, fmt.Errorf("json.Marshal failed: %w", err)
 	}
 
-	assignerPath := getAssignerPath()
+	assignerPath := "orderManagment/hall_request_assigner"
 	cmd := exec.Command(assignerPath)
 
 	stdin, err := cmd.StdinPipe()
@@ -74,4 +74,4 @@ func AssignHallRequests(
 
 	return output, nil
 }
-*/
+
