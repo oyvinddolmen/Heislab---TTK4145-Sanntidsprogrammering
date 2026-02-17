@@ -11,7 +11,7 @@ import (
 // Struct definitions
 // --------------------
 
-type ElevatorState struct {
+type ElevatorStateJSON struct {
 	Behavior    string `json:"behaviour"`
 	Floor       int    `json:"floor"`
 	Direction   string `json:"direction"`
@@ -20,18 +20,14 @@ type ElevatorState struct {
 
 type AssignerInput struct {
 	HallRequests [][2]bool                `json:"hallRequests"`
-	States       map[string]ElevatorState `json:"states"`
+	States       map[string]ElevatorStateJSON `json:"states"`
 }
-
-// --------------------
-// Public API function
-// --------------------
 
 // AssignHallRequests calls the external hall_request_assigner binary
 // and returns hall requests assigned per elevator.
 func AssignHallRequests(
 	hallRequests [][2]bool,
-	states map[string]ElevatorState,
+	states map[string]ElevatorStateJSON,
 ) (map[string][][2]bool, error) {
 
 	input := AssignerInput{
