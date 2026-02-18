@@ -22,4 +22,5 @@ func RunNetwork(channels NetworkChannels) {
 func BcastElevInfo(BcastChannel chan managment.Elevator) {
 	time.Sleep(2 * time.Millisecond)
 	BcastChannel <- managment.Elev
+	// TODO
 }

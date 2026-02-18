@@ -8,13 +8,12 @@ import (
 )
 
 type GlobalState struct {
-	HallRequests [][2]bool                // [floor][0=up,1=down]
+	HallRequests [][2]bool                    // [floor][0=up,1=down]
 	States       map[string]ElevatorStateJSON // elevatorID -> state
 }
 
 var globalState GlobalState
 var mutex sync.Mutex
-
 
 func InitGlobalState() {
 	mutex.Lock()
@@ -23,7 +22,6 @@ func InitGlobalState() {
 	globalState.HallRequests = make([][2]bool, managment.NumFloors)
 	globalState.States = make(map[string]ElevatorStateJSON)
 }
-
 
 // Convert elevator to JSON elevator state
 func convertElevatorToJSON(e managment.Elevator) ElevatorStateJSON {
@@ -66,8 +64,8 @@ func convertDirection(d managment.Direction) string {
 }
 
 func UpdateLocalGlobalState() {
-    UpdateLocalElevator()
-    UpdateHallRequests()
+	UpdateLocalElevator()
+	UpdateHallRequests()
 }
 
 // Update local elevator state in globalState
@@ -98,7 +96,6 @@ func MergeRemoteElevator(id string, e managment.Elevator) {
 	globalState.States[id] = convertElevatorToJSON(e)
 }
 
-
 func RunHallAssigner() error {
 
 	mutex.Lock()
@@ -121,7 +118,6 @@ func RunHallAssigner() error {
 	applyAssignments(assignments)
 	return nil
 }
-
 
 func applyAssignments(assignments map[string][][2]bool) {
 

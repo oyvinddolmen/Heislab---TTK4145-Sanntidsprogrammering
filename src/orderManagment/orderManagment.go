@@ -30,6 +30,10 @@ func OrderNotTaken(order managment.Order) bool {
 }
 
 // changes the state currentOrder of given elevator. elevID is the elevator which will get the order
-func distributeOrder(order managment.Order, elevID int, localElevId int) {
+func DistributeOrder(order managment.Order, elevID int, localElevId int) {
 	// must change the currentOrder of the correct elevator
+}
+
+func HandleNewOrder(order managment.Order, channels managment.ElevChannels) {
+	// handle order...
 }
