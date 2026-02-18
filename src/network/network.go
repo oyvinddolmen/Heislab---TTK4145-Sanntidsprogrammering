@@ -39,16 +39,16 @@ type Config struct {
 }
 
 // Start launches goroutines for:
-//  1) peer discovery (who is alive?)
-//  2) broadcast messaging (sending/receiving typed messages)
+//  1. peer discovery (who is alive?)
+//  2. broadcast messaging (sending/receiving typed messages)
 //
 // outgoingMessageChans: channels THIS node will broadcast OUT (bcast.Transmitter listens to them)
 // incomingMessageChans: channels THIS node will receive IN from the network (bcast.Receiver writes to them)
 //
 // Returns:
-//  - peerTxEnabled: send true/false to enable/disable announcing your presence
-//  - peerUpdates: stream of PeerUpdate (New/Lost/Peers)
-//  - myID: the node ID used on the network
+//   - peerTxEnabled: send true/false to enable/disable announcing your presence
+//   - peerUpdates: stream of PeerUpdate (New/Lost/Peers)
+//   - myID: the node ID used on the network
 func initNetwork(
 	cfg Config,
 	outgoingMessageChans []interface{},
