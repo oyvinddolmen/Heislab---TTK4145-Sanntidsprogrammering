@@ -1,4 +1,4 @@
-package orderManagment
+package orderManagement
 
 
 import (

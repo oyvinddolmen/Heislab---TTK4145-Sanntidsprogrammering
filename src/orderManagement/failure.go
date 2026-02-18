@@ -1,10 +1,10 @@
-package orderManagment
+package orderManagement
 
 import (
 	"strconv"
 	"sync"
 	"time"
-	"heislab/managment"
+	"heislab/management"
 )
 
 const HeartbeatTimeout = 2 * time.Second
@@ -15,7 +15,7 @@ var failureMutex sync.Mutex
 
 // Called whenever we receive state from another elevator
 func RegisterHeartbeat(id string) {
-	localID := strconv.Itoa(managment.Elev.ID)
+	localID := strconv.Itoa(management.Elev.ID)
 	if id == localID {
 		// Ignore self
 		return
@@ -40,7 +40,7 @@ func checkForDeadElevators() {
 	defer failureMutex.Unlock()
 
 	now := time.Now()
-	localID := strconv.Itoa(managment.Elev.ID)
+	localID := strconv.Itoa(management.Elev.ID)
 
 	for id, t := range lastSeen {
 
@@ -78,10 +78,10 @@ func releaseHallOrders(deadID string) {
 
 	idInt, _ := strconv.Atoi(deadID)
 
-	for f := 0; f < managment.NumFloors; f++ {
+	for f := 0; f < management.NumFloors; f++ {
 		for btn := 0; btn < 2; btn++ { // hall buttons only
 
-			order := &managment.Elev.Orders[f][btn]
+			order := &management.Elev.Orders[f][btn]
 
 			if order.Status == idInt {
 				order.Status = -1  // sets order as not handled

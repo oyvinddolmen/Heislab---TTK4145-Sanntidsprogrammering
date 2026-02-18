@@ -1,7 +1,7 @@
-package orderManagment
+package orderManagement
 
 import (
-	"heislab/managment"
+	"heislab/management"
 	"strconv"
 	"sync"
 )
@@ -25,16 +25,16 @@ func InitGlobalState() {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	globalState.HallRequests = make([][2]bool, managment.NumFloors)
+	globalState.HallRequests = make([][2]bool, management.NumFloors)
 	globalState.States = make(map[string]ElevatorStateJSON)
 }
 
 
 // Convert elevator to JSON elevator state
-func convertElevatorToJSON(e managment.Elevator) ElevatorStateJSON {
+func convertElevatorToJSON(e management.Elevator) ElevatorStateJSON {
 
-	cabRequests := make([]bool, managment.NumFloors)
-	for f := 0; f < managment.NumFloors; f++ {
+	cabRequests := make([]bool, management.NumFloors)
+	for f := 0; f < management.NumFloors; f++ {
 		cabRequests[f] = e.Orders[f][2].OrderPlaced // 2 = Cab button
 	}
 
@@ -46,26 +46,26 @@ func convertElevatorToJSON(e managment.Elevator) ElevatorStateJSON {
 	}
 }
 
-func convertState(s managment.State) string {
+func convertState(s management.State) string {
 	switch s {
-	case managment.IDLE:
+	case management.IDLE:
 		return "idle"
-	case managment.EXECUTING:
+	case management.EXECUTING:
 		return "moving"
-	case managment.DOOROPEN:
+	case management.DOOROPEN:
 		return "doorOpen"
-	case managment.OFFLINE:
+	case management.OFFLINE:
 		return "offline"
 	default:
 		return "idle"
 	}
 }
 
-func convertDirection(d managment.Direction) string {
+func convertDirection(d management.Direction) string {
 	switch d {
-	case managment.Dir_Up:
+	case management.Dir_Up:
 		return "up"
-	case managment.Dir_Down:
+	case management.Dir_Down:
 		return "down"
 	default:
 		return "stop"
@@ -82,8 +82,8 @@ func UpdateLocalElevator() {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	id := strconv.Itoa(managment.Elev.ID)
-	globalState.States[id] = convertElevatorToJSON(managment.Elev)
+	id := strconv.Itoa(management.Elev.ID)
+	globalState.States[id] = convertElevatorToJSON(management.Elev)
 }
 
 // Update hall requests from Elev.Orders
@@ -91,14 +91,14 @@ func UpdateHallRequests() {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	for f := 0; f < managment.NumFloors; f++ {
-		globalState.HallRequests[f][0] = managment.Elev.Orders[f][0].OrderPlaced // HallUp
-		globalState.HallRequests[f][1] = managment.Elev.Orders[f][1].OrderPlaced // HallDown
+	for f := 0; f < management.NumFloors; f++ {
+		globalState.HallRequests[f][0] = management.Elev.Orders[f][0].OrderPlaced // HallUp
+		globalState.HallRequests[f][1] = management.Elev.Orders[f][1].OrderPlaced // HallDown
 	}
 }
 
 // Merge received remote elevator state
-func MergeRemoteElevator(id string, e managment.Elevator) {
+func MergeRemoteElevator(id string, e management.Elevator) {
 	mutex.Lock()
 	defer mutex.Unlock()
 

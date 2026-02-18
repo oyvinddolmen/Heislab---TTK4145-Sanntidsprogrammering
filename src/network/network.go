@@ -6,20 +6,20 @@ package network
 
 
 import (
-	"heislab/managment"
+	"heislab/management"
 	"time"
 )
 
 type NetworkChannels struct {
-	RcvChannel   chan managment.Elevator
-	BcastChannel chan managment.Elevator
+	RcvChannel   chan management.Elevator
+	BcastChannel chan management.Elevator
 }
 
 func RunNetwork(channels NetworkChannels) {
 	// Funksjonen er bare en placeholder. Bare å endre navn og det den gjør
 }
 
-func BcastElevInfo(BcastChannel chan managment.Elevator) {
+func BcastElevInfo(BcastChannel chan management.Elevator) {
 	time.Sleep(2 * time.Millisecond)
-	BcastChannel <- managment.Elev
+	BcastChannel <- management.Elev
 }

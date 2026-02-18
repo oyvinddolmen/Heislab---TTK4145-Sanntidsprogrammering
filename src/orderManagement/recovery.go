@@ -1,8 +1,8 @@
-package orderManagment
+package orderManagement
 
 import (
 	"strconv"
-	"heislab/managment"
+	"heislab/management"
 )
 
 // Called once when elevator boots
@@ -11,14 +11,14 @@ func RecoverOnStartup() {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	localID := strconv.Itoa(managment.Elev.ID)
+	localID := strconv.Itoa(management.Elev.ID)
 
 	// Restore cab orders if available
 	oldState, exists := globalState.States[localID]
 	if exists {
-		for f := 0; f < managment.NumFloors; f++ {
+		for f := 0; f < management.NumFloors; f++ {
 			if oldState.CabRequests[f] {
-				managment.Elev.Orders[f][2].OrderPlaced = true
+				management.Elev.Orders[f][2].OrderPlaced = true
 			}
 		}
 	}
@@ -27,7 +27,7 @@ func RecoverOnStartup() {
 	clearLocalHallOrders()
 
 	// Mark self alive in globalState (behavior idle)
-	globalState.States[localID] = convertElevatorToJSON(managment.Elev)
+	globalState.States[localID] = convertElevatorToJSON(management.Elev)
 
 	// Trigger hall reassignment
 	go RunHallAssigner()
@@ -36,10 +36,10 @@ func RecoverOnStartup() {
 // Clear local hall orders (only hall buttons, keep cab orders)
 func clearLocalHallOrders() {
 
-	for f := 0; f < managment.NumFloors; f++ {
+	for f := 0; f < management.NumFloors; f++ {
 		for btn := 0; btn < 2; btn++ { // hall buttons only
-			managment.Elev.Orders[f][btn].OrderPlaced = false
-			managment.Elev.Orders[f][btn].Status = -1
+			management.Elev.Orders[f][btn].OrderPlaced = false
+			management.Elev.Orders[f][btn].Status = -1
 		}
 	}
 }

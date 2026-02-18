@@ -7,7 +7,7 @@ package elevator
 import (
 	"fmt"
 	"heislab/elevio"
-	"heislab/managment"
+	"heislab/management"
 	/*"heislab/orderManagment"*/
 )
 
@@ -21,7 +21,7 @@ type ElevChannels struct {
 	Obstruction    chan bool
 	StopBtn        chan bool
 	BtnPresses     chan elevio.ButtonEvent // getting buttonpresses on the physical control box
-	NewOrder       chan managment.Order    // getting new orders locally (somebody places an order on your own elevator)
+	NewOrder       chan management.Order    // getting new orders locally (somebody places an order on your own elevator)
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -34,7 +34,7 @@ func goToGroundFloor() {
 	}
 	elevio.SetMotorDirection(elevio.MD_Stop)
 	elevio.SetFloorIndicator(0)
-	managment.Elev.State = managment.IDLE
+	management.Elev.State = management.IDLE
 }
 
 func ElevatorInit(elevID int, adress string, numFloors int) {

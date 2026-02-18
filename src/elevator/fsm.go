@@ -3,7 +3,7 @@ package elevator
 import (
 	"fmt"
 	"heislab/elevio"
-	"heislab/managment"
+	"heislab/management"
 )
 
 // -------------------------------------------------------------------------------------------
@@ -15,18 +15,18 @@ import (
 // -------------------------------------------------------------------------------------------
 
 func InitFSM(elevID int, NumFloors int) {
-	noOrder := managment.Order{Floor: -1, ButtonType: -1, Status: -1, Finished: false}
-	managment.Elev.State = managment.INIT
-	managment.Elev.ID = elevID
-	managment.Elev.Floor = -1
-	managment.Elev.MoveDir = managment.Dir_Down
-	managment.Elev.CurrentOrder = noOrder
+	noOrder := management.Order{Floor: -1, ButtonType: -1, Status: -1, Finished: false}
+	management.Elev.State = management.INIT
+	management.Elev.ID = elevID
+	management.Elev.Floor = -1
+	management.Elev.MoveDir = management.Dir_Down
+	management.Elev.CurrentOrder = noOrder
 	for i := 0; i < NumFloors; i++ {
-		for j := 0; j < managment.NumButtons; j++ {
-			managment.Elev.Orders[i][j].Floor = i
-			managment.Elev.Orders[i][j].ButtonType = j
-			managment.Elev.Orders[i][j].Status = -1
-			managment.Elev.Orders[i][j].Finished = false
+		for j := 0; j < management.NumButtons; j++ {
+			management.Elev.Orders[i][j].Floor = i
+			management.Elev.Orders[i][j].ButtonType = j
+			management.Elev.Orders[i][j].Status = -1
+			management.Elev.Orders[i][j].Finished = false
 			// more Order variables need to be filled. Must discuss what to include with group
 		}
 	}
@@ -43,14 +43,14 @@ func RunElevator(channels ElevChannels) {
 	go elevio.PollObstructionSwitch(channels.Obstruction)
 
 	for {
-		switch managment.Elev.State {
+		switch management.Elev.State {
 
-		case managment.IDLE:
+		case management.IDLE:
 			select {
 			case currentOrder := <-channels.NewOrder:
-				moveDir := findMovingDirection(currentOrder.Floor, managment.Elev.LastFloor, managment.Elev.Floor)
+				moveDir := findMovingDirection(currentOrder.Floor, management.Elev.LastFloor, management.Elev.Floor)
 				elevio.SetMotorDirection(moveDir)
-				managment.Elev.State = managment.EXECUTING
+				management.Elev.State = management.EXECUTING
 
 			case obstruction := <-channels.Obstruction:
 				// door open functionality
@@ -65,7 +65,7 @@ func RunElevator(channels ElevChannels) {
 				fmt.Println(btnPress)
 			}
 
-		case managment.EXECUTING:
+		case management.EXECUTING:
 			select {
 				case stop := <-channels.StopBtn:
 				// stop button functionality 

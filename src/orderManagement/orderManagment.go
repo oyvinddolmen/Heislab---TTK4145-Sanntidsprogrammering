@@ -1,4 +1,4 @@
-package orderManagment
+package orderManagement
 
 // -------------------------------------------------------------------------------------------
 // Functions for handling and distributing orders
