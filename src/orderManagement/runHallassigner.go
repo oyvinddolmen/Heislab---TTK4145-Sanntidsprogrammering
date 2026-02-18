@@ -52,4 +52,6 @@ func applyAssignments(assignments map[string][][2]bool) {
 			}
 		}
 	}
+
+	UpdateCurrentOrder()
 }
