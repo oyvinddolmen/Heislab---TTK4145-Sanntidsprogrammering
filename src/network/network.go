@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"heislab/management"
+	"heislab/orderManagement"
 	"heislab/network/bcast"
 	"heislab/network/localip"
 	"heislab/network/peers"
@@ -32,30 +33,39 @@ type Envelope[T any] struct {
 	Payload  T
 }
 
-type Config struct {
+type PortConfig struct {
 	PeerDiscoveryPort int // used by peers.Transmitter/Receiver (heartbeats)
 	MessageBcastPort  int // used by bcast.Transmitter/Receiver (your actual data)
 	NodeID            string
 }
 
-// Start launches goroutines for:
-//  1. peer discovery (who is alive?)
-//  2. broadcast messaging (sending/receiving typed messages)
-//
-// outgoingMessageChans: channels THIS node will broadcast OUT (bcast.Transmitter listens to them)
-// incomingMessageChans: channels THIS node will receive IN from the network (bcast.Receiver writes to them)
-//
-// Returns:
+type NetworkConn struct {
+	MyID string
+
+	// Peer discovery
+	PeerTxEnabled chan<- bool
+	PeerUpdates   <-chan peers.PeerUpdate
+
+	// GlobalState messaging
+	GlobalStateTx chan<- Envelope[orderManagement.GlobalState]
+	GlobalStateRx <-chan Envelope[orderManagement.GlobalState]
+}
+
+
+// InitNetwork initializes network goroutines for:
+//	1. Peer discovery (Tx and Rx)
+//		-> Sends heartbeats and keeps track of peers
+//	2. Global state broadcasts (Tx and Rx)
+// 
+// Also initializes and returns channels for network interactions:
+//   - myID: the node ID used on the network
 //   - peerTxEnabled: send true/false to enable/disable announcing your presence
 //   - peerUpdates: stream of PeerUpdate (New/Lost/Peers)
-//   - myID: the node ID used on the network
-func InitNetwork(
-	cfg Config,
-	outgoingMessageChans []interface{},
-	incomingMessageChans []interface{},
-) (peerTxEnabled chan<- bool, peerUpdates <-chan peers.PeerUpdate, myID string) {
+//	 - globalStateTx: broadcast transmitting channel
+// 	 - globalStateRx: broadcast receiving channel
 
-	myID = cfg.NodeID
+func InitNetwork(cfg PortConfig) NetworkConn {
+	myID := cfg.NodeID
 	if myID == "" {
 		ip, err := localip.LocalIP()
 		if err != nil {
@@ -65,24 +75,27 @@ func InitNetwork(
 		}
 	}
 
-	// Channel to turn peer announcements on/off (useful for simulating disconnect).
-	peerTxEnabledCh := make(chan bool, 1)
-	peerTxEnabledCh <- true
+	// --- peer discovery channels ---
+	peerTxEnabled := make(chan bool, 1)
+	peerTxEnabled <- true								// true -> Sends heartbeats
+	peerUpdates   := make(chan peers.PeerUpdate, 16)
 
-	// Channel where the peers.Receiver posts updates about peers.
-	peerUpdatesCh := make(chan peers.PeerUpdate, 16)
+	go peers.Transmitter(cfg.PeerDiscoveryPort, myID, peerTxEnabled)
+	go peers.Receiver(cfg.PeerDiscoveryPort, peerUpdates)
 
-	// ---- Peer discovery: "I'm alive" beacons + tracking others ----
-	go peers.Transmitter(cfg.PeerDiscoveryPort, myID, peerTxEnabledCh)
-	go peers.Receiver(cfg.PeerDiscoveryPort, peerUpdatesCh)
+	// --- global state channels ---
+	globalStateTx := make(chan Envelope[orderManagement.GlobalState], 16)
+	globalStateRx := make(chan Envelope[orderManagement.GlobalState], 16)
 
-	// ---- Message broadcast: your actual elevator messages ----
-	if len(outgoingMessageChans) > 0 {
-		go bcast.Transmitter(cfg.MessageBcastPort, outgoingMessageChans...)
+	// bcast wants "interface{} channels", but we hide that here.
+	go bcast.Transmitter(cfg.MessageBcastPort, globalStateTx)
+	go bcast.Receiver(cfg.MessageBcastPort, globalStateRx)
+
+	return NetworkConn{
+		MyID:          myID,
+		PeerTxEnabled: peerTxEnabled,
+		PeerUpdates:   peerUpdates,
+		GlobalStateTx: globalStateTx,
+		GlobalStateRx: globalStateRx,
 	}
-	if len(incomingMessageChans) > 0 {
-		go bcast.Receiver(cfg.MessageBcastPort, incomingMessageChans...)
-	}
-
-	return peerTxEnabledCh, peerUpdatesCh, myID
 }
