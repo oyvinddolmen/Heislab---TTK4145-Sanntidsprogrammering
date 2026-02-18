@@ -59,7 +59,7 @@ func assignUp() bool {
 			if order.OrderPlaced && !order.Finished {
 				e.CurrentOrder = *order
 				e.MoveDir = management.Dir_Up
-				e.State = management.EXECUTING
+				e.State = management.MOVING
 				return true
 			}
 		}
@@ -80,7 +80,7 @@ func assignDown() bool {
 			if order.OrderPlaced && !order.Finished {
 				e.CurrentOrder = *order
 				e.MoveDir = management.Dir_Down
-				e.State = management.EXECUTING
+				e.State = management.MOVING
 				return true
 			}
 		}
