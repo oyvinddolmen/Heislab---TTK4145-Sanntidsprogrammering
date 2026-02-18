@@ -3,7 +3,7 @@ package orderManagment
 // -------------------------------------------------------------------------------------------
 // Functions for handling and distributing orders
 // -------------------------------------------------------------------------------------------
-
+/*
 import (
 	"heislab/elevio"
 	"heislab/managment"
@@ -33,3 +33,4 @@ func OrderNotTaken(order managment.Order) bool {
 func distributeOrder(order managment.Order, elevID int, localElevId int) {
 	// must change the currentOrder of the correct elevator
 }
+*/

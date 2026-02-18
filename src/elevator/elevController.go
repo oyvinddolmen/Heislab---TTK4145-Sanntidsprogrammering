@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"heislab/elevio"
 	"heislab/managment"
-	"heislab/orderManagment"
+	/*"heislab/orderManagment"*/
 )
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -72,9 +72,12 @@ func setLights(channels ElevChannels) {
 			elevio.SetButtonLamp(elevio.BT_HallDown, lastFloor, false)
 
 		case btnPress := <-channels.BtnPresses:
+			/*
 			if orderManagment.OrderConfirmed(btnPress) {
 				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 			}
+			*/
+			elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
 			// elevator already at the floor
 			if elevio.GetFloor() == btnPress.Floor {

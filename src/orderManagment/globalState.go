@@ -1,11 +1,16 @@
 package orderManagment
 
 import (
-	"fmt"
 	"heislab/managment"
 	"strconv"
 	"sync"
 )
+type ElevatorStateJSON struct {
+	Behavior    string `json:"behaviour"` // idle, moving, doorOpen, offline
+	Floor       int    `json:"floor"`
+	Direction   string `json:"direction"`
+	CabRequests []bool `json:"cabRequests"`
+}
 
 type GlobalState struct {
 	HallRequests [][2]bool                // [floor][0=up,1=down]
@@ -49,6 +54,8 @@ func convertState(s managment.State) string {
 		return "moving"
 	case managment.DOOROPEN:
 		return "doorOpen"
+	case managment.OFFLINE:
+		return "offline"
 	default:
 		return "idle"
 	}
@@ -99,48 +106,3 @@ func MergeRemoteElevator(id string, e managment.Elevator) {
 }
 
 
-func RunHallAssigner() error {
-
-	mutex.Lock()
-	// Copy HallRequests
-	hallRequests := make([][2]bool, len(globalState.HallRequests))
-	copy(hallRequests, globalState.HallRequests)
-
-	// CopyStates
-	states := make(map[string]ElevatorStateJSON, len(globalState.States))
-	for k, v := range globalState.States {
-		states[k] = v
-	}
-	mutex.Unlock()
-
-	assignments, err := AssignHallRequests(hallRequests, states)
-	if err != nil {
-		return fmt.Errorf("assigner failed: %w", err)
-	}
-
-	applyAssignments(assignments)
-	return nil
-}
-
-
-func applyAssignments(assignments map[string][][2]bool) {
-
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	localID := strconv.Itoa(managment.Elev.ID)
-
-	assigned, exists := assignments[localID]
-	if !exists {
-		return
-	}
-
-	for floor := 0; floor < managment.NumFloors; floor++ {
-		for btn := 0; btn < 2; btn++ { // only hall buttons
-			if assigned[floor][btn] {
-				managment.Elev.Orders[floor][btn].OrderPlaced = true
-				managment.Elev.Orders[floor][btn].Status = managment.Elev.ID
-			}
-		}
-	}
-}

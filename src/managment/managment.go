@@ -24,7 +24,8 @@ const (
 	INIT      = 1
 	IDLE      = 2
 	EXECUTING = 3
-	DOOROPEN  = 4 // need this??
+	DOOROPEN  = 4
+	OFFLINE   = 5
 )
 
 type Direction int

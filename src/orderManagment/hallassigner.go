@@ -7,17 +7,6 @@ import (
 	"os/exec"
 )
 
-// --------------------
-// Struct definitions
-// --------------------
-
-type ElevatorStateJSON struct {
-	Behavior    string `json:"behaviour"`
-	Floor       int    `json:"floor"`
-	Direction   string `json:"direction"`
-	CabRequests []bool `json:"cabRequests"`
-}
-
 type AssignerInput struct {
 	HallRequests [][2]bool                `json:"hallRequests"`
 	States       map[string]ElevatorStateJSON `json:"states"`
