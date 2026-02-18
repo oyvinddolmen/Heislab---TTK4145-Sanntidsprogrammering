@@ -43,7 +43,7 @@ func convertState(s management.State) string {
 	switch s {
 	case management.IDLE:
 		return "idle"
-	case management.EXECUTING:
+	case management.MOVING:
 		return "moving"
 	case management.DOOROPEN:
 		return "doorOpen"

@@ -37,12 +37,12 @@ func main() {
 	// -------------------------------------------------------------------------------------------
 
 	elevChannels := management.ElevChannels{
-		MotorDirection: make(chan int),
-		LastFloor:      make(chan int),
-		Obstruction:    make(chan bool),
-		StopBtn:        make(chan bool),
-		BtnPresses:     make(chan elevio.ButtonEvent),
-		NewOrder:       make(chan management.Order),
+		MotorDirection:  make(chan int),
+		LastFloor:       make(chan int),
+		Obstruction:     make(chan bool),
+		StopBtn:         make(chan bool),
+		BtnPresses:      make(chan elevio.ButtonEvent),
+		WorldViewUpdate: make(chan bool),
 	}
 
 	/* To make code runnable

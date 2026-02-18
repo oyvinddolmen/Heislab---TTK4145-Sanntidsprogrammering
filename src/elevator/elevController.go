@@ -67,3 +67,35 @@ func findMovingDirection(dest int, lastFloor int, currentFloor int) elevio.Motor
 		return elevio.MD_Stop
 	}
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Driving functions
+// ---------------------------------------------------------------------------------------------------------------------
+
+// check if elevator have reached floor
+func reachedDestination(floor int) bool {
+	if management.Elev.State == management.MOVING && floor == management.Elev.CurrentOrder.Floor {
+		return true
+	} else {
+		return false
+	}
+
+}
+
+// turns off lights when reaching destination floor
+func reachedFloorLightsOff(floor int) {
+	elevio.SetMotorDirection(elevio.MD_Stop)
+	elevio.SetButtonLamp(elevio.BT_Cab, floor, false)
+	elevio.SetButtonLamp(elevio.BT_HallUp, floor, false)
+	elevio.SetButtonLamp(elevio.BT_HallDown, floor, false)
+
+}
+
+func stopElevator() {
+	elevio.SetMotorDirection(elevio.MD_Stop)
+}
+
+func driveToDestination(destination int, lastFloor int, currentFloor int) {
+	moveDir := findMovingDirection(destination, lastFloor, currentFloor)
+	elevio.SetMotorDirection(moveDir)
+}

@@ -5,6 +5,7 @@ package orderManagement
 // -------------------------------------------------------------------------------------------
 
 import (
+	"fmt"
 	"heislab/elevio"
 	"heislab/management"
 )
@@ -17,6 +18,8 @@ import (
 func OrderConfirmed(elevio.ButtonEvent) bool {
 	// ....
 	// ....
+
+	// hvis eneste levende heis -> return true
 	return true
 }
 
@@ -29,11 +32,28 @@ func OrderNotTaken(order management.Order) bool {
 	}
 }
 
-// changes the state currentOrder of given elevator. elevID is the elevator which will get the order
-func DistributeOrder(order management.Order, elevID int, localElevId int) {
-	// must change the currentOrder of the correct elevator
+func CreateOrder(btnPress elevio.ButtonEvent) management.Order {
+	order := management.Order{
+		OrderPlaced: true,
+		Floor:       btnPress.Floor,
+		ButtonType:  int(btnPress.Button),
+		Status:      -1,
+		Finished:    false,
+	}
+
+	return order
 }
 
-func HandleNewOrder(order management.Order, channels management.ElevChannels) {
-	// handle order...
+func PrintOrders() {
+	for f := 0; f < management.NumFloors; f++ {
+		for b := 0; b < management.NumButtons; b++ {
+			order := management.Elev.Orders[f][b]
+			fmt.Printf("Floor: %d Button: %d ID: %d\n", order.Floor, order.ButtonType, order.Status)
+		}
+	}
+
+}
+
+func AddOrderToOrders(order management.Order) {
+	management.Elev.Orders[order.Floor][int(order.ButtonType)] = order
 }

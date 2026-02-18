@@ -57,32 +57,26 @@ func runFSM(channels management.ElevChannels) {
 
 		case management.IDLE:
 			select {
-			case currentOrder := <-channels.NewOrder:
-				// broadcast order
-				// verify order is received by other elevs
-				// calculate who gets the order
-				// if this elevator gets order:
-				fmt.Println("New order arrived in channel")
-				moveDir := findMovingDirection(currentOrder.Floor, management.Elev.LastFloor, management.Elev.Floor)
-				elevio.SetMotorDirection(moveDir)
-				management.Elev.State = management.EXECUTING
+
+			case <-channels.WorldViewUpdate:
+				orderManagement.RunHallAssigner()
+				orderManagement.PrintOrders()
+				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor, management.Elev.Floor)
+				management.Elev.State = management.MOVING
 
 			case obstruction := <-channels.Obstruction:
 				// door open functionality
 				elevio.SetDoorOpenLamp(obstruction)
-				fmt.Println("state", management.Elev.State)
+				fmt.Println("State", management.Elev.State)
 
 			case floor := <-channels.LastFloor:
-				elevio.SetFloorIndicator(floor)
-
 				// reaching the destination -> stop and turn off lights
-				if management.Elev.State == management.EXECUTING && floor == management.Elev.CurrentOrder.Floor {
-
+				elevio.SetFloorIndicator(floor)
+				if management.Elev.State == management.MOVING && floor == management.Elev.CurrentOrder.Floor {
 					elevio.SetMotorDirection(elevio.MD_Stop)
 					elevio.SetButtonLamp(elevio.BT_Cab, floor, false)
 					elevio.SetButtonLamp(elevio.BT_HallUp, floor, false)
 					elevio.SetButtonLamp(elevio.BT_HallDown, floor, false)
-
 					management.Elev.State = management.IDLE
 				}
 
@@ -92,19 +86,18 @@ func runFSM(channels management.ElevChannels) {
 				fmt.Println("Stop-btn: ", stop)
 
 			case btnPress := <-channels.BtnPresses:
-				// somebody places and order
-				order := management.Order{
-					Floor:      btnPress.Floor,
-					ButtonType: int(btnPress.Button),
-					Status:     -1,
-					Finished:   false,
-				}
-
-				fmt.Println("order floor", order.Floor)
-				orderManagement.HandleNewOrder(order, channels)
-
+				// hvis orderen blir mottatt av de andre heisene
 				if orderManagement.OrderConfirmed(btnPress) {
+					order := orderManagement.CreateOrder(btnPress)
+					orderManagement.AddOrderToOrders(order)
+					fmt.Println("Valid order floor", order.Floor)
 					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
+
+					// not really supposed to be here, only here for testing
+					orderManagement.RunHallAssigner()
+					orderManagement.PrintOrders()
+					driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor, management.Elev.Floor)
+					management.Elev.State = management.MOVING
 				}
 
 				// elevator already at the floor
@@ -115,15 +108,31 @@ func runFSM(channels management.ElevChannels) {
 			}
 
 		// -------------------------------------------------------------------------------------------
-		// CASE: EXECUTING
+		// CASE: MOVING
 		// -------------------------------------------------------------------------------------------
 
-		case management.EXECUTING:
+		case management.MOVING:
 			select {
+
+			case <-channels.WorldViewUpdate:
+				orderManagement.RunHallAssigner()
+				orderManagement.PrintOrders()
+				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor, management.Elev.Floor)
+
 			case stop := <-channels.StopBtn:
-				// stop button functionality
+				// stop button functionality while driving
 				fmt.Println(stop)
 
+			case floor := <-channels.LastFloor:
+				elevio.SetFloorIndicator(floor)
+
+				// reaching the destination -> stop and turn off lights. State -> IDLE
+				if reachedDestination(floor) {
+					reachedFloorLightsOff(floor)
+					stopElevator()
+					management.Elev.State = management.IDLE
+					fmt.Println("State: ", management.Elev.State)
+				}
 			}
 
 		// -------------------------------------------------------------------------------------------

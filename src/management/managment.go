@@ -20,10 +20,10 @@ const (
 type State int
 
 const (
-	INIT      = 1
-	IDLE      = 2
-	EXECUTING = 3
-	DOOROPEN  = 4 // need this??
+	INIT     = 1
+	IDLE     = 2
+	MOVING   = 3
+	DOOROPEN = 4 // need this??
 )
 
 type Direction int
@@ -49,7 +49,7 @@ type Order struct {
 type Elevator struct {
 	State        State
 	ID           int
-	Floor        int
+	Floor        int // -1 if between floors
 	LastFloor    int
 	MoveDir      Direction
 	CurrentOrder Order
@@ -57,12 +57,12 @@ type Elevator struct {
 }
 
 type ElevChannels struct {
-	MotorDirection chan int
-	LastFloor      chan int
-	Obstruction    chan bool
-	StopBtn        chan bool
-	BtnPresses     chan elevio.ButtonEvent // getting buttonpresses on the physical control box
-	NewOrder       chan Order              // getting new orders locally (somebody places an order on your own elevator)
+	MotorDirection  chan int
+	LastFloor       chan int
+	Obstruction     chan bool
+	StopBtn         chan bool
+	BtnPresses      chan elevio.ButtonEvent // getting buttonpresses on the physical control box
+	WorldViewUpdate chan bool
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
