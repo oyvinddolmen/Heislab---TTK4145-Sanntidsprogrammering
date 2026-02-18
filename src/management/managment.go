@@ -1,4 +1,4 @@
-package managment
+package management
 
 // -------------------------------------------------------------------------------------------
 // Struct and variables for Order and Elevator

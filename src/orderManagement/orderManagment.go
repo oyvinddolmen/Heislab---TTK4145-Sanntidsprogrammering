@@ -1,4 +1,4 @@
-package orderManagment
+package orderManagement
 
 // -------------------------------------------------------------------------------------------
 // Functions for handling and distributing orders
@@ -6,7 +6,7 @@ package orderManagment
 
 import (
 	"heislab/elevio"
-	"heislab/managment"
+	"heislab/management"
 )
 
 // -------------------------------------------------------------------------------------------
@@ -21,7 +21,7 @@ func OrderConfirmed(elevio.ButtonEvent) bool {
 }
 
 // checks if any other elevators is attending this order
-func OrderNotTaken(order managment.Order) bool {
+func OrderNotTaken(order management.Order) bool {
 	if order.Status == 0 {
 		return true
 	} else {
@@ -30,6 +30,6 @@ func OrderNotTaken(order managment.Order) bool {
 }
 
 // changes the state currentOrder of given elevator. elevID is the elevator which will get the order
-func distributeOrder(order managment.Order, elevID int, localElevId int) {
+func distributeOrder(order management.Order, elevID int, localElevId int) {
 	// must change the currentOrder of the correct elevator
 }
