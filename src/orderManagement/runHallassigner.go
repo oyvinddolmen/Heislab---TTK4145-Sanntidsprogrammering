@@ -2,8 +2,8 @@ package orderManagement
 
 import (
 	"fmt"
-	"strconv"
 	"heislab/management"
+	"strconv"
 )
 
 func RunHallAssigner() error {
@@ -31,7 +31,6 @@ func RunHallAssigner() error {
 	return nil
 }
 
-
 func applyAssignments(assignments map[string][][2]bool) {
 
 	mutex.Lock()
@@ -48,7 +47,7 @@ func applyAssignments(assignments map[string][][2]bool) {
 		for btn := 0; btn < 2; btn++ { // only hall buttons
 			if assigned[floor][btn] {
 				management.Elev.Orders[floor][btn].OrderPlaced = true
-				management.Elev.Orders[floor][btn].Status = management.Elev.ID
+				management.Elev.Orders[floor][btn].ElevID = management.Elev.ID
 			}
 		}
 	}

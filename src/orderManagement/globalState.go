@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"sync"
 )
+
 type ElevatorStateJSON struct {
 	Behavior    string `json:"behaviour"` // idle, moving, doorOpen, offline
 	Floor       int    `json:"floor"`
@@ -13,7 +14,7 @@ type ElevatorStateJSON struct {
 }
 
 type GlobalState struct {
-	HallRequests [][2]bool                // [floor][0=up,1=down]
+	HallRequests [][2]bool                    // [floor][0=up,1=down]
 	States       map[string]ElevatorStateJSON // elevatorID -> state
 }
 
@@ -71,8 +72,8 @@ func convertDirection(d management.Direction) string {
 }
 
 func UpdateLocalGlobalState() {
-    UpdateLocalElevator()
-    UpdateHallRequests()
+	UpdateLocalElevator()
+	UpdateHallRequests()
 }
 
 // Update local elevator state in globalState
@@ -102,4 +103,3 @@ func MergeRemoteElevator(id string, e management.Elevator) {
 
 	globalState.States[id] = convertElevatorToJSON(e)
 }
-

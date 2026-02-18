@@ -1,11 +1,10 @@
 package orderManagement
 
 import (
+	"heislab/management"
 	"strconv"
 	"sync"
 	"time"
-	"heislab/management"
-	
 )
 
 const HeartbeatTimeout = 2 * time.Second
@@ -45,7 +44,7 @@ func checkForDeadElevators() {
 
 	for id, t := range lastSeen {
 
-		if id == localID {    // we do not delete ourself
+		if id == localID { // we do not delete ourself
 			continue
 		}
 
@@ -73,7 +72,6 @@ func handleElevatorFailure(deadID string) {
 	go RunHallAssigner()
 }
 
-
 // Release hall orders belonging to dead elevator
 func releaseHallOrders(deadID string) {
 
@@ -84,8 +82,8 @@ func releaseHallOrders(deadID string) {
 
 			order := &management.Elev.Orders[f][btn]
 
-			if order.Status == idInt {
-				order.Status = -1  // sets order as not handled
+			if order.ElevID == idInt {
+				order.ElevID = -1        // sets order as not handled
 				order.OrderPlaced = true //sets order as placed.. need this?
 			}
 		}

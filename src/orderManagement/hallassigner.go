@@ -1,14 +1,14 @@
 package orderManagement
 
-
 import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"runtime"
 )
 
 type AssignerInput struct {
-	HallRequests [][2]bool                `json:"hallRequests"`
+	HallRequests [][2]bool                    `json:"hallRequests"`
 	States       map[string]ElevatorStateJSON `json:"states"`
 }
 
@@ -29,7 +29,14 @@ func AssignHallRequests(
 		return nil, fmt.Errorf("json.Marshal failed: %w", err)
 	}
 
-	assignerPath := "orderManagment/hall_request_assigner"
+	// different paths for windows/linux
+	assignerPath := ""
+	if runtime.GOOS == "windows" {
+		assignerPath = "./orderManagement/hall_request_assigner.exe"
+	} else {
+		assignerPath = "./orderManagement/hall_request_assigner"
+	}
+
 	cmd := exec.Command(assignerPath)
 
 	stdin, err := cmd.StdinPipe()
@@ -59,4 +66,3 @@ func AssignHallRequests(
 
 	return output, nil
 }
-

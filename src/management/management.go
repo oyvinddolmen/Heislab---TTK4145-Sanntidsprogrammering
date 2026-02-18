@@ -43,7 +43,7 @@ type Order struct {
 	OrderPlaced bool
 	Floor       int
 	ButtonType  int
-	Status      int // -1 if no elevator is assigned, else the ID of the elevator assigned
+	ElevID      int // -1 if no elevator is assigned, else the ID of the elevator assigned
 	Finished    bool
 }
 
