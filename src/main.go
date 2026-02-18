@@ -5,8 +5,8 @@ import (
 	"heislab/elevator"
 	"heislab/elevio"
 	"heislab/management"
+	"heislab/network"
 
-	//"heislab/network"
 	"os"
 	"strconv"
 )
@@ -45,19 +45,24 @@ func main() {
 		NewOrder:       make(chan management.Order),
 	}
 
-	/* To make code runnable
-	networkChannels := network.NetworkChannels{
-		RcvChannel:   make(chan management.Elevator),
-		BcastChannel: make(chan management.Elevator),
+	// -------------------------------------------------------------------------------------------
+	// Initialize network
+	// -------------------------------------------------------------------------------------------
+
+	portCfg := network.PortConfig{
+		PeerDiscoveryPort: 15657, 	// Random ports, must be same for all
+		MessageBcastPort: 15658,
+		NodeID: "",
 	}
-	*/
+
+	networkConn := network.InitNetwork(portCfg) // Burde kanskje tas inn i RunElevator eller noe ?
 
 	// -------------------------------------------------------------------------------------------
 	// Initialise elevator and run go-functions
 	// -------------------------------------------------------------------------------------------
+
 	elevator.ElevatorInit(elevID, "localhost:15657", 4) // localhost:15657" for simulatoren
 
 	go elevator.RunElevator(elevChannels)
-	//go network.InitNetwork(networkChannels)
 	select {}
 }
