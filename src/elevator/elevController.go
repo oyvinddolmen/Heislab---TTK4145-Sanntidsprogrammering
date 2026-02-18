@@ -12,19 +12,6 @@ import (
 )
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Datatypes
-// ---------------------------------------------------------------------------------------------------------------------
-
-type ElevChannels struct {
-	MotorDirection chan int
-	LastFloor      chan int
-	Obstruction    chan bool
-	StopBtn        chan bool
-	BtnPresses     chan elevio.ButtonEvent // getting buttonpresses on the physical control box
-	NewOrder       chan managment.Order    // getting new orders locally (somebody places an order on your own elevator)
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
 // Initalize elevator functions
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -42,14 +29,15 @@ func ElevatorInit(elevID int, adress string, numFloors int) {
 	lightInit(numFloors)
 	goToGroundFloor()
 	InitFSM(elevID, numFloors)
+	managment.Elev.State = managment.IDLE
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Initalize lights functions
 // ---------------------------------------------------------------------------------------------------------------------
 
-// function that sets all lights on the elevator controll panel
-func setLights(channels ElevChannels) {
+// Function that sets all lights on the elevator controll panel
+func setLights(channels managment.ElevChannels) {
 
 	for {
 		select {
@@ -57,19 +45,26 @@ func setLights(channels ElevChannels) {
 		case obstruction := <-channels.Obstruction:
 			elevio.SetDoorOpenLamp(obstruction)
 			fmt.Println("Obstruction:", obstruction)
+			fmt.Println(managment.Elev.State)
 
 		case stopBtn := <-channels.StopBtn:
 			elevio.SetStopLamp(stopBtn)
 			fmt.Println("Stop btn:", stopBtn)
 
-		case lastFloor := <-channels.LastFloor:
-			elevio.SetFloorIndicator(lastFloor)
-			fmt.Println("floor", lastFloor)
+		case floor := <-channels.LastFloor:
+			elevio.SetFloorIndicator(floor)
+			fmt.Println("floor", floor)
 
-			// turn off order lights when reaching a floor
-			elevio.SetButtonLamp(elevio.BT_Cab, lastFloor, false)
-			elevio.SetButtonLamp(elevio.BT_HallUp, lastFloor, false)
-			elevio.SetButtonLamp(elevio.BT_HallDown, lastFloor, false)
+			// reaching the destination -> stop and turn off lights
+			if managment.Elev.State == managment.EXECUTING && floor == managment.Elev.CurrentOrder.Floor {
+
+				elevio.SetMotorDirection(elevio.MD_Stop)
+				elevio.SetButtonLamp(elevio.BT_Cab, floor, false)
+				elevio.SetButtonLamp(elevio.BT_HallUp, floor, false)
+				elevio.SetButtonLamp(elevio.BT_HallDown, floor, false)
+
+				managment.Elev.State = managment.IDLE
+			}
 
 		case btnPress := <-channels.BtnPresses:
 			if orderManagment.OrderConfirmed(btnPress) {

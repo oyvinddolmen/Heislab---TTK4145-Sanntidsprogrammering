@@ -22,7 +22,8 @@ type NetworkChannels struct {
 
 func BcastElevInfo(BcastChannel chan management.Elevator) {
 	time.Sleep(2 * time.Millisecond)
-	BcastChannel <- management.Elev
+	BcastChannel <- managment.Elev
+	// TODO
 }
 
 // Envelope wraps any payload with a SenderID so receivers can ignore their own broadcasts.
