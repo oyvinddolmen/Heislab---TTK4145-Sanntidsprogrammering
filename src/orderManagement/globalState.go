@@ -108,10 +108,12 @@ func RunHallAssigner() error {
 	for k, v := range globalState.States {
 		states[k] = v
 	}
+
 	mutex.Unlock()
 
 	assignments, err := AssignHallRequests(hallRequests, states)
 	if err != nil {
+		fmt.Printf("assigner error:\n%v\n", err)
 		return fmt.Errorf("assigner failed: %w", err)
 	}
 
@@ -135,7 +137,7 @@ func applyAssignments(assignments map[string][][2]bool) {
 		for btn := 0; btn < 2; btn++ { // only hall buttons
 			if assigned[floor][btn] {
 				management.Elev.Orders[floor][btn].OrderPlaced = true
-				management.Elev.Orders[floor][btn].Status = management.Elev.ID
+				management.Elev.Orders[floor][btn].ElevID = management.Elev.ID
 			}
 		}
 	}

@@ -12,7 +12,7 @@ import (
 // -------------------------------------------------------------------------------------------
 
 func InitFSM(elevID int, NumFloors int) {
-	noOrder := management.Order{Floor: -1, ButtonType: -1, Status: -1, Finished: false}
+	noOrder := management.Order{Floor: -1, ButtonType: -1, ElevID: -1, Finished: false}
 	management.Elev.State = management.INIT
 	management.Elev.ID = elevID
 	management.Elev.Floor = -1
@@ -23,9 +23,8 @@ func InitFSM(elevID int, NumFloors int) {
 		for j := 0; j < management.NumButtons; j++ {
 			management.Elev.Orders[i][j].Floor = i
 			management.Elev.Orders[i][j].ButtonType = j
-			management.Elev.Orders[i][j].Status = -1
+			management.Elev.Orders[i][j].ElevID = -1
 			management.Elev.Orders[i][j].Finished = false
-			// maybe more Order variables need to be filled? Must discuss what to include with group
 		}
 	}
 	management.Elev.State = management.IDLE
@@ -62,6 +61,7 @@ func runFSM(channels management.ElevChannels) {
 				orderManagement.RunHallAssigner()
 				orderManagement.PrintOrders()
 				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor, management.Elev.Floor)
+				setElevState(management.MOVING)
 				management.Elev.State = management.MOVING
 
 			case obstruction := <-channels.Obstruction:
@@ -94,7 +94,7 @@ func runFSM(channels management.ElevChannels) {
 					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
 					// not really supposed to be here, only here for testing
-					orderManagement.RunHallAssigner()
+					print("Error hallAssigner: ", orderManagement.RunHallAssigner())
 					orderManagement.PrintOrders()
 					driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor, management.Elev.Floor)
 					management.Elev.State = management.MOVING
@@ -143,4 +143,8 @@ func runFSM(channels management.ElevChannels) {
 
 		}
 	}
+}
+
+func setElevState(state management.State) {
+
 }
