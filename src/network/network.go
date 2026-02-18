@@ -22,7 +22,7 @@ type NetworkChannels struct {
 
 func BcastElevInfo(BcastChannel chan management.Elevator) {
 	time.Sleep(2 * time.Millisecond)
-	BcastChannel <- managment.Elev
+	BcastChannel <- management.Elev
 	// TODO
 }
 
@@ -49,7 +49,7 @@ type Config struct {
 //   - peerTxEnabled: send true/false to enable/disable announcing your presence
 //   - peerUpdates: stream of PeerUpdate (New/Lost/Peers)
 //   - myID: the node ID used on the network
-func initNetwork(
+func InitNetwork(
 	cfg Config,
 	outgoingMessageChans []interface{},
 	incomingMessageChans []interface{},

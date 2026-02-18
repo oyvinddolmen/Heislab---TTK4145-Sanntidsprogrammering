@@ -3,8 +3,8 @@ package elevator
 import (
 	"fmt"
 	"heislab/elevio"
-	"heislab/managment"
-	"heislab/orderManagment"
+	"heislab/management"
+	"heislab/orderManagement"
 )
 
 // -------------------------------------------------------------------------------------------
@@ -12,71 +12,88 @@ import (
 // -------------------------------------------------------------------------------------------
 
 func InitFSM(elevID int, NumFloors int) {
-	noOrder := managment.Order{Floor: -1, ButtonType: -1, Status: -1, Finished: false}
-	managment.Elev.State = managment.INIT
-	managment.Elev.ID = elevID
-	managment.Elev.Floor = -1
-	managment.Elev.LastFloor = -1
-	managment.Elev.MoveDir = managment.Dir_Down
-	managment.Elev.CurrentOrder = noOrder
+	noOrder := management.Order{Floor: -1, ButtonType: -1, Status: -1, Finished: false}
+	management.Elev.State = management.INIT
+	management.Elev.ID = elevID
+	management.Elev.Floor = -1
+	management.Elev.LastFloor = -1
+	management.Elev.MoveDir = management.Dir_Down
+	management.Elev.CurrentOrder = noOrder
 	for i := 0; i < NumFloors; i++ {
-		for j := 0; j < managment.NumButtons; j++ {
-			managment.Elev.Orders[i][j].Floor = i
-			managment.Elev.Orders[i][j].ButtonType = j
-			managment.Elev.Orders[i][j].Status = -1
-			managment.Elev.Orders[i][j].Finished = false
-			// more Order variables need to be filled. Must discuss what to include with group
+		for j := 0; j < management.NumButtons; j++ {
+			management.Elev.Orders[i][j].Floor = i
+			management.Elev.Orders[i][j].ButtonType = j
+			management.Elev.Orders[i][j].Status = -1
+			management.Elev.Orders[i][j].Finished = false
+			// maybe more Order variables need to be filled? Must discuss what to include with group
 		}
 	}
+	management.Elev.State = management.IDLE
 }
 
 // -------------------------------------------------------------------------------------------
 // Running elevator and FSM
 // -------------------------------------------------------------------------------------------
 
-func RunElevator(channels managment.ElevChannels) {
+func RunElevator(channels management.ElevChannels) {
 	go elevio.PollFloorSensor(channels.LastFloor)
 	go elevio.PollButtons(channels.BtnPresses)
 	go elevio.PollStopButton(channels.StopBtn)
 	go elevio.PollObstructionSwitch(channels.Obstruction)
-	go setLights(channels)
 	go runFSM(channels)
 }
 
 // -------------------------------------------------------------------------------------------
-// Running FSM
+// Running FSM function
 // -------------------------------------------------------------------------------------------
 
-func runFSM(channels managment.ElevChannels) {
+func runFSM(channels management.ElevChannels) {
 	for {
-		switch managment.Elev.State {
+		switch management.Elev.State {
 
 		// -------------------------------------------------------------------------------------------
 		// CASE: IDLE
 		// -------------------------------------------------------------------------------------------
 
-		case managment.IDLE:
+		case management.IDLE:
 			select {
 			case currentOrder := <-channels.NewOrder:
 				// broadcast order
-				// verify order is received
+				// verify order is received by other elevs
 				// calculate who gets the order
 				// if this elevator gets order:
-				moveDir := findMovingDirection(currentOrder.Floor, managment.Elev.LastFloor, managment.Elev.Floor)
+				fmt.Println("New order arrived in channel")
+				moveDir := findMovingDirection(currentOrder.Floor, management.Elev.LastFloor, management.Elev.Floor)
 				elevio.SetMotorDirection(moveDir)
-				managment.Elev.State = managment.EXECUTING
+				management.Elev.State = management.EXECUTING
 
-			case <-channels.Obstruction:
+			case obstruction := <-channels.Obstruction:
 				// door open functionality
-				fmt.Println("state", managment.Elev.State)
+				elevio.SetDoorOpenLamp(obstruction)
+				fmt.Println("state", management.Elev.State)
+
+			case floor := <-channels.LastFloor:
+				elevio.SetFloorIndicator(floor)
+
+				// reaching the destination -> stop and turn off lights
+				if management.Elev.State == management.EXECUTING && floor == management.Elev.CurrentOrder.Floor {
+
+					elevio.SetMotorDirection(elevio.MD_Stop)
+					elevio.SetButtonLamp(elevio.BT_Cab, floor, false)
+					elevio.SetButtonLamp(elevio.BT_HallUp, floor, false)
+					elevio.SetButtonLamp(elevio.BT_HallDown, floor, false)
+
+					management.Elev.State = management.IDLE
+				}
 
 			case stop := <-channels.StopBtn:
 				// stop button functionality
-				fmt.Println(stop)
+				elevio.SetStopLamp(stop)
+				fmt.Println("Stop-btn: ", stop)
 
 			case btnPress := <-channels.BtnPresses:
 				// somebody places and order
-				order := managment.Order{
+				order := management.Order{
 					Floor:      btnPress.Floor,
 					ButtonType: int(btnPress.Button),
 					Status:     -1,
@@ -84,14 +101,24 @@ func runFSM(channels managment.ElevChannels) {
 				}
 
 				fmt.Println("order floor", order.Floor)
-				orderManagment.HandleNewOrder(order, channels)
+				orderManagement.HandleNewOrder(order, channels)
+
+				if orderManagement.OrderConfirmed(btnPress) {
+					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
+				}
+
+				// elevator already at the floor
+				if elevio.GetFloor() == btnPress.Floor {
+					// openDoor()
+					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, false)
+				}
 			}
 
 		// -------------------------------------------------------------------------------------------
 		// CASE: EXECUTING
 		// -------------------------------------------------------------------------------------------
 
-		case managment.EXECUTING:
+		case management.EXECUTING:
 			select {
 			case stop := <-channels.StopBtn:
 				// stop button functionality
@@ -103,7 +130,7 @@ func runFSM(channels managment.ElevChannels) {
 		// CASE: DOOR OPEN ???
 		// -------------------------------------------------------------------------------------------
 
-		case managment.DOOROPEN:
+		case management.DOOROPEN:
 
 		}
 	}

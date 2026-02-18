@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"heislab/elevator"
 	"heislab/elevio"
-	"heislab/network"
 	"heislab/management"
+
+	//"heislab/network"
 	"os"
 	"strconv"
 )
@@ -35,7 +36,7 @@ func main() {
 	// Initializing channels
 	// -------------------------------------------------------------------------------------------
 
-	elevChannels := managment.ElevChannels{
+	elevChannels := management.ElevChannels{
 		MotorDirection: make(chan int),
 		LastFloor:      make(chan int),
 		Obstruction:    make(chan bool),
@@ -44,10 +45,12 @@ func main() {
 		NewOrder:       make(chan management.Order),
 	}
 
+	/* To make code runnable
 	networkChannels := network.NetworkChannels{
 		RcvChannel:   make(chan management.Elevator),
 		BcastChannel: make(chan management.Elevator),
 	}
+	*/
 
 	// -------------------------------------------------------------------------------------------
 	// Initialise elevator and run go-functions
@@ -55,6 +58,6 @@ func main() {
 	elevator.ElevatorInit(elevID, "localhost:15657", 4) // localhost:15657" for simulatoren
 
 	go elevator.RunElevator(elevChannels)
-	go network.initNetwork(networkChannels)
+	//go network.InitNetwork(networkChannels)
 	select {}
 }
