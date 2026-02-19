@@ -1,8 +1,8 @@
 package orderManagement
 
 import (
-	"strconv"
 	"heislab/management"
+	"strconv"
 )
 
 // Called once when elevator boots
@@ -39,7 +39,7 @@ func clearLocalHallOrders() {
 	for f := 0; f < management.NumFloors; f++ {
 		for btn := 0; btn < 2; btn++ { // hall buttons only
 			management.Elev.Orders[f][btn].OrderPlaced = false
-			management.Elev.Orders[f][btn].Status = -1
+			management.Elev.Orders[f][btn].ElevID = -1
 		}
 	}
 }

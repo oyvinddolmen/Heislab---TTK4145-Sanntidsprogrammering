@@ -2,8 +2,9 @@ package orderManagement
 
 import (
 	"fmt"
-	"strconv"
 	"heislab/management"
+	"strconv"
+	"heislab/hallRequestAssigner"
 )
 
 func RunHallAssigner() error {
@@ -14,7 +15,7 @@ func RunHallAssigner() error {
 	copy(hallRequests, globalState.HallRequests)
 
 	// CopyStates (only the online elevators)
-	filtered := make(map[string]ElevatorStateJSON)
+	filtered := make(map[string]hallRequestAssigner.ElevatorStateJSON)
 	for id, s := range globalState.States {
 		if s.Behavior != "offline" {
 			filtered[id] = s
@@ -22,7 +23,7 @@ func RunHallAssigner() error {
 	}
 	mutex.Unlock()
 
-	assignments, err := AssignHallRequests(hallRequests, filtered)
+	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
 	if err != nil {
 		return fmt.Errorf("assigner failed: %w", err)
 	}
@@ -30,7 +31,6 @@ func RunHallAssigner() error {
 	applyAssignments(assignments)
 	return nil
 }
-
 
 func applyAssignments(assignments map[string][][2]bool) {
 
@@ -48,8 +48,10 @@ func applyAssignments(assignments map[string][][2]bool) {
 		for btn := 0; btn < 2; btn++ { // only hall buttons
 			if assigned[floor][btn] {
 				management.Elev.Orders[floor][btn].OrderPlaced = true
-				management.Elev.Orders[floor][btn].Status = management.Elev.ID
+				management.Elev.Orders[floor][btn].ElevID = management.Elev.ID
 			}
 		}
 	}
+
+	UpdateCurrentOrder()
 }
