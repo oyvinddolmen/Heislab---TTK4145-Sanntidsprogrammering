@@ -1,1 +1,10 @@
-src/Project-resources/
+# Binaries
+SimElevatorServer
+SimElevatorServer.exe
+SimElevatorServer_mac
+*.exe
+*.obj
+*.pdb
+# macOS
+.DS_Store
+

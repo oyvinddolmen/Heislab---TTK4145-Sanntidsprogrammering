@@ -4,18 +4,12 @@ import (
 	"heislab/management"
 	"strconv"
 	"sync"
+	"heislab/hallRequestAssigner"
 )
-
-type ElevatorStateJSON struct {
-	Behavior    string `json:"behaviour"` // idle, moving, doorOpen, offline
-	Floor       int    `json:"floor"`
-	Direction   string `json:"direction"`
-	CabRequests []bool `json:"cabRequests"`
-}
 
 type GlobalState struct {
 	HallRequests [][2]bool                    // [floor][0=up,1=down]
-	States       map[string]ElevatorStateJSON // elevatorID -> state
+	States       map[string]hallRequestAssigner.ElevatorStateJSON // elevatorID -> state
 }
 
 var globalState GlobalState
@@ -26,18 +20,18 @@ func InitGlobalState() {
 	defer mutex.Unlock()
 
 	globalState.HallRequests = make([][2]bool, management.NumFloors)
-	globalState.States = make(map[string]ElevatorStateJSON)
+	globalState.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
 }
 
 // Convert elevator to JSON elevator state
-func convertElevatorToJSON(e management.Elevator) ElevatorStateJSON {
+func convertElevatorToJSON(e management.Elevator) hallRequestAssigner.ElevatorStateJSON {
 
 	cabRequests := make([]bool, management.NumFloors)
 	for f := 0; f < management.NumFloors; f++ {
 		cabRequests[f] = e.Orders[f][2].OrderPlaced // 2 = Cab button
 	}
 
-	return ElevatorStateJSON{
+	return hallRequestAssigner.ElevatorStateJSON{
 		Behavior:    convertState(e.State),
 		Floor:       e.Floor,
 		Direction:   convertDirection(e.MoveDir),

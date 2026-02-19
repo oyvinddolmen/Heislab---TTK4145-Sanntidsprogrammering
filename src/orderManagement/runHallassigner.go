@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"heislab/management"
 	"strconv"
+	"heislab/hallRequestAssigner"
 )
 
 func RunHallAssigner() error {
@@ -14,7 +15,7 @@ func RunHallAssigner() error {
 	copy(hallRequests, globalState.HallRequests)
 
 	// CopyStates (only the online elevators)
-	filtered := make(map[string]ElevatorStateJSON)
+	filtered := make(map[string]hallRequestAssigner.ElevatorStateJSON)
 	for id, s := range globalState.States {
 		if s.Behavior != "offline" {
 			filtered[id] = s
@@ -22,7 +23,7 @@ func RunHallAssigner() error {
 	}
 	mutex.Unlock()
 
-	assignments, err := AssignHallRequests(hallRequests, filtered)
+	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
 	if err != nil {
 		return fmt.Errorf("assigner failed: %w", err)
 	}
