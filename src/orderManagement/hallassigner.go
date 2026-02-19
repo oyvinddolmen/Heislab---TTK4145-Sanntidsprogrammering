@@ -31,9 +31,12 @@ func AssignHallRequests(
 
 	// different paths for windows/linux
 	assignerPath := ""
-	if runtime.GOOS == "windows" {
+	switch runtime.GOOS {
+	case "windows":
 		assignerPath = "./orderManagement/hall_request_assigner.exe"
-	} else {
+	case "darwin": // macOS
+		assignerPath = "./orderManagement/hall_request_assigner_mac"
+	default: // linux og evt. andre unix-systemer
 		assignerPath = "./orderManagement/hall_request_assigner"
 	}
 
