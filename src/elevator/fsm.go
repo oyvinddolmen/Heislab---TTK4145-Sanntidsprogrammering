@@ -94,7 +94,7 @@ func runFSM(channels management.ElevChannels) {
 					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
 					// not really supposed to be here, only here for testing
-					print("Error hallAssigner: ", orderManagement.RunHallAssigner())
+					fmt.Println("Error hallAssigner: ", orderManagement.RunHallAssigner())
 					orderManagement.PrintOrders()
 					driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor, management.Elev.Floor)
 					management.Elev.State = management.MOVING

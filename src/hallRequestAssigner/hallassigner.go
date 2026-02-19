@@ -3,6 +3,7 @@ package hallRequestAssigner
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
 )
@@ -40,6 +41,10 @@ func AssignHallRequests(
 	assignerPath := ""
 	switch runtime.GOOS {
 	case "windows":
+		wd, _ := os.Getwd()
+		fmt.Println("Working dir:", wd)
+		fmt.Println("Assigner path:", assignerPath)
+
 		assignerPath = "./orderManagement/hall_request_assigner.exe"
 	case "darwin": // macOS
 		assignerPath = "./orderManagement/hall_request_assigner_mac"
