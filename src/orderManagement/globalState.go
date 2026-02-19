@@ -7,24 +7,26 @@ import (
 	"heislab/hallRequestAssigner"
 )
 
-type GlobalState struct {
+type GlobalStateType struct {
 	HallRequests [][2]bool                    // [floor][0=up,1=down]
 	States       map[string]hallRequestAssigner.ElevatorStateJSON // elevatorID -> state
 }
 
-var globalState GlobalState
-var mutex sync.Mutex
+var (
+    GlobalState GlobalStateType
+    GlobalStateMutex sync.Mutex
+)
 
 func InitGlobalState() {
-	mutex.Lock()
-	defer mutex.Unlock()
+	GlobalStateMutex.Lock()
+	defer GlobalStateMutex.Unlock()
 
-	globalState.HallRequests = make([][2]bool, management.NumFloors)
-	globalState.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
+	GlobalState.HallRequests = make([][2]bool, management.NumFloors)
+	GlobalState.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
 }
 
 // Convert elevator to JSON elevator state
-func convertElevatorToJSON(e management.Elevator) hallRequestAssigner.ElevatorStateJSON {
+func ConvertElevatorToJSON(e management.Elevator) hallRequestAssigner.ElevatorStateJSON {
 
 	cabRequests := make([]bool, management.NumFloors)
 	for f := 0; f < management.NumFloors; f++ {
@@ -72,28 +74,28 @@ func UpdateLocalGlobalState() {
 
 // Update local elevator state in globalState
 func UpdateLocalElevator() {
-	mutex.Lock()
-	defer mutex.Unlock()
+	GlobalStateMutex.Lock()
+	defer GlobalStateMutex.Unlock()
 
 	id := strconv.Itoa(management.Elev.ID)
-	globalState.States[id] = convertElevatorToJSON(management.Elev)
+	GlobalState.States[id] = ConvertElevatorToJSON(management.Elev)
 }
 
 // Update hall requests from Elev.Orders
 func UpdateHallRequests() {
-	mutex.Lock()
-	defer mutex.Unlock()
+	GlobalStateMutex.Lock()
+	defer GlobalStateMutex.Unlock()
 
 	for f := 0; f < management.NumFloors; f++ {
-		globalState.HallRequests[f][0] = management.Elev.Orders[f][0].OrderPlaced // HallUp
-		globalState.HallRequests[f][1] = management.Elev.Orders[f][1].OrderPlaced // HallDown
+		GlobalState.HallRequests[f][0] = management.Elev.Orders[f][0].OrderPlaced // HallUp
+		GlobalState.HallRequests[f][1] = management.Elev.Orders[f][1].OrderPlaced // HallDown
 	}
 }
 
 // Merge received remote elevator state
 func MergeRemoteElevator(id string, e management.Elevator) {
-	mutex.Lock()
-	defer mutex.Unlock()
+	GlobalStateMutex.Lock()
+	defer GlobalStateMutex.Unlock()
 
-	globalState.States[id] = convertElevatorToJSON(e)
+	GlobalState.States[id] = ConvertElevatorToJSON(e)
 }

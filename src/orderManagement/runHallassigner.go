@@ -9,19 +9,19 @@ import (
 
 func RunHallAssigner() error {
 
-	mutex.Lock()
+	GlobalStateMutex.Lock()
 	// Copy HallRequests
-	hallRequests := make([][2]bool, len(globalState.HallRequests))
-	copy(hallRequests, globalState.HallRequests)
+	hallRequests := make([][2]bool, len(GlobalState.HallRequests))
+	copy(hallRequests, GlobalState.HallRequests)
 
 	// CopyStates (only the online elevators)
 	filtered := make(map[string]hallRequestAssigner.ElevatorStateJSON)
-	for id, s := range globalState.States {
+	for id, s := range GlobalState.States {
 		if s.Behavior != "offline" {
 			filtered[id] = s
 		}
 	}
-	mutex.Unlock()
+	GlobalStateMutex.Unlock()
 
 	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
 	if err != nil {
@@ -34,8 +34,8 @@ func RunHallAssigner() error {
 
 func applyAssignments(assignments map[string][][2]bool) {
 
-	mutex.Lock()
-	defer mutex.Unlock()
+	GlobalStateMutex.Lock()
+	defer GlobalStateMutex.Unlock()
 
 	localID := strconv.Itoa(management.Elev.ID)
 

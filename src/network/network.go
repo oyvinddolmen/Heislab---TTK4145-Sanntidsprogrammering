@@ -47,8 +47,8 @@ type NetworkConn struct {
 	PeerUpdates   <-chan peers.PeerUpdate
 
 	// GlobalState messaging
-	GlobalStateTx chan<- Envelope[orderManagement.GlobalState]
-	GlobalStateRx <-chan Envelope[orderManagement.GlobalState]
+	GlobalStateTx chan<- Envelope[orderManagement.GlobalStateType]
+	GlobalStateRx <-chan Envelope[orderManagement.GlobalStateType]
 }
 
 
@@ -84,8 +84,8 @@ func InitNetwork(cfg PortConfig) NetworkConn {
 	go peers.Receiver(cfg.PeerDiscoveryPort, peerUpdates)
 
 	// --- global state channels ---
-	globalStateTx := make(chan Envelope[orderManagement.GlobalState], 16)
-	globalStateRx := make(chan Envelope[orderManagement.GlobalState], 16)
+	globalStateTx := make(chan Envelope[orderManagement.GlobalStateType], 16)
+	globalStateRx := make(chan Envelope[orderManagement.GlobalStateType], 16)
 
 	// bcast wants "interface{} channels", but we hide that here.
 	go bcast.Transmitter(cfg.MessageBcastPort, globalStateTx)

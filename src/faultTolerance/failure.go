@@ -1,11 +1,13 @@
-package orderManagement
+package faultTolerance
 
 import (
 	"heislab/management"
+	"heislab/orderManagement"
 	"strconv"
 	"sync"
 	"time"
 )
+
 
 const HeartbeatTimeout = 2 * time.Second
 
@@ -59,17 +61,17 @@ func checkForDeadElevators() {
 // Remove dead elevator from global state and redistribute orders
 func handleElevatorFailure(deadID string) {
 
-	state, exists := globalState.States[deadID]
+	state, exists := orderManagement.GlobalState.States[deadID]
 	if !exists {
 		return
 	}
 
 	state.Behavior = "offline"
-	globalState.States[deadID] = state
+	orderManagement.GlobalState.States[deadID] = state
 
 	releaseHallOrders(deadID)
 
-	go RunHallAssigner()
+	go orderManagement.RunHallAssigner()
 }
 
 // Release hall orders belonging to dead elevator

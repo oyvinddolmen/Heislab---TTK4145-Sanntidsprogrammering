@@ -1,20 +1,21 @@
-package orderManagement
+package faultTolerance
 
 import (
 	"heislab/management"
 	"strconv"
+	"heislab/orderManagement"
 )
 
 // Called once when elevator boots
 func RecoverOnStartup() {
 
-	mutex.Lock()
-	defer mutex.Unlock()
+	orderManagement.GlobalStateMutex.Lock()
+	defer orderManagement.GlobalStateMutex.Unlock()
 
 	localID := strconv.Itoa(management.Elev.ID)
 
 	// Restore cab orders if available
-	oldState, exists := globalState.States[localID]
+	oldState, exists := orderManagement.GlobalState.States[localID]
 	if exists {
 		for f := 0; f < management.NumFloors; f++ {
 			if oldState.CabRequests[f] {
@@ -27,10 +28,10 @@ func RecoverOnStartup() {
 	clearLocalHallOrders()
 
 	// Mark self alive in globalState (behavior idle)
-	globalState.States[localID] = convertElevatorToJSON(management.Elev)
+	orderManagement.GlobalState.States[localID] = orderManagement.ConvertElevatorToJSON(management.Elev)
 
 	// Trigger hall reassignment
-	go RunHallAssigner()
+	go orderManagement.RunHallAssigner()
 }
 
 // Clear local hall orders (only hall buttons, keep cab orders)
