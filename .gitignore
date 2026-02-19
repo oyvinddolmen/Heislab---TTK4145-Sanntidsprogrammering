@@ -2,6 +2,7 @@
 SimElevatorServer
 SimElevatorServer.exe
 SimElevatorServer_mac
+hall_request_assigner*
 *.exe
 *.obj
 *.pdb
