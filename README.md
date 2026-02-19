@@ -9,6 +9,9 @@ for å starte opp simulatoren:
     dmd -w -g src\sim_server.d src\timer_event.d -ofSimElevatorServer.exe
     .\SimElevatorServer.exe
  
+ for å starte opp simulatoren MAC: 
+ 1.-    dmd -w -g src\sim_server.d Simulator-v2-master/src/timer_event.d -ofSimElevatorServer.exe
+2.-    ./SimElevatorServer.exe
 
 
 Hvordan jobbe i branches og merge:
