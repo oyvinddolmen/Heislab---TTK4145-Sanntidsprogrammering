@@ -5,7 +5,7 @@ import (
 	"heislab/elevator"
 	"heislab/elevio"
 	"heislab/management"
-	"heislab/network"
+	//"heislab/network"
 
 	"os"
 	"strconv"
@@ -48,7 +48,7 @@ func main() {
 	// -------------------------------------------------------------------------------------------
 	// Initialize network
 	// -------------------------------------------------------------------------------------------
-
+	/*
 	portCfg := network.PortConfig{
 		PeerDiscoveryPort: 15657, 	// Random ports, must be same for all
 		MessageBcastPort: 15658,
@@ -60,7 +60,7 @@ func main() {
 	// -------------------------------------------------------------------------------------------
 	// Initialise elevator and run go-functions
 	// -------------------------------------------------------------------------------------------
-
+	*/
 	elevator.ElevatorInit(elevID, "localhost:15657", 4) // localhost:15657" for simulatoren
 
 	go elevator.RunElevator(elevChannels)

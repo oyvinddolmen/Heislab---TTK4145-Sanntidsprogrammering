@@ -1,11 +1,11 @@
 # Binaries
 SimElevatorServer
 SimElevatorServer.exe
-SimElevatorServer_mac
-hall_request_assigner*
-*.exe
-*.obj
-*.pdb
+SimElevatorServer.o
+hall_request_assigner_mac
+hall_request_assigner
+hall_request_assigner.exe
+
 # macOS
 .DS_Store
 
