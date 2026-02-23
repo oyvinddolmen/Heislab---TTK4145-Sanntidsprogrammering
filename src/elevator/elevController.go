@@ -5,6 +5,7 @@ package elevator
 // ---------------------------------------------------------------------------------------------------------------------
 
 import (
+	"fmt"
 	"heislab/elevio"
 	"heislab/management"
 )
@@ -50,19 +51,17 @@ func lightInit(numFloors int) {
 // Driving logic
 // ---------------------------------------------------------------------------------------------------------------------
 
-func findMovingDirection(dest int, lastFloor int, currentFloor int) elevio.MotorDirection {
-	floor := currentFloor
-	if floor == -1 {
-		floor = lastFloor
+func findMovingDirection(dest int, lastFloor int) elevio.MotorDirection {
+
+	if dest < 0 {
+		return elevio.MD_Stop
 	}
 
 	switch {
-	case dest > currentFloor:
+	case dest > lastFloor:
 		return elevio.MD_Up
-
-	case dest < currentFloor:
+	case dest < lastFloor:
 		return elevio.MD_Down
-
 	default:
 		return elevio.MD_Stop
 	}
@@ -95,7 +94,13 @@ func stopElevator() {
 	elevio.SetMotorDirection(elevio.MD_Stop)
 }
 
-func driveToDestination(destination int, lastFloor int, currentFloor int) {
-	moveDir := findMovingDirection(destination, lastFloor, currentFloor)
+// sets motordirection in direction of newOrder, and sets state = MOVING
+func driveToDestination(destination int, lastFloor int) {
+	moveDir := findMovingDirection(destination, lastFloor)
+	fmt.Println("moveDir", moveDir)
 	elevio.SetMotorDirection(moveDir)
+
+	if moveDir != elevio.MD_Stop {
+		setElevState(management.MOVING)
+	}
 }

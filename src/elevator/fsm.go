@@ -58,27 +58,15 @@ func runFSM(channels management.ElevChannels) {
 			select {
 
 			case <-channels.WorldViewUpdate:
+				fmt.Println("World view update :)")
 				orderManagement.RunHallAssigner()
 				orderManagement.PrintOrders()
-				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor, management.Elev.Floor)
-				setElevState(management.MOVING)
-				management.Elev.State = management.MOVING
+				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
 
 			case obstruction := <-channels.Obstruction:
 				// door open functionality
 				elevio.SetDoorOpenLamp(obstruction)
-				fmt.Println("State", management.Elev.State)
-
-			case floor := <-channels.LastFloor:
-				// reaching the destination -> stop and turn off lights
-				elevio.SetFloorIndicator(floor)
-				if management.Elev.State == management.MOVING && floor == management.Elev.CurrentOrder.Floor {
-					elevio.SetMotorDirection(elevio.MD_Stop)
-					elevio.SetButtonLamp(elevio.BT_Cab, floor, false)
-					elevio.SetButtonLamp(elevio.BT_HallUp, floor, false)
-					elevio.SetButtonLamp(elevio.BT_HallDown, floor, false)
-					management.Elev.State = management.IDLE
-				}
+				management.Elev.State = management.DOOROPEN
 
 			case stop := <-channels.StopBtn:
 				// stop button functionality
@@ -90,18 +78,15 @@ func runFSM(channels management.ElevChannels) {
 				if orderManagement.OrderConfirmed(btnPress) {
 					order := orderManagement.CreateOrder(btnPress)
 					orderManagement.AddOrderToOrders(order)
-					fmt.Println("Valid order floor", order.Floor)
+					fmt.Println("Valid order floor", order.Floor, "btn: ", btnPress.Button)
 					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
-					// not really supposed to be here, only here for testing
-					fmt.Println("Error hallAssigner: ", orderManagement.RunHallAssigner())
-					orderManagement.PrintOrders()
-					driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor, management.Elev.Floor)
-					management.Elev.State = management.MOVING
+					orderManagement.RunHallAssigner()
+					driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
 				}
 
 				// elevator already at the floor
-				if elevio.GetFloor() == btnPress.Floor {
+				if management.Elev.Floor == btnPress.Floor {
 					// openDoor()
 					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, false)
 				}
@@ -117,21 +102,28 @@ func runFSM(channels management.ElevChannels) {
 			case <-channels.WorldViewUpdate:
 				orderManagement.RunHallAssigner()
 				orderManagement.PrintOrders()
-				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor, management.Elev.Floor)
+				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
 
 			case stop := <-channels.StopBtn:
 				// stop button functionality while driving
 				fmt.Println(stop)
 
 			case floor := <-channels.LastFloor:
+				management.Elev.Floor = floor
+				management.Elev.LastFloor = floor
 				elevio.SetFloorIndicator(floor)
+				fmt.Println("Reached floor, last floor: ", management.Elev.LastFloor)
+				fmt.Println("Floor reached: ", floor)
 
 				// reaching the destination -> stop and turn off lights. State -> IDLE
 				if reachedDestination(floor) {
-					reachedFloorLightsOff(floor)
+
+					// TODO: fjerne orderen fra currentOrder og fra order tabellen
+
 					stopElevator()
-					management.Elev.State = management.IDLE
-					fmt.Println("State: ", management.Elev.State)
+					reachedFloorLightsOff(floor)
+					setElevState(management.IDLE)
+					fmt.Println("Reached destination and Switched from MOVING (3) to : ", management.Elev.State)
 				}
 			}
 
@@ -145,6 +137,10 @@ func runFSM(channels management.ElevChannels) {
 	}
 }
 
-func setElevState(state management.State) {
+// -------------------------------------------------------------------------------------------
+// FSM functions
+// -------------------------------------------------------------------------------------------
 
+func setElevState(state management.State) {
+	management.Elev.State = state
 }
