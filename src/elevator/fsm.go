@@ -16,7 +16,7 @@ func InitFSM(elevID int, NumFloors int) {
 	management.Elev.State = management.INIT
 	management.Elev.ID = elevID
 	management.Elev.Floor = -1
-	management.Elev.LastFloor = -1
+	management.Elev.LastFloor = 0
 	management.Elev.MoveDir = management.Dir_Down
 	management.Elev.CurrentOrder = noOrder
 	for i := 0; i < NumFloors; i++ {

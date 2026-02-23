@@ -8,7 +8,7 @@ import (
 )
 
 func RunHallAssigner() error {
-
+	UpdateLocalGlobalState()
 	GlobalStateMutex.Lock()
 	// Copy HallRequests
 	hallRequests := make([][2]bool, len(GlobalState.HallRequests))
@@ -22,6 +22,11 @@ func RunHallAssigner() error {
 		}
 	}
 	GlobalStateMutex.Unlock()
+	
+	for id, s := range filtered {
+    fmt.Printf("Heis %s: Behavior=%s, Floor=%d, Direction=%s, CabRequests=%v\n", 
+        id, s.Behavior, s.Floor, s.Direction, s.CabRequests)
+	}
 
 	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
 	if err != nil {

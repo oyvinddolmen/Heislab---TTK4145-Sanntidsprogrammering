@@ -3,7 +3,6 @@ package hallRequestAssigner
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"os/exec"
 	"runtime"
 )
@@ -36,33 +35,21 @@ func AssignHallRequests(
 	if err != nil {
 		return nil, fmt.Errorf("json.Marshal failed: %w", err)
 	}
+	jsonStr := string(jsonBytes)
+	fmt.Println("JSON sendt til hall_request_assigner:", jsonStr)
 
-	// different paths for windows/linux
 	assignerPath := ""
 	switch runtime.GOOS {
 	case "windows":
-		wd, _ := os.Getwd()
-		fmt.Println("Working dir:", wd)
-		fmt.Println("Assigner path:", assignerPath)
-
-		assignerPath = "./orderManagement/hall_request_assigner.exe"
-	case "darwin": // macOS
-		assignerPath = "./orderManagement/hall_request_assigner_mac"
-	default: // linux og evt. andre unix-systemer
-		assignerPath = "./orderManagement/hall_request_assigner"
+		assignerPath = "./hallRequestAssigner/hall_request_assigner.exe"
+	case "darwin":
+		assignerPath = "./hallRequestAssigner/hall_request_assigner_mac"
+	default:
+		assignerPath = "./hallRequestAssigner/hall_request_assigner"
 	}
 
-	cmd := exec.Command(assignerPath)
-
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return nil, fmt.Errorf("stdin pipe failed: %w", err)
-	}
-
-	go func() {
-		defer stdin.Close()
-		stdin.Write(jsonBytes)
-	}()
+	// Run binary file
+	cmd := exec.Command(assignerPath, "--input", jsonStr)
 
 	outputBytes, err := cmd.CombinedOutput()
 	if err != nil {
@@ -76,8 +63,9 @@ func AssignHallRequests(
 	output := make(map[string][][2]bool)
 	err = json.Unmarshal(outputBytes, &output)
 	if err != nil {
-		return nil, fmt.Errorf("json.Unmarshal failed: %w", err)
+		return nil, fmt.Errorf("json.Unmarshal failed: %w\nOutput: %s", err, string(outputBytes))
 	}
 
+	fmt.Println("AHR ferdig kjørt. Output:", output)
 	return output, nil
 }

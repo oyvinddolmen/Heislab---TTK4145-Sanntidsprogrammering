@@ -1,59 +1,64 @@
 package orderManagement
 
-import "heislab/management"
+import (
+	"fmt"
+	"heislab/management"
+)
 
 // ---------------------------------------------------------------------
-// Update the CurrentOrder for the global elevator Elev
+// UpdateCurrentOrder: velger neste ordre for heisen basert på GlobalState
 // ---------------------------------------------------------------------
 func UpdateCurrentOrder() {
+	e := &management.Elev
 
-	e := &management.Elev // bruk global heis
-
-	// Hvis vi allerede har en ordre som ikke er fullført, behold den
+	// Hvis vi allerede har en aktiv ordre som ikke er ferdig: gjør ingenting
 	if e.CurrentOrder.OrderPlaced && !e.CurrentOrder.Finished {
 		return
 	}
 
+	// Start fra aktuell etasje, eller 0 hvis -1
+	startFloor := e.Floor
+	if startFloor < 0 {
+		startFloor = 0
+	}
+
+	// Velg retning basert på tidligere retning
 	switch e.MoveDir {
-
 	case management.Dir_Up:
-		if assignUp() {
+		if assignUp(startFloor) {
 			return
 		}
-		if assignDown() {
+		if assignDown(startFloor) {
 			return
 		}
-
 	case management.Dir_Down:
-		if assignDown() {
+		if assignDown(startFloor) {
 			return
 		}
-		if assignUp() {
+		if assignUp(startFloor) {
 			return
 		}
-
 	default: // Dir_Idle eller stopper
-		if assignUp() {
+		if assignUp(startFloor) {
 			return
 		}
-		if assignDown() {
+		if assignDown(startFloor) {
 			return
 		}
 	}
 
-	// Ingen ordre funnet
+	// Ingen ordre funnet → gå IDLE
 	e.State = management.IDLE
 	e.MoveDir = management.Dir_Idle
 }
 
 // ---------------------------------------------------------------------
-// assignUp: finn første ordre oppover fra nåværende etasje
+// assignUp: finn første ordre oppover fra startFloor
 // ---------------------------------------------------------------------
-func assignUp() bool {
-
+func assignUp(startFloor int) bool {
 	e := &management.Elev
 
-	for f := e.Floor; f < management.NumFloors; f++ {
+	for f := startFloor; f < management.NumFloors; f++ {
 		for b := 0; b < management.NumButtons; b++ {
 			order := &e.Orders[f][b]
 			if order.OrderPlaced && !order.Finished {
@@ -68,13 +73,16 @@ func assignUp() bool {
 }
 
 // ---------------------------------------------------------------------
-// assignDown: finn første ordre nedover fra nåværende etasje
+// assignDown: finn første ordre nedover fra startFloor
 // ---------------------------------------------------------------------
-func assignDown() bool {
-
+func assignDown(startFloor int) bool {
 	e := &management.Elev
 
-	for f := e.Floor; f >= 0; f-- {
+	if startFloor >= management.NumFloors {
+		startFloor = management.NumFloors - 1
+	}
+
+	for f := startFloor; f >= 0; f-- {
 		for b := 0; b < management.NumButtons; b++ {
 			order := &e.Orders[f][b]
 			if order.OrderPlaced && !order.Finished {
@@ -92,15 +100,23 @@ func assignDown() bool {
 // CompleteCurrentOrder: kall når heisen har nådd CurrentOrder.Floor
 // ---------------------------------------------------------------------
 func CompleteCurrentOrder() {
-
 	e := &management.Elev
 
 	f := e.CurrentOrder.Floor
 	b := e.CurrentOrder.ButtonType
 
+	if f < 0 || f >= management.NumFloors || b < 0 || b >= management.NumButtons {
+		fmt.Println("Warning: CompleteCurrentOrder called with invalid floor/button")
+		return
+	}
+
 	e.Orders[f][b].Finished = true
 	e.CurrentOrder.Finished = true
 	e.CurrentOrder.OrderPlaced = false
 
+	// Oppdater lokale orders basert på GlobalState
+	//UpdateLocalGlobalState().   oppdatere her eller annet sted, vi ser
+
+	// Velg neste ordre
 	UpdateCurrentOrder()
 }

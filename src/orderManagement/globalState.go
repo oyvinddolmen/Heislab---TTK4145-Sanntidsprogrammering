@@ -23,6 +23,9 @@ func InitGlobalState() {
 
 	GlobalState.HallRequests = make([][2]bool, management.NumFloors)
 	GlobalState.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
+
+	id := strconv.Itoa(management.Elev.ID)
+	GlobalState.States[id] = ConvertElevatorToJSON(management.Elev)
 }
 
 // Convert elevator to JSON elevator state
@@ -35,7 +38,7 @@ func ConvertElevatorToJSON(e management.Elevator) hallRequestAssigner.ElevatorSt
 
 	return hallRequestAssigner.ElevatorStateJSON{
 		Behavior:    convertState(e.State),
-		Floor:       e.Floor,
+		Floor:       e.LastFloor,
 		Direction:   convertDirection(e.MoveDir),
 		CabRequests: cabRequests,
 	}
@@ -46,6 +49,8 @@ func convertState(s management.State) string {
 	case management.IDLE:
 		return "idle"
 	case management.MOVING:
+		return "moving"
+	case management.INIT:
 		return "moving"
 	case management.DOOROPEN:
 		return "doorOpen"

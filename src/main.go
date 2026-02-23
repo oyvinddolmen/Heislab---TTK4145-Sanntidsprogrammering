@@ -5,6 +5,8 @@ import (
 	"heislab/elevator"
 	"heislab/elevio"
 	"heislab/management"
+	"heislab/orderManagement"
+
 	//"heislab/network"
 
 	"os"
@@ -62,7 +64,8 @@ func main() {
 	// -------------------------------------------------------------------------------------------
 	*/
 	elevator.ElevatorInit(elevID, "localhost:15657", 4) // localhost:15657" for simulatoren
-
+	orderManagement.InitGlobalState()
+	
 	go elevator.RunElevator(elevChannels)
 	select {}
 }
