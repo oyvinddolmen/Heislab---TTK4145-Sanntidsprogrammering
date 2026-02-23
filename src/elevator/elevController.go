@@ -51,18 +51,27 @@ func lightInit(numFloors int) {
 // Driving logic
 // ---------------------------------------------------------------------------------------------------------------------
 
-func findMovingDirection(dest int, lastFloor int) elevio.MotorDirection {
+func findMovingDirection(destination int, lastFloor int) elevio.MotorDirection {
 
-	if dest < 0 {
+	// safety measure
+	if destination < 0 {
+		fmt.Println("Destination -1 [!!!]")
 		return elevio.MD_Stop
 	}
 
 	switch {
-	case dest > lastFloor:
+	case destination > lastFloor:
+		management.Elev.MoveDir = management.Dir_Up
 		return elevio.MD_Up
-	case dest < lastFloor:
+	case destination < lastFloor:
+		management.Elev.MoveDir = management.Dir_Down
 		return elevio.MD_Down
 	default:
+		if elevio.GetFloor() == -1 {
+			management.Elev.MoveDir = management.Dir_Down
+			return elevio.MD_Down // if between two floors, always go down (maybe better solution later, lastMovingDir variable?)
+		}
+		management.Elev.MoveDir = management.Dir_Idle
 		return elevio.MD_Stop
 	}
 }
@@ -83,11 +92,9 @@ func reachedDestination(floor int) bool {
 
 // turns off lights when reaching destination floor
 func reachedFloorLightsOff(floor int) {
-	elevio.SetMotorDirection(elevio.MD_Stop)
 	elevio.SetButtonLamp(elevio.BT_Cab, floor, false)
 	elevio.SetButtonLamp(elevio.BT_HallUp, floor, false)
 	elevio.SetButtonLamp(elevio.BT_HallDown, floor, false)
-
 }
 
 func stopElevator() {
@@ -96,11 +103,14 @@ func stopElevator() {
 
 // sets motordirection in direction of newOrder, and sets state = MOVING
 func driveToDestination(destination int, lastFloor int) {
+	fmt.Println("Current destination", destination)
 	moveDir := findMovingDirection(destination, lastFloor)
 	fmt.Println("moveDir", moveDir)
 	elevio.SetMotorDirection(moveDir)
 
 	if moveDir != elevio.MD_Stop {
 		setElevState(management.MOVING)
+	} else {
+		setElevState(management.IDLE)
 	}
 }

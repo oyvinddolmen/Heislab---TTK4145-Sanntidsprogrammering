@@ -22,7 +22,7 @@ func InitFSM(elevID int, NumFloors int) {
 	for i := 0; i < NumFloors; i++ {
 		for j := 0; j < management.NumButtons; j++ {
 			management.Elev.Orders[i][j].Floor = i
-			management.Elev.Orders[i][j].ButtonType = j
+			management.Elev.Orders[i][j].ButtonType = elevio.ButtonType(j)
 			management.Elev.Orders[i][j].ElevID = -1
 			management.Elev.Orders[i][j].Finished = false
 		}
@@ -57,10 +57,10 @@ func runFSM(channels management.ElevChannels) {
 		case management.IDLE:
 			select {
 
+			// only triggered from outside events (getting broadcast from another elevator)
 			case <-channels.WorldViewUpdate:
 				fmt.Println("World view update :)")
 				orderManagement.RunHallAssigner()
-				orderManagement.PrintOrders()
 				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
 
 			case obstruction := <-channels.Obstruction:
@@ -83,6 +83,7 @@ func runFSM(channels management.ElevChannels) {
 
 					orderManagement.RunHallAssigner()
 					driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
+					orderManagement.PrintOrders()
 				}
 
 				// elevator already at the floor
@@ -99,9 +100,9 @@ func runFSM(channels management.ElevChannels) {
 		case management.MOVING:
 			select {
 
+			// only triggered from outside events (getting broadcast from another elevator)
 			case <-channels.WorldViewUpdate:
 				orderManagement.RunHallAssigner()
-				orderManagement.PrintOrders()
 				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
 
 			case stop := <-channels.StopBtn:
@@ -112,27 +113,43 @@ func runFSM(channels management.ElevChannels) {
 				management.Elev.Floor = floor
 				management.Elev.LastFloor = floor
 				elevio.SetFloorIndicator(floor)
-				fmt.Println("Reached floor, last floor: ", management.Elev.LastFloor)
-				fmt.Println("Floor reached: ", floor)
+				fmt.Println("Reached floor:", floor)
 
-				// reaching the destination -> stop and turn off lights. State -> IDLE
+				// reaching the destination -> stop, turn off lights and remove order from order-table. State -> IDLE
 				if reachedDestination(floor) {
-
-					// TODO: fjerne orderen fra currentOrder og fra order tabellen
-
+					orderManagement.RemoveOrdersAtFloor(&management.Elev, floor)
 					stopElevator()
 					reachedFloorLightsOff(floor)
-					setElevState(management.IDLE)
+					orderManagement.RunHallAssigner()
+					fmt.Println("Ran hall assigner after reaching floor")
+					driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor) // NOT SUPPOSED TO BE HERE
+					// open doors
+					//setElevState(management.IDLE) // SUPPOSED TO BE DOOROPEN [!!!], waiting for implementation of DOOROPEN
 					fmt.Println("Reached destination and Switched from MOVING (3) to : ", management.Elev.State)
+
+					// TODO: NYE CURRENTORDER BLIR IKKE ENDRET NÅR MAN NÅR EN ETASJE
 				}
+
+			case btnPress := <-channels.BtnPresses:
+				// hvis orderen blir mottatt av de andre heisene
+				if orderManagement.OrderConfirmed(btnPress) {
+					order := orderManagement.CreateOrder(btnPress)
+					orderManagement.AddOrderToOrders(order)
+					fmt.Println("Valid order floor", order.Floor, "btn: ", btnPress.Button)
+					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
+
+					orderManagement.RunHallAssigner()
+					driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
+				}
+
 			}
 
 		// -------------------------------------------------------------------------------------------
-		// CASE: DOOR OPEN ???
+		// CASE: DOOR OPEN
 		// -------------------------------------------------------------------------------------------
 
 		case management.DOOROPEN:
-
+			// when doors closing - driveToDestination()
 		}
 	}
 }

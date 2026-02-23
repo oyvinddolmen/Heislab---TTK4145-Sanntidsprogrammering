@@ -42,7 +42,7 @@ const (
 type Order struct {
 	OrderPlaced bool
 	Floor       int
-	ButtonType  int
+	ButtonType  elevio.ButtonType
 	ElevID      int // -1 if no elevator is assigned, else the ID of the elevator assigned
 	Finished    bool
 }
