@@ -114,9 +114,6 @@ func CompleteCurrentOrder() {
 	e.CurrentOrder.Finished = true
 	e.CurrentOrder.OrderPlaced = false
 
-	// Oppdater lokale orders basert på GlobalState
-	//UpdateLocalGlobalState().   oppdatere her eller annet sted, vi ser
-
 	// Velg neste ordre
 	UpdateCurrentOrder()
 }

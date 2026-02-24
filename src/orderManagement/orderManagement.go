@@ -11,7 +11,7 @@ import (
 )
 
 // -------------------------------------------------------------------------------------------
-// Functions managin orders
+// Functions managing orders
 // -------------------------------------------------------------------------------------------
 
 // function that sends order to other elevators and wait for confirmed from the other elevators
@@ -55,20 +55,4 @@ func PrintOrders() {
 
 func AddOrderToOrders(order management.Order) {
 	management.Elev.Orders[order.Floor][int(order.ButtonType)] = order
-}
-
-func RemoveOrdersAtFloor(Elev *management.Elevator, floor int) {
-	// TODO: BROADCAST: floor elevator arrived at. ACTION: elevators removes the order from the order-table
-
-	// removing orders from local order-table
-	for btn := 0; btn < management.NumButtons; btn++ {
-
-		order := &Elev.Orders[floor][btn]
-
-		if order.OrderPlaced {
-			order.OrderPlaced = false
-			order.Finished = true
-			order.ElevID = -1
-		}
-	}
 }

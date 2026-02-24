@@ -5,6 +5,7 @@ import (
 	"heislab/elevator"
 	"heislab/elevio"
 	"heislab/management"
+	"heislab/network"
 	"heislab/orderManagement"
 
 	//"heislab/network"
@@ -52,9 +53,9 @@ func main() {
 	// -------------------------------------------------------------------------------------------
 
 	portCfg := network.PortConfig{
-		PeerDiscoveryPort: 15657, 	// Random ports, must be same for all
-		MessageBcastPort: 15658,
-		NodeID: "",
+		PeerDiscoveryPort: 15657, // Random ports, must be same for all
+		MessageBcastPort:  15658,
+		NodeID:            "",
 	}
 
 	networkConn := network.InitNetwork(portCfg) // Burde kanskje tas inn i RunElevator eller noe ?
@@ -63,8 +64,10 @@ func main() {
 	// Initialise elevator and run go-functions
 	// -------------------------------------------------------------------------------------------
 
-	elevator.ElevatorInit(elevID, "localhost:15657", 4) // localhost:15657" for simulatoren
 	orderManagement.InitGlobalState()
+	elevator.ElevatorInit(elevID, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
+
+	// TODO ØYVIND: fikse setElevState, blir gjort for mange ganger
 
 	go elevator.RunElevator(elevChannels)
 	select {}
