@@ -8,8 +8,9 @@ import (
 )
 
 type GlobalStateType struct {
-	HallRequests [][2]bool                    // [floor][0=up,1=down]
-	States       map[string]hallRequestAssigner.ElevatorStateJSON // elevatorID -> state
+	HallRequests         [][2]bool // [floor][0=up,1=down]
+	HallRequestsAssigned [][2]string
+	States               map[string]hallRequestAssigner.ElevatorStateJSON // elevatorID -> state
 }
 
 var (
@@ -22,6 +23,7 @@ func InitGlobalState() {
 	defer GlobalStateMutex.Unlock()
 
 	GlobalState.HallRequests = make([][2]bool, management.NumFloors)
+	GlobalState.HallRequestsAssigned = make([][2]string, management.NumFloors)
 	GlobalState.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
 
 	id := strconv.Itoa(management.Elev.ID)

@@ -58,35 +58,45 @@ func checkForDeadElevators() {
 	}
 }
 
-// Remove dead elevator from global state and redistribute orders
+// Set dead elevator behavior to "offline" and redistribute orders
 func handleElevatorFailure(deadID string) {
+
+	orderManagement.GlobalStateMutex.Lock()
 
 	state, exists := orderManagement.GlobalState.States[deadID]
 	if !exists {
+		orderManagement.GlobalStateMutex.Unlock()
 		return
 	}
 
 	state.Behavior = "offline"
 	orderManagement.GlobalState.States[deadID] = state
 
+	orderManagement.GlobalStateMutex.Unlock()
+
 	releaseHallOrders(deadID)
 
-	go orderManagement.RunHallAssigner()
+	orderManagement.RunHallAssigner()
+
+	// broadcast her via channel
 }
 
 // Release hall orders belonging to dead elevator
 func releaseHallOrders(deadID string) {
 
-	idInt, _ := strconv.Atoi(deadID)
+	orderManagement.GlobalStateMutex.Lock()
+	defer orderManagement.GlobalStateMutex.Unlock()
 
 	for f := 0; f < management.NumFloors; f++ {
-		for btn := 0; btn < 2; btn++ { // hall buttons only
+		for btn := 0; btn < 2; btn++ {
 
-			order := &management.Elev.Orders[f][btn]
+			if orderManagement.GlobalState.HallRequestsAssigned[f][btn] == deadID {
 
-			if order.ElevID == idInt {
-				order.ElevID = -1        // sets order as not handled
-				order.OrderPlaced = true //sets order as placed.. need this?
+				// sett tilbake som aktiv request
+				orderManagement.GlobalState.HallRequests[f][btn] = true
+
+				// fjern assignment
+				orderManagement.GlobalState.HallRequestsAssigned[f][btn] = ""
 			}
 		}
 	}

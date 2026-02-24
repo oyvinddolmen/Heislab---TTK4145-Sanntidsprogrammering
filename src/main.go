@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"heislab/elevator"
 	"heislab/elevio"
+	//"heislab/faultTolerance"
 	"heislab/management"
 	"heislab/orderManagement"
 
@@ -65,6 +66,7 @@ func main() {
 	*/
 	elevator.ElevatorInit(elevID, "localhost:15657", 4) // localhost:15657" for simulatoren
 	orderManagement.InitGlobalState()
+	//faultTolerance.RecoverOnStartup(GlobalStateRx)
 	
 	go elevator.RunElevator(elevChannels)
 	select {}

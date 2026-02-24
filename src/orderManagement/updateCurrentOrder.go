@@ -1,8 +1,8 @@
 package orderManagement
 
 import (
-	"fmt"
 	"heislab/management"
+	"heislab/elevio"
 )
 
 // ---------------------------------------------------------------------
@@ -97,26 +97,30 @@ func assignDown(startFloor int) bool {
 }
 
 // ---------------------------------------------------------------------
-// CompleteCurrentOrder: kall når heisen har nådd CurrentOrder.Floor
-// ---------------------------------------------------------------------
+// call when elevator has reached CurrentOrder.Floor
 func CompleteCurrentOrder() {
-	e := &management.Elev
 
+	e := &management.Elev
 	f := e.CurrentOrder.Floor
 	b := e.CurrentOrder.ButtonType
 
-	if f < 0 || f >= management.NumFloors || b < 0 || b >= management.NumButtons {
-		fmt.Println("Warning: CompleteCurrentOrder called with invalid floor/button")
-		return
+	// --- CAB ORDER ---
+	if b == elevio.BT_Cab {
+
+		e.Orders[f][b].Finished = true
+		e.CurrentOrder.Finished = true
+		e.CurrentOrder.OrderPlaced = false
+
+	} else {
+
+		// --- HALL ORDER ---
+		GlobalStateMutex.Lock()
+
+		GlobalState.HallRequests[f][b] = false
+		GlobalState.HallRequestsAssigned[f][b] = ""
+
+		GlobalStateMutex.Unlock()
 	}
 
-	e.Orders[f][b].Finished = true
-	e.CurrentOrder.Finished = true
-	e.CurrentOrder.OrderPlaced = false
-
-	// Oppdater lokale orders basert på GlobalState
-	//UpdateLocalGlobalState().   oppdatere her eller annet sted, vi ser
-
-	// Velg neste ordre
 	UpdateCurrentOrder()
 }
