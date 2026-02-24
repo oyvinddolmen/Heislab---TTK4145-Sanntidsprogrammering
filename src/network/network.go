@@ -34,9 +34,9 @@ type Envelope[T any] struct {
 }
 
 type PortConfig struct {
-	PeerDiscoveryPort int // used by peers.Transmitter/Receiver (heartbeats)
-	MessageBcastPort  int // used by bcast.Transmitter/Receiver (your actual data)
-	NodeID            string
+	PeerDiscoveryPort int    // Used by peers.Transmitter/Receiver (heartbeats)
+	MessageBcastPort  int    // Used by bcast.Transmitter/Receiver (global state)
+	NodeID            string // Local IP
 }
 
 type NetworkConn struct {
