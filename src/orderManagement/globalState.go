@@ -52,8 +52,8 @@ func convertState(s management.State) string {
 		return "moving"
 	case management.INIT:
 		return "moving"
-	case management.DOOROPEN:
-		return "doorOpen"
+	case management.STOP:
+		return "STOP"
 	case management.OFFLINE:
 		return "offline"
 	default:

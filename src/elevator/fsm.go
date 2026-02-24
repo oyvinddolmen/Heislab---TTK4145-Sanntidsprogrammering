@@ -62,15 +62,17 @@ func runFSM(channels management.ElevChannels) {
 				fmt.Println("World view update :)")
 				orderManagement.RunHallAssigner()
 				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
+				if management.Elev.MoveDir != management.Dir_Idle {
+					setElevState(management.MOVING)
+				}
 
 			case obstruction := <-channels.Obstruction:
 				// door open functionality
 				elevio.SetDoorOpenLamp(obstruction)
-				management.Elev.State = management.DOOROPEN
+				management.Elev.State = management.STOP
 
 			case stop := <-channels.StopBtn:
-				// stop button functionality
-				elevio.SetStopLamp(stop)
+				setElevState(management.STOP)
 				fmt.Println("Stop-btn: ", stop)
 
 			case btnPress := <-channels.BtnPresses:
@@ -82,8 +84,14 @@ func runFSM(channels management.ElevChannels) {
 					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
 					orderManagement.RunHallAssigner()
-					driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
-					orderManagement.PrintOrders()
+					driveToDestination(
+						management.Elev.CurrentOrder.Floor,
+						management.Elev.LastFloor)
+
+					if management.Elev.MoveDir != management.Dir_Idle {
+						setElevState(management.MOVING)
+					}
+
 				}
 
 				// elevator already at the floor
@@ -104,10 +112,13 @@ func runFSM(channels management.ElevChannels) {
 			case <-channels.WorldViewUpdate:
 				orderManagement.RunHallAssigner()
 				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
+				if management.Elev.MoveDir != management.Dir_Idle {
+					setElevState(management.MOVING)
+				}
 
 			case stop := <-channels.StopBtn:
-				// stop button functionality while driving
-				fmt.Println(stop)
+				setElevState(management.STOP)
+				fmt.Println("Stop pressed", stop)
 
 			case floor := <-channels.LastFloor:
 				management.Elev.Floor = floor
@@ -118,15 +129,9 @@ func runFSM(channels management.ElevChannels) {
 				// reaching the destination -> stop, turn off lights and remove order from order-table. State -> IDLE
 				if reachedDestination(floor) {
 					stopElevator()
-					orderManagement.RemoveOrdersAtFloor(&management.Elev, floor)
-					// openDoors()
-					setElevState(management.IDLE) // SUPPOSED TO BE DOOROPEN [!!!], waiting for implementation of DOOROPEN
+					orderManagement.CompleteCurrentOrder()
 					reachedFloorLightsOff(floor)
-					orderManagement.RunHallAssigner()
-					driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor) // NOT SUPPOSED TO BE HERE, supposed to be in case: DOOROPEN
-					fmt.Println("Reached destination and Switched from MOVING (3) to : ", management.Elev.State)
-
-					// TODO: NYE CURRENTORDER BLIR IKKE ENDRET NÅR MAN NÅR EN ETASJE
+					setElevState(management.IDLE)
 				}
 
 			case btnPress := <-channels.BtnPresses:
@@ -138,17 +143,39 @@ func runFSM(channels management.ElevChannels) {
 					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
 					orderManagement.RunHallAssigner()
-					driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
-				}
+					driveToDestination(
+						management.Elev.CurrentOrder.Floor,
+						management.Elev.LastFloor)
 
+					if management.Elev.MoveDir != management.Dir_Idle {
+						setElevState(management.MOVING)
+					}
+				}
 			}
 
 		// -------------------------------------------------------------------------------------------
 		// CASE: DOOR OPEN
 		// -------------------------------------------------------------------------------------------
 
-		case management.DOOROPEN:
-			// when doors closing - driveToDestination()
+		case management.STOP:
+			select {
+
+			case btnPress := <-channels.BtnPresses:
+				if orderManagement.OrderConfirmed(btnPress) {
+					order := orderManagement.CreateOrder(btnPress)
+					orderManagement.AddOrderToOrders(order)
+					fmt.Println("Valid order floor", order.Floor, "btn: ", btnPress.Button)
+					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
+				}
+
+			case stop := <-channels.StopBtn:
+				setElevState(management.STOP)
+				fmt.Println("Stop-btn: ", stop)
+
+			case <-channels.WorldViewUpdate:
+				orderManagement.RunHallAssigner()
+
+			}
 		}
 	}
 }
@@ -158,5 +185,51 @@ func runFSM(channels management.ElevChannels) {
 // -------------------------------------------------------------------------------------------
 
 func setElevState(state management.State) {
+	prev := management.Elev.State
 	management.Elev.State = state
+
+	switch state {
+
+	case management.STOP:
+		onStopEntry()
+
+	case management.IDLE:
+		onIdleEntry()
+
+	case management.MOVING:
+		onMovingEntry()
+	}
+
+	fmt.Println("STATE CHANGE:", prev, "->", state)
+}
+
+// turns on stopLam and sets Dir_Idle
+func onStopEntry() {
+	elevio.SetStopLamp(true)
+	management.Elev.MoveDir = management.Dir_Idle
+	if management.Elev.Floor != -1 {
+		openDoorTimer()
+	}
+}
+
+// turns off door-open and stop-light when going to state MOVING
+func onMovingEntry() {
+	elevio.SetDoorOpenLamp(false)
+	elevio.SetStopLamp(false)
+}
+
+// turns off door-open and stop-light, calls RunHallAssigner and driveToDestination
+func onIdleEntry() {
+	elevio.SetDoorOpenLamp(false)
+	elevio.SetStopLamp(false)
+	management.Elev.MoveDir = management.Dir_Idle
+
+	orderManagement.RunHallAssigner()
+	driveToDestination(
+		management.Elev.CurrentOrder.Floor,
+		management.Elev.LastFloor)
+
+	if management.Elev.MoveDir != management.Dir_Idle {
+		setElevState(management.MOVING)
+	}
 }

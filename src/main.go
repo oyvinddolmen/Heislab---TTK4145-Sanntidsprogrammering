@@ -63,8 +63,10 @@ func main() {
 		// Initialise elevator and run go-functions
 		// -------------------------------------------------------------------------------------------
 	*/
-	elevator.ElevatorInit(elevID, "localhost:15657", 4) // localhost:15657" for simulatoren
 	orderManagement.InitGlobalState()
+	elevator.ElevatorInit(elevID, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
+
+	// TODO ØYVIND: fikse setElevState, blir gjort for mange ganger
 
 	go elevator.RunElevator(elevChannels)
 	select {}

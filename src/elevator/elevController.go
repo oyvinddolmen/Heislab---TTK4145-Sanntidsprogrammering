@@ -20,11 +20,12 @@ func goToGroundFloor() {
 	}
 	elevio.SetMotorDirection(elevio.MD_Stop)
 	elevio.SetFloorIndicator(0)
-	management.Elev.State = management.IDLE
+	setElevState(management.IDLE)
 }
 
 func ElevatorInit(elevID int, adress string, numFloors int) {
 	elevio.Init(adress, numFloors) // To run several simulators, each terminal/simulator needs unique adress
+	setElevState(management.INIT)
 	lightInit(numFloors)
 	goToGroundFloor()
 	InitFSM(elevID, numFloors)
@@ -87,7 +88,6 @@ func reachedDestination(floor int) bool {
 	} else {
 		return false
 	}
-
 }
 
 // turns off lights when reaching destination floor
@@ -99,12 +99,22 @@ func reachedFloorLightsOff(floor int) {
 
 func stopElevator() {
 	elevio.SetMotorDirection(elevio.MD_Stop)
+	management.Elev.MoveDir = management.Dir_Idle
 }
 
-// sets motordirection in direction of newOrder, and sets state = MOVING
+// sets motordirection in direction of newOrder and changes Elev.MoveDir
 func driveToDestination(destination int, lastFloor int) {
 	fmt.Println("Current destination", destination)
 	moveDir := findMovingDirection(destination, lastFloor)
-	fmt.Println("moveDir", moveDir)
+	management.Elev.MoveDir = management.Direction(moveDir)
+	fmt.Println("moveDir:", moveDir)
 	elevio.SetMotorDirection(moveDir)
+}
+
+// starts 2 sec timer
+func openDoorTimer() {
+	// TODO
+	// SetDoorOpenLamp(true)
+
+	// doorOpenLight is turned off when switching to another state
 }
