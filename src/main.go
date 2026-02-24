@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"heislab/elevator"
 	"heislab/elevio"
+	//"heislab/faultTolerance"
 	"heislab/management"
 	"heislab/network"
 	"heislab/orderManagement"
@@ -69,6 +70,8 @@ func main() {
 
 	// TODO ØYVIND: fikse setElevState, blir gjort for mange ganger
 
+	//faultTolerance.RecoverOnStartup(GlobalStateRx)
+	
 	go elevator.RunElevator(elevChannels)
 	select {}
 }

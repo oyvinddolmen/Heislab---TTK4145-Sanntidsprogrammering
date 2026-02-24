@@ -25,6 +25,7 @@ func InitFSM(elevID int, NumFloors int) {
 			management.Elev.Orders[i][j].ButtonType = elevio.ButtonType(j)
 			management.Elev.Orders[i][j].ElevID = -1
 			management.Elev.Orders[i][j].Finished = false
+			management.Elev.Orders[i][j].OrderPlaced = false
 		}
 	}
 	management.Elev.State = management.IDLE

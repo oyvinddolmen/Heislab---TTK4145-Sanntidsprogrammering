@@ -1,46 +1,56 @@
 package faultTolerance
 
 import (
+	"heislab/elevio"
 	"heislab/management"
-	"strconv"
 	"heislab/orderManagement"
+	"strconv"
+	"fmt"
+	"time"
 )
 
 // Called once when elevator boots
-func RecoverOnStartup() {
 
-	orderManagement.GlobalStateMutex.Lock()
-	defer orderManagement.GlobalStateMutex.Unlock()
+func RecoverOnStartup(rx <-chan orderManagement.GlobalStateType) {
 
-	localID := strconv.Itoa(management.Elev.ID)
+    timeout := time.After(1 * time.Second)
 
-	// Restore cab orders if available
-	oldState, exists := orderManagement.GlobalState.States[localID]
-	if exists {
-		for f := 0; f < management.NumFloors; f++ {
-			if oldState.CabRequests[f] {
-				management.Elev.Orders[f][2].OrderPlaced = true
-			}
-		}
-	}
+    // Vent på eksisterende GlobalState 
+    for {
+        select {
 
-	// Clear local hall orders (they are global responsibility)
-	clearLocalHallOrders()
+        case gs := <-rx:
+            orderManagement.GlobalStateMutex.Lock()
+            orderManagement.GlobalState = gs
+            orderManagement.GlobalStateMutex.Unlock()
+            goto RECOVER
 
-	// Mark self alive in globalState (behavior idle)
-	orderManagement.GlobalState.States[localID] = orderManagement.ConvertElevatorToJSON(management.Elev)
+        case <-timeout:
+            fmt.Println("No GlobalState received on startup, starting fresh")
+            goto RECOVER
+        }
+    }
 
-	// Trigger hall reassignment
-	go orderManagement.RunHallAssigner()
+RECOVER:
+
+    localID := strconv.Itoa(management.Elev.ID)
+
+    orderManagement.GlobalStateMutex.Lock()
+    defer orderManagement.GlobalStateMutex.Unlock()
+
+    // Gjenopprett cab-orders hvis de fantes fra før 
+    oldState, exists := orderManagement.GlobalState.States[localID]
+    if exists {
+        for f := 0; f < management.NumFloors; f++ {
+            if oldState.CabRequests[f] {
+                management.Elev.Orders[f][elevio.BT_Cab].OrderPlaced = true
+                management.Elev.Orders[f][elevio.BT_Cab].Finished = false
+                management.Elev.Orders[f][elevio.BT_Cab].ElevID = management.Elev.ID
+            }
+        }
+    }
+
+    // Registrer oss selv i GlobalState 
+    orderManagement.GlobalState.States[localID] = orderManagement.ConvertElevatorToJSON(management.Elev)
 }
 
-// Clear local hall orders (only hall buttons, keep cab orders)
-func clearLocalHallOrders() {
-
-	for f := 0; f < management.NumFloors; f++ {
-		for btn := 0; btn < 2; btn++ { // hall buttons only
-			management.Elev.Orders[f][btn].OrderPlaced = false
-			management.Elev.Orders[f][btn].ElevID = -1
-		}
-	}
-}
