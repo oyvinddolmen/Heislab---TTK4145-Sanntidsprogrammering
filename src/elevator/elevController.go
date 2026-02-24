@@ -107,10 +107,4 @@ func driveToDestination(destination int, lastFloor int) {
 	moveDir := findMovingDirection(destination, lastFloor)
 	fmt.Println("moveDir", moveDir)
 	elevio.SetMotorDirection(moveDir)
-
-	if moveDir != elevio.MD_Stop {
-		setElevState(management.MOVING)
-	} else {
-		setElevState(management.IDLE)
-	}
 }
