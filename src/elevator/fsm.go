@@ -117,14 +117,13 @@ func runFSM(channels management.ElevChannels) {
 
 				// reaching the destination -> stop, turn off lights and remove order from order-table. State -> IDLE
 				if reachedDestination(floor) {
-					orderManagement.RemoveOrdersAtFloor(&management.Elev, floor)
 					stopElevator()
+					orderManagement.RemoveOrdersAtFloor(&management.Elev, floor)
+					// openDoors()
+					setElevState(management.IDLE) // SUPPOSED TO BE DOOROPEN [!!!], waiting for implementation of DOOROPEN
 					reachedFloorLightsOff(floor)
 					orderManagement.RunHallAssigner()
-					fmt.Println("Ran hall assigner after reaching floor")
-					driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor) // NOT SUPPOSED TO BE HERE
-					// open doors
-					//setElevState(management.IDLE) // SUPPOSED TO BE DOOROPEN [!!!], waiting for implementation of DOOROPEN
+					driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor) // NOT SUPPOSED TO BE HERE, supposed to be in case: DOOROPEN
 					fmt.Println("Reached destination and Switched from MOVING (3) to : ", management.Elev.State)
 
 					// TODO: NYE CURRENTORDER BLIR IKKE ENDRET NÅR MAN NÅR EN ETASJE

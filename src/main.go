@@ -51,21 +51,21 @@ func main() {
 	// Initialize network
 	// -------------------------------------------------------------------------------------------
 	/*
-	portCfg := network.PortConfig{
-		PeerDiscoveryPort: 15657, 	// Random ports, must be same for all
-		MessageBcastPort: 15658,
-		NodeID: "",
-	}
+		portCfg := network.PortConfig{
+			PeerDiscoveryPort: 15657, 	// Random ports, must be same for all
+			MessageBcastPort: 15658,
+			NodeID: "",
+		}
 
-	networkConn := network.InitNetwork(portCfg) // Burde kanskje tas inn i RunElevator eller noe ?
+		networkConn := network.InitNetwork(portCfg) // Burde kanskje tas inn i RunElevator eller noe ?
 
-	// -------------------------------------------------------------------------------------------
-	// Initialise elevator and run go-functions
-	// -------------------------------------------------------------------------------------------
+		// -------------------------------------------------------------------------------------------
+		// Initialise elevator and run go-functions
+		// -------------------------------------------------------------------------------------------
 	*/
 	elevator.ElevatorInit(elevID, "localhost:15657", 4) // localhost:15657" for simulatoren
 	orderManagement.InitGlobalState()
-	
+
 	go elevator.RunElevator(elevChannels)
 	select {}
 }
