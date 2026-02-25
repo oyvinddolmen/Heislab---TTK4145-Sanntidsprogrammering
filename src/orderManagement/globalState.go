@@ -28,6 +28,7 @@ func InitGlobalState(localIP string) {
 	GlobalState.LocalIP = localIP
 
 	GlobalState.States[management.Elev.IP] = ConvertElevatorToJSON(management.Elev)
+	GlobalState.States[management.Elev.IP] = ConvertElevatorToJSON(management.Elev)
 }
 
 // Convert elevator to JSON elevator state

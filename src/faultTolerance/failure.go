@@ -55,6 +55,8 @@ func checkForDeadElevators() {
 
 			handleElevatorFailure(ip)
 			delete(lastSeen, ip)
+			handleElevatorFailure(ip)
+			delete(lastSeen, ip)
 		}
 	}
 }
