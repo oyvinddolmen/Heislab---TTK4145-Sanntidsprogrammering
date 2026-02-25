@@ -3,11 +3,10 @@ package faultTolerance
 import (
 	"heislab/management"
 	"heislab/orderManagement"
-	"strconv"
 	"sync"
 	"time"
-	"os"
-	"fmt"
+	//"os"
+	//"fmt"
 )
 
 
@@ -18,13 +17,13 @@ var lastSeen = make(map[string]time.Time)
 var failureMutex sync.Mutex
 
 // Called whenever we receive state from another elevator
-func RegisterHeartbeat(id string) {
-	localID := strconv.Itoa(management.Elev.ID)
-	if id == localID {
+func RegisterHeartbeat(ip string) {
+	localIP := management.Elev.IP
+	if ip == localIP {
 		// Ignore self
 		return
 	}
-	lastSeen[id] = time.Now()
+	lastSeen[ip] = time.Now()
 }
 
 // Periodically check if elevators have died
@@ -44,39 +43,39 @@ func checkForDeadElevators() {
 	defer failureMutex.Unlock()
 
 	now := time.Now()
-	localID := strconv.Itoa(management.Elev.ID)
+	localIP := management.Elev.IP
 
-	for id, t := range lastSeen {
+	for ip, t := range lastSeen {
 
-		if id == localID { // we do not delete ourself
+		if ip == localIP { // we do not delete ourself
 			continue
 		}
 
 		if now.Sub(t) > HeartbeatTimeout {
 
-			handleElevatorFailure(id)
-			delete(lastSeen, id)
+			handleElevatorFailure(ip)
+			delete(lastSeen, ip)
 		}
 	}
 }
 
 // Set dead elevator behavior to "offline" and redistribute orders
-func handleElevatorFailure(deadID string) {
+func handleElevatorFailure(deadIP string) {
 
 	orderManagement.GlobalStateMutex.Lock()
 
-	state, exists := orderManagement.GlobalState.States[deadID]
+	state, exists := orderManagement.GlobalState.States[deadIP]
 	if !exists {
 		orderManagement.GlobalStateMutex.Unlock()
 		return
 	}
 
 	state.Behavior = "offline"
-	orderManagement.GlobalState.States[deadID] = state
+	orderManagement.GlobalState.States[deadIP] = state
 
 	orderManagement.GlobalStateMutex.Unlock()
 
-	releaseHallOrders(deadID)
+	releaseHallOrders(deadIP)
 
 	orderManagement.RunHallAssigner()
 
@@ -84,7 +83,7 @@ func handleElevatorFailure(deadID string) {
 }
 
 // Release hall orders belonging to dead elevator
-func releaseHallOrders(deadID string) {
+func releaseHallOrders(deadIP string) {
 
 	orderManagement.GlobalStateMutex.Lock()
 	defer orderManagement.GlobalStateMutex.Unlock()
@@ -92,7 +91,7 @@ func releaseHallOrders(deadID string) {
 	for f := 0; f < management.NumFloors; f++ {
 		for btn := 0; btn < 2; btn++ {
 
-			if orderManagement.GlobalState.HallRequestsAssigned[f][btn] == deadID {
+			if orderManagement.GlobalState.HallRequestsAssigned[f][btn] == deadIP {
 
 				// sett tilbake som aktiv request
 				orderManagement.GlobalState.HallRequests[f][btn] = true
@@ -104,6 +103,7 @@ func releaseHallOrders(deadID string) {
 	}
 }
 
+/*
 func GetStartupInput() (int, error) {
 
 	if len(os.Args) != 2 {
@@ -117,3 +117,4 @@ func GetStartupInput() (int, error) {
 
 	return elevID, nil
 }
+*/

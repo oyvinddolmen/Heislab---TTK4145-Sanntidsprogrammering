@@ -1,17 +1,18 @@
 package main
 
 import (
+	//"fmt"
 	"heislab/elevator"
 	"heislab/elevio"
-	"heislab/faultTolerance"
-	"fmt"
-	"os"
 
 	//"heislab/faultTolerance"
 	"heislab/management"
 	"heislab/orderManagement"
 
-	//"heislab/network"
+	"heislab/network"
+
+	//"os"
+	//"strconv"
 )
 
 // -------------------------------------------------------------------------------------------
@@ -21,13 +22,13 @@ import (
 func main() {
 	// -------------------------------------------------------------------------------------------
 	// Retrieving ID and network ports on startup
-	elevID, err := faultTolerance.GetStartupInput()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		
+	// -------------------------------------------------------------------------------------------
+
+
+	// -------------------------------------------------------------------------------------------
 	// Initializing channels
+	// -------------------------------------------------------------------------------------------
+
 	elevChannels := management.ElevChannels{
 		MotorDirection:  make(chan int),
 		LastFloor:       make(chan int),
@@ -41,15 +42,14 @@ func main() {
 	// Initialize network
 	// -------------------------------------------------------------------------------------------
 
-	/*
 	portCfg := network.PortConfig{
-		PeerDiscoveryPort: 15657, // Random ports, must be same for all
-		MessageBcastPort:  15658,
-		NodeID:            "",
+		PeerDiscoveryPort: 15657, 	// Random ports, must be same for all
+		MessageBcastPort: 15658,
+		LocalIP: "",
 	}
-	*/
 
-	//networkConn := network.InitNetwork(portCfg) // Burde kanskje tas inn i RunElevator eller noe ?
+	networkConn := network.InitNetwork(portCfg)		// Contains network channels and local IP
+	localIP := networkConn.LocalIP
 
 	// -------------------------------------------------------------------------------------------
 	// Initialise elevator and run go-functions
@@ -57,8 +57,8 @@ func main() {
 
 	// TODO Øyvind, fix stop btn turning off after 2 sec not when button->false
 
-	orderManagement.InitGlobalState()
-	elevator.ElevatorInit(elevID, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
+	orderManagement.InitGlobalState(localIP)
+	elevator.ElevatorInit(localIP, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
 	//faultTolerance.RecoverOnStartup(GlobalStateRx)
 	go elevator.RunElevator(elevChannels)
 	select {}

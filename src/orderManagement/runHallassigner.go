@@ -2,9 +2,8 @@ package orderManagement
 
 import (
 	"fmt"
-	"heislab/hallRequestAssigner"
 	"heislab/management"
-	"strconv"
+	"heislab/hallRequestAssigner"
 )
 
 func RunHallAssigner() error {
@@ -44,9 +43,9 @@ func applyAssignments(assignments map[string][][2]bool) {
 	GlobalStateMutex.Lock()
 	defer GlobalStateMutex.Unlock()
 
-	localID := strconv.Itoa(management.Elev.ID)
+	localIP := management.Elev.IP
 
-	assigned, exists := assignments[localID]
+	assigned, exists := assignments[localIP]
 	if !exists {
 		return
 	}
@@ -55,7 +54,7 @@ func applyAssignments(assignments map[string][][2]bool) {
 		for btn := 0; btn < 2; btn++ { // only hall buttons
 			if assigned[floor][btn] {
 				management.Elev.Orders[floor][btn].OrderPlaced = true
-				management.Elev.Orders[floor][btn].ElevID = management.Elev.ID
+				management.Elev.Orders[floor][btn].ElevIP = management.Elev.IP
 			}
 		}
 	}
