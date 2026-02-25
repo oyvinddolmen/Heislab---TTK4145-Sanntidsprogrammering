@@ -27,28 +27,22 @@ func BcastElevInfo(BcastChannel chan management.Elevator) {
 	// TODO
 }
 
-// Envelope wraps any payload with a SenderID so receivers can ignore their own broadcasts.
-type Envelope[T any] struct {
-	SenderID string
-	Payload  T
-}
-
 type PortConfig struct {
 	PeerDiscoveryPort int    // Used by peers.Transmitter/Receiver (heartbeats)
 	MessageBcastPort  int    // Used by bcast.Transmitter/Receiver (global state)
-	NodeID            string // Local IP
+	LocalIP            string // Local IP
 }
 
 type NetworkConn struct {
-	MyID string
+	LocalIP string
 
 	// Peer discovery
 	PeerTxEnabled chan<- bool
 	PeerUpdates   <-chan peers.PeerUpdate
 
 	// GlobalState messaging
-	GlobalStateTx chan<- Envelope[orderManagement.GlobalStateType]
-	GlobalStateRx <-chan Envelope[orderManagement.GlobalStateType]
+	GlobalStateTx chan<- orderManagement.GlobalStateType
+	GlobalStateRx <-chan orderManagement.GlobalStateType
 }
 
 
@@ -65,13 +59,13 @@ type NetworkConn struct {
 // 	 - globalStateRx: broadcast receiving channel
 
 func InitNetwork(cfg PortConfig) NetworkConn {
-	myID := cfg.NodeID
-	if myID == "" {
+	myIP := cfg.LocalIP
+	if myIP == "" {
 		ip, err := localip.LocalIP()
 		if err != nil {
-			myID = fmt.Sprintf("unknown-%d", os.Getpid())
+			myIP = fmt.Sprintf("unknown-%d", os.Getpid())
 		} else {
-			myID = fmt.Sprintf("%s-%d", ip, os.Getpid())
+			myIP = fmt.Sprintf("%s-%d", ip, os.Getpid())
 		}
 	}
 
@@ -80,19 +74,19 @@ func InitNetwork(cfg PortConfig) NetworkConn {
 	peerTxEnabled <- true								// true -> Sends heartbeats
 	peerUpdates   := make(chan peers.PeerUpdate, 16)
 
-	go peers.Transmitter(cfg.PeerDiscoveryPort, myID, peerTxEnabled)
+	go peers.Transmitter(cfg.PeerDiscoveryPort, myIP, peerTxEnabled)
 	go peers.Receiver(cfg.PeerDiscoveryPort, peerUpdates)
 
 	// --- global state channels ---
-	globalStateTx := make(chan Envelope[orderManagement.GlobalStateType], 16)
-	globalStateRx := make(chan Envelope[orderManagement.GlobalStateType], 16)
+	globalStateTx := make(chan orderManagement.GlobalStateType, 16)
+	globalStateRx := make(chan orderManagement.GlobalStateType, 16)
 
 	// bcast wants "interface{} channels", but we hide that here.
 	go bcast.Transmitter(cfg.MessageBcastPort, globalStateTx)
 	go bcast.Receiver(cfg.MessageBcastPort, globalStateRx)
 
 	return NetworkConn{
-		MyID:          myID,
+		LocalIP:       myIP,
 		PeerTxEnabled: peerTxEnabled,
 		PeerUpdates:   peerUpdates,
 		GlobalStateTx: globalStateTx,

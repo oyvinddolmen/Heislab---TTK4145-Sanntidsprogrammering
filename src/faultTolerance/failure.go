@@ -3,7 +3,6 @@ package faultTolerance
 import (
 	"heislab/management"
 	"heislab/orderManagement"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -17,8 +16,8 @@ var failureMutex sync.Mutex
 
 // Called whenever we receive state from another elevator
 func RegisterHeartbeat(id string) {
-	localID := strconv.Itoa(management.Elev.ID)
-	if id == localID {
+	localIP := management.Elev.IP
+	if id == localIP {
 		// Ignore self
 		return
 	}
@@ -42,50 +41,48 @@ func checkForDeadElevators() {
 	defer failureMutex.Unlock()
 
 	now := time.Now()
-	localID := strconv.Itoa(management.Elev.ID)
+	localIP := management.Elev.IP
 
-	for id, t := range lastSeen {
+	for ip, t := range lastSeen {
 
-		if id == localID { // we do not delete ourself
+		if ip == localIP { // we do not delete ourself
 			continue
 		}
 
 		if now.Sub(t) > HeartbeatTimeout {
 
-			handleElevatorFailure(id)
-			delete(lastSeen, id)
+			handleElevatorFailure(ip)
+			delete(lastSeen, ip)
 		}
 	}
 }
 
 // Remove dead elevator from global state and redistribute orders
-func handleElevatorFailure(deadID string) {
+func handleElevatorFailure(deadIP string) {
 
-	state, exists := orderManagement.GlobalState.States[deadID]
+	state, exists := orderManagement.GlobalState.States[deadIP]
 	if !exists {
 		return
 	}
 
 	state.Behavior = "offline"
-	orderManagement.GlobalState.States[deadID] = state
+	orderManagement.GlobalState.States[deadIP] = state
 
-	releaseHallOrders(deadID)
+	releaseHallOrders(deadIP)
 
 	go orderManagement.RunHallAssigner()
 }
 
 // Release hall orders belonging to dead elevator
-func releaseHallOrders(deadID string) {
-
-	idInt, _ := strconv.Atoi(deadID)
+func releaseHallOrders(deadIP string) {
 
 	for f := 0; f < management.NumFloors; f++ {
 		for btn := 0; btn < 2; btn++ { // hall buttons only
 
 			order := &management.Elev.Orders[f][btn]
 
-			if order.ElevID == idInt {
-				order.ElevID = -1        // sets order as not handled
+			if order.ElevIP == deadIP {
+				order.ElevIP = ""        // sets order as not handled
 				order.OrderPlaced = true //sets order as placed.. need this?
 			}
 		}

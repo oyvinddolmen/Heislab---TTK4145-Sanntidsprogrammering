@@ -1,16 +1,16 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 	"heislab/elevator"
 	"heislab/elevio"
 	"heislab/management"
 	"heislab/orderManagement"
 
-	//"heislab/network"
+	"heislab/network"
 
-	"os"
-	"strconv"
+	//"os"
+	//"strconv"
 )
 
 // -------------------------------------------------------------------------------------------
@@ -22,17 +22,19 @@ func main() {
 	// Retrieving ID and network ports on startup
 	// -------------------------------------------------------------------------------------------
 
+	/*
 	if len(os.Args) != 2 {
 		fmt.Println("Forgot to ID the elevator")
 		fmt.Println("Id the elevator by adding an argument: go run main.go <ID>")
 		return
 	}
 
-	elevID, err := strconv.Atoi(os.Args[1])
+	elevIP, err := strconv.Atoi(os.Args[1])
 	if err != nil {
 		fmt.Println("ID must be an integer")
 		return
 	}
+	*/
 
 	// -------------------------------------------------------------------------------------------
 	// Initializing channels
@@ -54,17 +56,18 @@ func main() {
 	portCfg := network.PortConfig{
 		PeerDiscoveryPort: 15657, 	// Random ports, must be same for all
 		MessageBcastPort: 15658,
-		NodeID: "",
+		LocalIP: "",
 	}
 
-	networkConn := network.InitNetwork(portCfg) // Burde kanskje tas inn i RunElevator eller noe ?
+	networkConn := network.InitNetwork(portCfg)		// Contains network channels and local IP
+	localIP := networkConn.LocalIP
 
 	// -------------------------------------------------------------------------------------------
 	// Initialise elevator and run go-functions
 	// -------------------------------------------------------------------------------------------
 
-	elevator.ElevatorInit(elevID, "localhost:15657", 4) // localhost:15657" for simulatoren
-	orderManagement.InitGlobalState()
+	elevator.ElevatorInit(localIP, "localhost:15657", 4) // localhost:15657" for simulatoren
+	orderManagement.InitGlobalState(localIP)
 
 	go elevator.RunElevator(elevChannels)
 	select {}
