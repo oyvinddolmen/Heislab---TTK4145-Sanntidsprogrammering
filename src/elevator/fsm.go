@@ -14,7 +14,7 @@ import (
 
 func InitFSM(localIP string, NumFloors int) {
 	noOrder := management.Order{Floor: -1, ButtonType: -1, ElevIP: "", Finished: false}
-	management.Elev.State = management.INIT
+	setElevState(management.INIT)
 	management.Elev.IP = localIP
 	management.Elev.Floor = -1
 	management.Elev.LastFloor = 0
@@ -29,7 +29,6 @@ func InitFSM(localIP string, NumFloors int) {
 			management.Elev.Orders[i][j].OrderPlaced = false
 		}
 	}
-	management.Elev.State = management.IDLE
 }
 
 // -------------------------------------------------------------------------------------------
@@ -80,7 +79,11 @@ func runFSM(channels management.ElevChannels) {
 
 			case stop := <-channels.StopBtn:
 				fmt.Println("Stop-btn: ", stop)
-				setElevState(management.STOP)
+				if management.Elev.Floor != -1 {
+					setElevState(management.OBSTRUCTION)
+				} else {
+					setElevState(management.STOP)
+				}
 
 			case btnPress := <-channels.BtnPresses:
 
@@ -126,16 +129,16 @@ func runFSM(channels management.ElevChannels) {
 				setElevState(management.STOP)
 
 			case floor := <-channels.LastFloor:
-				management.Elev.Floor = floor
-				management.Elev.LastFloor = floor
+				setElevLastFloor(floor)
 				elevio.SetFloorIndicator(floor)
 				fmt.Println("Reached floor:", floor)
 
-				// reaching the destination -> stop, turn off lights and remove order from order-table. State -> IDLE
+				// reaching the destination -> stop, turn off lights, remove order. State -> DOOROPEN
 				if reachedDestination(floor) {
 					stopElevator()
 					orderManagement.CompleteCurrentOrder()
 					reachedFloorLightsOff(floor)
+					setElevFloor(floor)
 					setElevState(management.OBSTRUCTION)
 				}
 
@@ -214,7 +217,6 @@ func setElevState(state management.State) {
 	management.Elev.State = state
 
 	switch state {
-
 	case management.STOP:
 		onStopEntry()
 
@@ -235,25 +237,30 @@ func setMoveDir(moveDir management.Direction) {
 	management.Elev.MoveDir = moveDir
 }
 
+func setElevLastFloor(lastFloor int) {
+	management.Elev.LastFloor = lastFloor
+}
+
+func setElevFloor(floor int) {
+	management.Elev.Floor = floor
+}
+
 // -------------------------------------------------------------------------------------------
 // On-State-Entry functions
 // -------------------------------------------------------------------------------------------
 
-// turns on stopLam, sets Dir_Idle and stops elevator
+// turns on stopLamp, sets Dir_Idle and goes to OBSTRUCTION/STOP state depending on elevator position
 func onStopEntry() {
 	elevio.SetStopLamp(true)
 	setMoveDir(management.Dir_Idle)
 	elevio.SetMotorDirection(elevio.MD_Stop)
-	if management.Elev.Floor != -1 {
-		openDoor()
-		setElevState(management.OBSTRUCTION)
-	}
 }
 
 // turns off door-open and stop-light when going to state MOVING
 func onMovingEntry() {
 	elevio.SetDoorOpenLamp(false)
 	elevio.SetStopLamp(false)
+	setElevFloor(-1)
 }
 
 // open door, turns off stop lamp, calls RunHallAssigner() and driveToDestination()
@@ -276,5 +283,8 @@ func onObstructionEntry() {
 	elevio.SetMotorDirection(elevio.MD_Stop)
 	setMoveDir(management.Dir_Idle)
 	openDoor()
+	if doorTimer != nil {
+		doorTimer.Stop()
+	}
 	doorTimer = time.NewTimer(doorOpenDuration)
 }

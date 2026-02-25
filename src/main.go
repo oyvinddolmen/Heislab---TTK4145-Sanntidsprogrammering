@@ -11,7 +11,6 @@ import (
 	"heislab/orderManagement"
 
 	"heislab/network"
-
 	//"os"
 	//"strconv"
 )
@@ -24,7 +23,6 @@ func main() {
 	// -------------------------------------------------------------------------------------------
 	// Retrieving ID and network ports on startup
 	// -------------------------------------------------------------------------------------------
-
 
 	// -------------------------------------------------------------------------------------------
 	// Initializing channels
@@ -44,20 +42,17 @@ func main() {
 	// -------------------------------------------------------------------------------------------
 
 	portCfg := network.PortConfig{
-		PeerDiscoveryPort: 15657, 	// Random ports, must be same for all
-		MessageBcastPort: 15658,
-		LocalIP: "",
+		PeerDiscoveryPort: 15657, // Random ports, must be same for all
+		MessageBcastPort:  15658,
+		LocalIP:           "",
 	}
 
-	networkConn := network.InitNetwork(portCfg)		// Contains network channels and local IP
+	// -------------------------------------------------------------------------------------------
+	// Initialise elevator and network
+	// -------------------------------------------------------------------------------------------
+
+	networkConn := network.InitNetwork(portCfg) // Contains network channels and local IP
 	localIP := networkConn.LocalIP
-
-	// -------------------------------------------------------------------------------------------
-	// Initialise elevator and run go-functions
-	// -------------------------------------------------------------------------------------------
-
-	// TODO Øyvind, fix stop btn turning off after 2 sec not when button->false
-
 	orderManagement.InitGlobalState(localIP)
 	elevator.ElevatorInit(localIP, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
 	//faultTolerance.RecoverOnStartup(GlobalStateRx)
