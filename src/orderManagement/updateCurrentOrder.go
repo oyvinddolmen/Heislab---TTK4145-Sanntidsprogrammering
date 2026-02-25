@@ -1,8 +1,8 @@
 package orderManagement
 
 import (
-	"heislab/management"
 	"heislab/elevio"
+	"heislab/management"
 )
 
 // ---------------------------------------------------------------------
@@ -98,6 +98,7 @@ func assignDown(startFloor int) bool {
 
 // ---------------------------------------------------------------------
 // call when elevator has reached CurrentOrder.Floor
+// ---------------------------------------------------------------------
 func CompleteCurrentOrder() {
 
 	e := &management.Elev

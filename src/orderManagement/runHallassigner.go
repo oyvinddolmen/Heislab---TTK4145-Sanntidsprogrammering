@@ -2,9 +2,9 @@ package orderManagement
 
 import (
 	"fmt"
+	"heislab/hallRequestAssigner"
 	"heislab/management"
 	"strconv"
-	"heislab/hallRequestAssigner"
 )
 
 func RunHallAssigner() error {
@@ -23,10 +23,12 @@ func RunHallAssigner() error {
 	}
 	GlobalStateMutex.Unlock()
 	
+	/*
 	for id, s := range filtered {
     fmt.Printf("Heis %s: Behavior=%s, Floor=%d, Direction=%s, CabRequests=%v\n", 
         id, s.Behavior, s.Floor, s.Direction, s.CabRequests)
-	}
+	} 
+	*/
 
 	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
 	if err != nil {

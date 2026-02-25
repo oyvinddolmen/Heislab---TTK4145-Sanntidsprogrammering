@@ -36,7 +36,7 @@ func AssignHallRequests(
 		return nil, fmt.Errorf("json.Marshal failed: %w", err)
 	}
 	jsonStr := string(jsonBytes)
-	fmt.Println("JSON sendt til hall_request_assigner:", jsonStr)
+	//fmt.Println("JSON sendt til hall_request_assigner:", jsonStr)
 
 	assignerPath := ""
 	switch runtime.GOOS {
@@ -66,6 +66,6 @@ func AssignHallRequests(
 		return nil, fmt.Errorf("json.Unmarshal failed: %w\nOutput: %s", err, string(outputBytes))
 	}
 
-	fmt.Println("AHR ferdig kjørt. Output:", output)
+	//fmt.Println("AHR ferdig kjørt. Output:", output)
 	return output, nil
 }

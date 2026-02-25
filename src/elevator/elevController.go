@@ -106,15 +106,13 @@ func stopElevator() {
 func driveToDestination(destination int, lastFloor int) {
 	fmt.Println("Current destination", destination)
 	moveDir := findMovingDirection(destination, lastFloor)
-	management.Elev.MoveDir = management.Direction(moveDir)
 	fmt.Println("moveDir:", moveDir)
+	management.Elev.MoveDir = management.Direction(moveDir)
 	elevio.SetMotorDirection(moveDir)
 }
 
-// starts 2 sec timer
-func openDoorTimer() {
-	// TODO
-	// SetDoorOpenLamp(true)
-
-	// doorOpenLight is turned off when switching to another state
+// turns on doorOpenLight
+func openDoor() {
+	elevio.SetDoorOpenLamp(true)
+	fmt.Println("Doors opening")
 }

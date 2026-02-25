@@ -20,11 +20,12 @@ const (
 type State int
 
 const (
-	INIT    = 1
-	IDLE    = 2
-	MOVING  = 3
-	STOP    = 4
-	OFFLINE = 5
+	INIT        = 1
+	IDLE        = 2
+	MOVING      = 3
+	STOP        = 4
+	OBSTRUCTION = 5
+	OFFLINE     = 6
 )
 
 type Direction int

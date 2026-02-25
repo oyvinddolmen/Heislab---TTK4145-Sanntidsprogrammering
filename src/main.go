@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"heislab/elevator"
 	"heislab/elevio"
+
 	//"heislab/faultTolerance"
 	"heislab/management"
-	"heislab/network"
 	"heislab/orderManagement"
 
 	//"heislab/network"
@@ -53,25 +53,25 @@ func main() {
 	// Initialize network
 	// -------------------------------------------------------------------------------------------
 
+	/*
 	portCfg := network.PortConfig{
 		PeerDiscoveryPort: 15657, // Random ports, must be same for all
 		MessageBcastPort:  15658,
 		NodeID:            "",
 	}
+	*/
 
-	networkConn := network.InitNetwork(portCfg) // Burde kanskje tas inn i RunElevator eller noe ?
+	//networkConn := network.InitNetwork(portCfg) // Burde kanskje tas inn i RunElevator eller noe ?
 
 	// -------------------------------------------------------------------------------------------
 	// Initialise elevator and run go-functions
 	// -------------------------------------------------------------------------------------------
 
+	// TODO Øyvind, fix stop btn turning off after 2 sec not when button->false
+
 	orderManagement.InitGlobalState()
 	elevator.ElevatorInit(elevID, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
-
-	// TODO ØYVIND: fikse setElevState, blir gjort for mange ganger
-
 	//faultTolerance.RecoverOnStartup(GlobalStateRx)
-	
 	go elevator.RunElevator(elevChannels)
 	select {}
 }
