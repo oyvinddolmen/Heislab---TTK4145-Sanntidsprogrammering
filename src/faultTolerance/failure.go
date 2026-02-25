@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"os"
+	"fmt"
 )
 
 
@@ -100,4 +102,18 @@ func releaseHallOrders(deadID string) {
 			}
 		}
 	}
+}
+
+func GetStartupInput() (int, error) {
+
+	if len(os.Args) != 2 {
+		return 0, fmt.Errorf("usage: go run main.go <ID>")
+	}
+
+	elevID, err := strconv.Atoi(os.Args[1])
+	if err != nil {
+		return 0, fmt.Errorf("ID must be an integer")
+	}
+
+	return elevID, nil
 }

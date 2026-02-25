@@ -1,18 +1,17 @@
 package main
 
 import (
-	"fmt"
 	"heislab/elevator"
 	"heislab/elevio"
+	"heislab/faultTolerance"
+	"fmt"
+	"os"
 
 	//"heislab/faultTolerance"
 	"heislab/management"
 	"heislab/orderManagement"
 
 	//"heislab/network"
-
-	"os"
-	"strconv"
 )
 
 // -------------------------------------------------------------------------------------------
@@ -22,24 +21,13 @@ import (
 func main() {
 	// -------------------------------------------------------------------------------------------
 	// Retrieving ID and network ports on startup
-	// -------------------------------------------------------------------------------------------
-
-	if len(os.Args) != 2 {
-		fmt.Println("Forgot to ID the elevator")
-		fmt.Println("Id the elevator by adding an argument: go run main.go <ID>")
-		return
-	}
-
-	elevID, err := strconv.Atoi(os.Args[1])
-	if err != nil {
-		fmt.Println("ID must be an integer")
-		return
-	}
-
-	// -------------------------------------------------------------------------------------------
+	elevID, err := faultTolerance.GetStartupInput()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		
 	// Initializing channels
-	// -------------------------------------------------------------------------------------------
-
 	elevChannels := management.ElevChannels{
 		MotorDirection:  make(chan int),
 		LastFloor:       make(chan int),
