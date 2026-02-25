@@ -88,15 +88,6 @@ func UpdateLocalGlobalState() {
 	}
 }
 
-// Merge received remote elevator state
-func MergeRemoteElevator(id string, e management.Elevator) {
-	GlobalStateMutex.Lock()
-	defer GlobalStateMutex.Unlock()
-
-	GlobalState.States[id] = ConvertElevatorToJSON(e)
-}
-
-
 func PrintGlobalState() {
 
 	GlobalStateMutex.Lock()
