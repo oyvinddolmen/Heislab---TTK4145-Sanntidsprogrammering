@@ -57,8 +57,10 @@ func main() {
 
 	// TODO Øyvind, fix stop btn turning off after 2 sec not when button->false
 
-	orderManagement.InitGlobalState()
 	elevator.ElevatorInit(elevID, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
+	
+	orderManagement.InitGlobalState()
+	
 	//faultTolerance.RecoverOnStartup(GlobalStateRx)
 	go elevator.RunElevator(elevChannels)
 	select {}
