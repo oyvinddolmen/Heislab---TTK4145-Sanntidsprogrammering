@@ -21,14 +21,8 @@ func RunHallAssigner() error {
 		}
 	}
 	GlobalStateMutex.Unlock()
+	PrintGlobalState()
 	
-	/*
-	for id, s := range filtered {
-    fmt.Printf("Heis %s: Behavior=%s, Floor=%d, Direction=%s, CabRequests=%v\n", 
-        id, s.Behavior, s.Floor, s.Direction, s.CabRequests)
-	} 
-	*/
-
 	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
 	if err != nil {
 		return fmt.Errorf("assigner failed: %w", err)

@@ -3,6 +3,7 @@ package orderManagement
 import (
 	"heislab/elevio"
 	"heislab/management"
+	"strconv"
 )
 
 // ---------------------------------------------------------------------
@@ -104,17 +105,32 @@ func CompleteCurrentOrder() {
 	e := &management.Elev
 	f := e.CurrentOrder.Floor
 	b := e.CurrentOrder.ButtonType
+	localID := strconv.Itoa(e.ID)
 
 	// --- CAB ORDER ---
 	if b == elevio.BT_Cab {
 
+		// Oppdater lokal heis
 		e.Orders[f][b].Finished = true
 		e.CurrentOrder.Finished = true
 		e.CurrentOrder.OrderPlaced = false
 
+		// Oppdater GlobalState
+		GlobalStateMutex.Lock()
+
+		state := GlobalState.States[localID]   // hent kopi
+		state.CabRequests[f] = false          // endre
+		GlobalState.States[localID] = state   // legg tilbake
+
+		GlobalStateMutex.Unlock()
+
 	} else {
 
 		// --- HALL ORDER ---
+		e.Orders[f][b].Finished = true
+		e.CurrentOrder.Finished = true
+		e.CurrentOrder.OrderPlaced = false
+
 		GlobalStateMutex.Lock()
 
 		GlobalState.HallRequests[f][b] = false

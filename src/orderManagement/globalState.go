@@ -4,6 +4,7 @@ import (
 	"heislab/management"
 	"sync"
 	"heislab/hallRequestAssigner"
+	"fmt"
 )
 
 type GlobalStateType struct {
@@ -76,12 +77,6 @@ func convertDirection(d management.Direction) string {
 }
 
 func UpdateLocalGlobalState() {
-	UpdateLocalElevator()
-	UpdateHallRequests()
-}
-
-// Update local elevator state in globalState
-func UpdateLocalElevator() {
 	GlobalStateMutex.Lock()
 	defer GlobalStateMutex.Unlock()
 
@@ -99,10 +94,48 @@ func UpdateHallRequests() {
 	}
 }
 
-// Merge received remote elevator state
-func MergeRemoteElevator(id string, e management.Elevator) {
+func PrintGlobalState() {
+
 	GlobalStateMutex.Lock()
 	defer GlobalStateMutex.Unlock()
 
-	GlobalState.States[id] = ConvertElevatorToJSON(e)
+	fmt.Println("====================================")
+	fmt.Println("           GLOBAL STATE             ")
+	fmt.Println("====================================")
+
+	// ---- Hall Requests ----
+	fmt.Println("\nHallRequests:")
+	for f := 0; f < len(GlobalState.HallRequests); f++ {
+		up := GlobalState.HallRequests[f][0]
+		down := GlobalState.HallRequests[f][1]
+		fmt.Printf("  Floor %d: Up=%v Down=%v\n", f, up, down)
+	}
+
+	// ---- Hall Assignments ----
+	fmt.Println("\nHallRequestsAssigned:")
+	for f := 0; f < len(GlobalState.HallRequestsAssigned); f++ {
+		up := GlobalState.HallRequestsAssigned[f][0]
+		down := GlobalState.HallRequestsAssigned[f][1]
+		fmt.Printf("  Floor %d: Up=%s Down=%s\n", f, up, down)
+	}
+
+	// ---- Elevator States ----
+	fmt.Println("\nElevator States:")
+	for id, state := range GlobalState.States {
+
+		fmt.Printf("\n  Elevator %s\n", id)
+		fmt.Printf("    Behaviour : %s\n", state.Behavior)
+		fmt.Printf("    Floor     : %d\n", state.Floor)
+		fmt.Printf("    Direction : %s\n", state.Direction)
+
+		fmt.Printf("    CabRequests: ")
+		for f := 0; f < len(state.CabRequests); f++ {
+			if state.CabRequests[f] {
+				fmt.Printf("[%d] ", f)
+			}
+		}
+		fmt.Println()
+	}
+
+	fmt.Println("\n====================================")
 }
