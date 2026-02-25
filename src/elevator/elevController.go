@@ -1,8 +1,10 @@
 package elevator
 
 // ---------------------------------------------------------------------------------------------------------------------
-// In charge of driving and setting lights
+// In charge of driving, driving-logic and setting lights
 // ---------------------------------------------------------------------------------------------------------------------
+
+// OWN LIGHTCONTROLLER FILE UNDER ELEVATOR?? !!!!!!!!!!!!!!!!!!!! YES
 
 import (
 	"fmt"
@@ -27,8 +29,8 @@ func ElevatorInit(elevIP string, adress string, numFloors int) {
 	elevio.Init(adress, numFloors) // To run several simulators, each terminal/simulator needs unique adress
 	setElevState(management.INIT)
 	lightInit(numFloors)
-	goToGroundFloor()
 	InitFSM(elevIP, numFloors)
+	goToGroundFloor()
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -56,7 +58,7 @@ func findMovingDirection(destination int, lastFloor int) elevio.MotorDirection {
 
 	// safety measure
 	if destination < 0 {
-		fmt.Println("Destination -1 [!!!]")
+		fmt.Println("Destination -1/noOrder")
 		return elevio.MD_Stop
 	}
 
@@ -102,13 +104,15 @@ func stopElevator() {
 	management.Elev.MoveDir = management.Dir_Idle
 }
 
-// sets motordirection in direction of newOrder and changes Elev.MoveDir
+// sets motordirection in direction of newOrder and changes Elev.MoveDir.
 func driveToDestination(destination int, lastFloor int) {
-	fmt.Println("Current destination", destination)
+	fmt.Println("Destination:", destination, " ||| lastFloor:", lastFloor)
 	moveDir := findMovingDirection(destination, lastFloor)
-	fmt.Println("moveDir:", moveDir)
-	management.Elev.MoveDir = management.Direction(moveDir)
 	elevio.SetMotorDirection(moveDir)
+	setMoveDir(management.Direction(moveDir))
+
+	fmt.Println("Current destination", destination)
+	fmt.Println("moveDir:", moveDir)
 }
 
 // turns on doorOpenLight
