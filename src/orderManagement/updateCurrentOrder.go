@@ -104,7 +104,7 @@ func CompleteCurrentOrder() {
 	e := &management.Elev
 	f := e.CurrentOrder.Floor
 	b := e.CurrentOrder.ButtonType
-	localIP := e.IP
+	localID := e.ID
 
 	// --- CAB ORDER ---
 	if b == elevio.BT_Cab {
@@ -117,9 +117,9 @@ func CompleteCurrentOrder() {
 		// Oppdater GlobalState
 		GlobalStateMutex.Lock()
 
-		state := GlobalState.States[localIP]   // hent kopi
+		state := GlobalState.States[localID]  // hent kopi
 		state.CabRequests[f] = false          // endre
-		GlobalState.States[localIP] = state   // legg tilbake
+		GlobalState.States[localID] = state   // legg tilbake
 
 		GlobalStateMutex.Unlock()
 

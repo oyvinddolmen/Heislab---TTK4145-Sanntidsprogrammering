@@ -25,11 +25,11 @@ func goToGroundFloor() {
 	setElevState(management.IDLE)
 }
 
-func ElevatorInit(elevIP string, adress string, numFloors int) {
+func ElevatorInit(localID string, adress string, numFloors int) {
 	elevio.Init(adress, numFloors) // To run several simulators, each terminal/simulator needs unique adress
 	setElevState(management.INIT)
 	lightInit(numFloors)
-	InitFSM(elevIP, numFloors)
+	InitFSM(localID, numFloors)
 	goToGroundFloor()
 }
 

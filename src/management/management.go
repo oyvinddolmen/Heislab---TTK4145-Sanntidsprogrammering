@@ -44,13 +44,13 @@ type Order struct {
 	OrderPlaced bool
 	Floor       int
 	ButtonType  elevio.ButtonType
-	ElevIP      string // -1 if no elevator is assigned, else the ID of the elevator assigned
+	ElevID      string // Empty string if no elevator is assigned, else the ID of the elevator assigned
 	Finished    bool
 }
 
 type Elevator struct {
 	State        State
-	IP           string
+	ID           string
 	Floor        int // -1 if between floors
 	LastFloor    int
 	MoveDir      Direction
@@ -63,7 +63,7 @@ type ElevChannels struct {
 	LastFloor       chan int
 	Obstruction     chan bool
 	StopBtn         chan bool
-	BtnPresses      chan elevio.ButtonEvent // getting buttonpresses on the physical control box
+	BtnPresses      chan elevio.ButtonEvent // Getting buttonpresses on the physical control box
 	WorldViewUpdate chan bool
 }
 

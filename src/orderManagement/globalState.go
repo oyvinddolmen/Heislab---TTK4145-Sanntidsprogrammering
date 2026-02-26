@@ -11,7 +11,7 @@ type GlobalStateType struct {
 	HallRequests         [][2]bool // [floor][0=up,1=down]
 	HallRequestsAssigned [][2]string
 	States               map[string]hallRequestAssigner.ElevatorStateJSON // elevatorID -> state
-	LocalIP		 		 string
+	LocalID		 		 string
 }
 
 var (
@@ -19,17 +19,17 @@ var (
     GlobalStateMutex sync.Mutex
 )
 
-func InitGlobalState(localIP string) {
+func InitGlobalState(localID string) {
 	GlobalStateMutex.Lock()
 	defer GlobalStateMutex.Unlock()
 
 	GlobalState.HallRequests = make([][2]bool, management.NumFloors)
 	GlobalState.HallRequestsAssigned = make([][2]string, management.NumFloors)
 	GlobalState.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
-	GlobalState.LocalIP = localIP
+	GlobalState.LocalID = localID
 
-	GlobalState.States[management.Elev.IP] = ConvertElevatorToJSON(management.Elev)
-	GlobalState.States[management.Elev.IP] = ConvertElevatorToJSON(management.Elev)
+	GlobalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
+	GlobalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
 }
 
 // Convert elevator to JSON elevator state
@@ -80,7 +80,7 @@ func UpdateLocalGlobalState() {
 	GlobalStateMutex.Lock()
 	defer GlobalStateMutex.Unlock()
 
-	GlobalState.States[management.Elev.IP] = ConvertElevatorToJSON(management.Elev)
+	GlobalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
 }
 
 // Update hall requests from Elev.Orders

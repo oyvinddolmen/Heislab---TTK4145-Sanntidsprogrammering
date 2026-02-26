@@ -37,9 +37,9 @@ func applyAssignments(assignments map[string][][2]bool) {
 	GlobalStateMutex.Lock()
 	defer GlobalStateMutex.Unlock()
 
-	localIP := management.Elev.IP
+	localID := management.Elev.ID
 
-	assigned, exists := assignments[localIP]
+	assigned, exists := assignments[localID]
 	if !exists {
 		return
 	}
@@ -48,7 +48,7 @@ func applyAssignments(assignments map[string][][2]bool) {
 		for btn := 0; btn < 2; btn++ { // only hall buttons
 			if assigned[floor][btn] {
 				management.Elev.Orders[floor][btn].OrderPlaced = true
-				management.Elev.Orders[floor][btn].ElevIP = management.Elev.IP
+				management.Elev.Orders[floor][btn].ElevID = management.Elev.ID
 			}
 		}
 	}

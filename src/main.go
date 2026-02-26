@@ -42,19 +42,19 @@ func main() {
 	// -------------------------------------------------------------------------------------------
 
 	portCfg := network.PortConfig{
-		PeerDiscoveryPort: 15657, // Random ports, must be same for all
+		PeerDiscoveryPort: 15657,    // Random ports, must be same for all
 		MessageBcastPort:  15658,
-		LocalIP:           "",
+		LocalID:           "",
 	}
 
 	// -------------------------------------------------------------------------------------------
 	// Initialise elevator and network
 	// -------------------------------------------------------------------------------------------
 
-	networkConn := network.InitNetwork(portCfg) // Contains network channels and local IP
-	localIP := networkConn.LocalIP
-	orderManagement.InitGlobalState(localIP)
-	elevator.ElevatorInit(localIP, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
+	networkConn := network.InitNetwork(portCfg)  // Returns network channels and local IP
+	localID := networkConn.LocalID
+	orderManagement.InitGlobalState(localID)
+	elevator.ElevatorInit(localID, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
 	//faultTolerance.RecoverOnStartup(GlobalStateRx)
 	go elevator.RunElevator(elevChannels)
 	select {}

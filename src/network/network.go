@@ -30,11 +30,11 @@ func BcastElevInfo(BcastChannel chan management.Elevator) {
 type PortConfig struct {
 	PeerDiscoveryPort int    // Used by peers.Transmitter/Receiver (heartbeats)
 	MessageBcastPort  int    // Used by bcast.Transmitter/Receiver (global state)
-	LocalIP            string // Local IP
+	LocalID           string // Local IP
 }
 
 type NetworkConn struct {
-	LocalIP string
+	LocalID string
 
 	// Peer discovery
 	PeerTxEnabled chan<- bool
@@ -59,13 +59,13 @@ type NetworkConn struct {
 // 	 - globalStateRx: broadcast receiving channel
 
 func InitNetwork(cfg PortConfig) NetworkConn {
-	myIP := cfg.LocalIP
-	if myIP == "" {
-		ip, err := localip.LocalIP()
+	myID := cfg.LocalID
+	if myID == "" {
+		id, err := localip.LocalIP()
 		if err != nil {
-			myIP = fmt.Sprintf("unknown-%d", os.Getpid())
+			myID = fmt.Sprintf("unknown-%d", os.Getpid())
 		} else {
-			myIP = fmt.Sprintf("%s-%d", ip, os.Getpid())
+			myID = fmt.Sprintf("%s-%d", id, os.Getpid())
 		}
 	}
 
@@ -74,7 +74,7 @@ func InitNetwork(cfg PortConfig) NetworkConn {
 	peerTxEnabled <- true								// true -> Sends heartbeats
 	peerUpdates   := make(chan peers.PeerUpdate, 16)
 
-	go peers.Transmitter(cfg.PeerDiscoveryPort, myIP, peerTxEnabled)
+	go peers.Transmitter(cfg.PeerDiscoveryPort, myID, peerTxEnabled)
 	go peers.Receiver(cfg.PeerDiscoveryPort, peerUpdates)
 
 	// --- global state channels ---
@@ -86,7 +86,7 @@ func InitNetwork(cfg PortConfig) NetworkConn {
 	go bcast.Receiver(cfg.MessageBcastPort, globalStateRx)
 
 	return NetworkConn{
-		LocalIP:       myIP,
+		LocalID:       myID,
 		PeerTxEnabled: peerTxEnabled,
 		PeerUpdates:   peerUpdates,
 		GlobalStateTx: globalStateTx,

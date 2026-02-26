@@ -17,13 +17,13 @@ var lastSeen = make(map[string]time.Time)
 var failureMutex sync.Mutex
 
 // Called whenever we receive state from another elevator
-func RegisterHeartbeat(ip string) {
-	localIP := management.Elev.IP
-	if ip == localIP {
+func RegisterHeartbeat(id string) {
+	localID := management.Elev.ID
+	if id == localID {
 		// Ignore self
 		return
 	}
-	lastSeen[ip] = time.Now()
+	lastSeen[id] = time.Now()
 }
 
 // Periodically check if elevators have died
@@ -43,41 +43,41 @@ func checkForDeadElevators() {
 	defer failureMutex.Unlock()
 
 	now := time.Now()
-	localIP := management.Elev.IP
+	localID := management.Elev.ID
 
-	for ip, t := range lastSeen {
+	for id, t := range lastSeen {
 
-		if ip == localIP { // we do not delete ourself
+		if id == localID { // we do not delete ourself
 			continue
 		}
 
 		if now.Sub(t) > HeartbeatTimeout {
 
-			handleElevatorFailure(ip)
-			delete(lastSeen, ip)
-			handleElevatorFailure(ip)
-			delete(lastSeen, ip)
+			handleElevatorFailure(id)
+			delete(lastSeen, id)
+			handleElevatorFailure(id)
+			delete(lastSeen, id)
 		}
 	}
 }
 
 // Set dead elevator behavior to "offline" and redistribute orders
-func handleElevatorFailure(deadIP string) {
+func handleElevatorFailure(deadID string) {
 
 	orderManagement.GlobalStateMutex.Lock()
 
-	state, exists := orderManagement.GlobalState.States[deadIP]
+	state, exists := orderManagement.GlobalState.States[deadID]
 	if !exists {
 		orderManagement.GlobalStateMutex.Unlock()
 		return
 	}
 
 	state.Behavior = "offline"
-	orderManagement.GlobalState.States[deadIP] = state
+	orderManagement.GlobalState.States[deadID] = state
 
 	orderManagement.GlobalStateMutex.Unlock()
 
-	releaseHallOrders(deadIP)
+	releaseHallOrders(deadID)
 
 	orderManagement.RunHallAssigner()
 
@@ -85,7 +85,7 @@ func handleElevatorFailure(deadIP string) {
 }
 
 // Release hall orders belonging to dead elevator
-func releaseHallOrders(deadIP string) {
+func releaseHallOrders(deadID string) {
 
 	orderManagement.GlobalStateMutex.Lock()
 	defer orderManagement.GlobalStateMutex.Unlock()
@@ -93,7 +93,7 @@ func releaseHallOrders(deadIP string) {
 	for f := 0; f < management.NumFloors; f++ {
 		for btn := 0; btn < 2; btn++ {
 
-			if orderManagement.GlobalState.HallRequestsAssigned[f][btn] == deadIP {
+			if orderManagement.GlobalState.HallRequestsAssigned[f][btn] == deadID {
 
 				// sett tilbake som aktiv request
 				orderManagement.GlobalState.HallRequests[f][btn] = true
