@@ -3,7 +3,6 @@ package orderManagement
 import (
 	"heislab/elevio"
 	"heislab/management"
-	"strconv"
 )
 
 // ---------------------------------------------------------------------
@@ -105,7 +104,7 @@ func CompleteCurrentOrder() {
 	e := &management.Elev
 	f := e.CurrentOrder.Floor
 	b := e.CurrentOrder.ButtonType
-	localID := strconv.Itoa(e.ID)
+	localIP := e.IP
 
 	// --- CAB ORDER ---
 	if b == elevio.BT_Cab {
@@ -118,9 +117,9 @@ func CompleteCurrentOrder() {
 		// Oppdater GlobalState
 		GlobalStateMutex.Lock()
 
-		state := GlobalState.States[localID]   // hent kopi
+		state := GlobalState.States[localIP]   // hent kopi
 		state.CabRequests[f] = false          // endre
-		GlobalState.States[localID] = state   // legg tilbake
+		GlobalState.States[localIP] = state   // legg tilbake
 
 		GlobalStateMutex.Unlock()
 
