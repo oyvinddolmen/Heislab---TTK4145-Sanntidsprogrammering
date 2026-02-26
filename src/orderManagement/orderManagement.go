@@ -48,7 +48,7 @@ func PrintOrders() {
 	for f := 0; f < management.NumFloors; f++ {
 		for b := 0; b < management.NumButtons; b++ {
 			order := management.Elev.Orders[f][b]
-			fmt.Printf("Floor: %d Button: %d IP: %s OrderPlaced: %b\n", order.Floor, order.ButtonType, order.ElevIP, order.OrderPlaced)
+			fmt.Printf("Floor: %d Button: %d IP: %s OrderPlaced: %t\n", order.Floor, order.ButtonType, order.ElevIP, order.OrderPlaced)
 		}
 	}
 }
