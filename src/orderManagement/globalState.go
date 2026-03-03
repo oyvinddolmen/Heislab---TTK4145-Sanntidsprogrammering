@@ -19,16 +19,17 @@ var (
 	GlobalStateMutex sync.Mutex
 )
 
-func InitGlobalState(localIP string) {
+func InitGlobalState(elevID string) {
 	GlobalStateMutex.Lock()
 	defer GlobalStateMutex.Unlock()
 
 	GlobalState.HallRequests = make([][2]bool, management.NumFloors)
 	GlobalState.HallRequestsVersion = make([][2]int, management.NumFloors)
 	GlobalState.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
-	GlobalState.LocalIP = localIP
+	GlobalState.LocalID = elevID
 
-	GlobalState.States[management.Elev.IP] = ConvertElevatorToJSON(management.Elev)
+	GlobalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
+	GlobalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
 }
 
 // Convert elevator to JSON elevator state
@@ -64,8 +65,8 @@ func convertState(s management.State) string {
 	}
 }
 
-func convertDirection(d management.Direction) string {
-	switch d {
+func convertDirection(direction management.Direction) string {
+	switch direction {
 	case management.Dir_Up:
 		return "up"
 	case management.Dir_Down:
@@ -79,7 +80,7 @@ func UpdateLocalGlobalState() {
 	GlobalStateMutex.Lock()
 	defer GlobalStateMutex.Unlock()
 
-	GlobalState.States[management.Elev.IP] = ConvertElevatorToJSON(management.Elev)
+	GlobalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
 }
 
 func AddHallRequestToGlobalState(order management.Order) {
@@ -138,20 +139,20 @@ func PrintGlobalState() {
 	fmt.Println("\n====================================")
 }
 
-func MergeGlobalState(gs GlobalStateType) {
+func MergeGlobalState(globalState GlobalStateType) {
 	GlobalStateMutex.Lock()
 	defer GlobalStateMutex.Unlock()
 
-	localID := management.Elev.IP
-	senderID := gs.LocalIP
+	localID := management.Elev.ID
+	senderID := globalState.LocalID
 
 	if senderID != localID {
-		if st, exists := gs.States[senderID]; exists {
+		if st, exists := globalState.States[senderID]; exists {
 			GlobalState.States[senderID] = st
 		}
 	}
 
-	chooseLatestHallRequestVersions(gs)
+	chooseLatestHallRequestVersions(globalState)
 }
 
 func chooseLatestHallRequestVersions(gs GlobalStateType) {
@@ -183,8 +184,8 @@ func IncremtHallRequestVersion(btnPress management.Order) {
 
 // Set dead elevator behavior to "offline" and redistribute orders
 func SetElevatorToOffline(deadID string) {
-
 	GlobalStateMutex.Lock()
+	defer GlobalStateMutex.Unlock()
 
 	state, exists := GlobalState.States[deadID]
 	if !exists {
@@ -194,7 +195,4 @@ func SetElevatorToOffline(deadID string) {
 
 	state.Behavior = "offline"
 	GlobalState.States[deadID] = state
-
-	GlobalStateMutex.Unlock()
-
 }

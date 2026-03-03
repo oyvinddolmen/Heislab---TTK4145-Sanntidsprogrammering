@@ -8,6 +8,7 @@ import (
 
 func RunHallAssigner() error {
 	GlobalStateMutex.Lock()
+
 	// Copy HallRequests
 	hallRequests := make([][2]bool, len(GlobalState.HallRequests))
 	copy(hallRequests, GlobalState.HallRequests)
@@ -19,6 +20,7 @@ func RunHallAssigner() error {
 			filtered[id] = s
 		}
 	}
+
 	GlobalStateMutex.Unlock()
 	PrintGlobalState()
 	
@@ -32,21 +34,26 @@ func RunHallAssigner() error {
 }
 
 func applyAssignments(assignments map[string][][2]bool) {
-	localID := management.Elev.IP
 
-	assigned, exists := assignments[localID]
+	GlobalStateMutex.Lock()
+
+	elevID := management.Elev.ID
+
+	assigned, exists := assignments[elevID]
 	if !exists {
 		return
 	}
-	fmt.Println("assigned: ",assigned)
+	fmt.Println("assigned: ", assigned)
+	
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for btn := 0; btn < management.CabButton; btn++ { // only hall buttons
 			if assigned[floor][btn] {
 				management.Elev.Orders[floor][btn].OrderPlaced = true
-				management.Elev.Orders[floor][btn].ElevIP = management.Elev.IP
+				management.Elev.Orders[floor][btn].ElevID = management.Elev.ID
 			}
 		}
 	}
 
+	GlobalStateMutex.Unlock()
 	UpdateCurrentOrder()
 }

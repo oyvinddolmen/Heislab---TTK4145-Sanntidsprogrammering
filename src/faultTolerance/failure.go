@@ -17,13 +17,13 @@ var lastSeen = make(map[string]time.Time)
 var failureMutex sync.Mutex
 
 // Called whenever we receive state from another elevator
-func RegisterHeartbeat(id string) {
-	localID := management.Elev.IP
-	if id == localID {
+func RegisterHeartbeat(elevID string) {
+	localID := management.Elev.ID
+	if elevID == localID {
 		// Ignore self
 		return
 	}
-	lastSeen[id] = time.Now()
+	lastSeen[elevID] = time.Now()
 }
 
 // Periodically check if elevators have died
@@ -43,7 +43,7 @@ func checkForDeadElevators() {
 	defer failureMutex.Unlock()
 
 	now := time.Now()
-	localID := management.Elev.IP
+	localID := management.Elev.ID
 
 	for id, t := range lastSeen {
 

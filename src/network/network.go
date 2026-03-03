@@ -5,21 +5,12 @@ package network
 // ---------------------------------------------------------------------------------------------------------------------
 
 import (
-	"fmt"
-	"os"
 	"time"
 
-	"heislab/management"
 	"heislab/network/bcast"
-	"heislab/network/localip"
 	"heislab/network/peers"
 	"heislab/orderManagement"
 )
-
-type NetworkChannels struct {
-	RcvChannel   chan management.Elevator
-	BcastChannel chan management.Elevator
-}
 
 // har ikke testet denne
 func ListenAndMergeGlobalState(rx <-chan orderManagement.GlobalStateType) {
@@ -64,14 +55,12 @@ func SendGlobalState(tx chan<- orderManagement.GlobalStateType) {
 type PortConfig struct {
 	PeerDiscoveryPort int    // Used by peers.Transmitter/Receiver (heartbeats)
 	MessageBcastPort  int    // Used by bcast.Transmitter/Receiver (global state)
-	LocalID           string // Local IP
+	ElevID           string
 }
 
 type NetworkConn struct {
-	LocalID string
-
 	// Peer discovery
-	PeerTxEnabled chan<- bool
+	HeartbeatEnabled chan<- bool
 	PeerUpdates   <-chan peers.PeerUpdate
 
 	// GlobalState messaging
@@ -91,38 +80,25 @@ type NetworkConn struct {
 //	 - globalStateTx: broadcast transmitting channel
 // 	 - globalStateRx: broadcast receiving channel
 
-func InitNetwork(cfg PortConfig) NetworkConn {
-	myID := cfg.LocalID
-	if myID == "" {
-		id, err := localip.LocalIP()
-		if err != nil {
-			myID = fmt.Sprintf("unknown-%d", os.Getpid())
-		} else {
-			myID = fmt.Sprintf("%s-%d", id, os.Getpid())
-		}
-	}
-
+func InitNetwork(config PortConfig) NetworkConn {
 	// --- peer discovery channels ---
-	peerTxEnabled := make(chan bool, 1)
-	peerTxEnabled <- true // true -> Sends heartbeats
+	heartbeatEnabled := make(chan bool, 1)
 	peerUpdates := make(chan peers.PeerUpdate, 16)
 
-	go peers.Transmitter(cfg.PeerDiscoveryPort, myID, peerTxEnabled)
-	go peers.Receiver(cfg.PeerDiscoveryPort, peerUpdates)
+	go peers.Transmitter(config.PeerDiscoveryPort, config.ElevID, heartbeatEnabled)
+	go peers.Receiver(config.PeerDiscoveryPort, peerUpdates)
 
 	// --- global state channels ---
 	globalStateTx := make(chan orderManagement.GlobalStateType, 16)
 	globalStateRx := make(chan orderManagement.GlobalStateType, 16)
 
-	// bcast wants "interface{} channels", but we hide that here.
-	go bcast.Transmitter(cfg.MessageBcastPort, globalStateTx)
-	go bcast.Receiver(cfg.MessageBcastPort, globalStateRx)
+	go bcast.Transmitter(config.MessageBcastPort, globalStateTx)
+	go bcast.Receiver(config.MessageBcastPort, globalStateRx)
 
 	return NetworkConn{
-		LocalID:       myID,
-		PeerTxEnabled: peerTxEnabled,
-		PeerUpdates:   peerUpdates,
-		GlobalStateTx: globalStateTx,
-		GlobalStateRx: globalStateRx,
+		HeartbeatEnabled: heartbeatEnabled,
+		PeerUpdates:   	  peerUpdates,
+		GlobalStateTx: 	  globalStateTx,
+		GlobalStateRx:    globalStateRx,
 	}
 }

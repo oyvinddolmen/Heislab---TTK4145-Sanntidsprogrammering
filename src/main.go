@@ -12,7 +12,6 @@ import (
 	"heislab/orderManagement"
 
 	"heislab/network"
-	//"os"
 	//"strconv"
 )
 
@@ -43,6 +42,8 @@ func main() {
 	if elevAddr == "" {
 		elevAddr = fmt.Sprintf("%s:%d", *simHost, *simPort)
 	}
+
+	elevID := management.GetElevID()
 
 	// -------------------------------------------------------------------------------------------
 	// Initializing channels
@@ -82,6 +83,9 @@ func main() {
 	go elevator.RunElevator(elevChannels, networkConn)
 	select {}
 }
+
+
+
 
 /*
 import (

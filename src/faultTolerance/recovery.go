@@ -30,23 +30,23 @@ func RecoverOnStartup(rx <-chan orderManagement.GlobalStateType) {
 
 RECOVER:
 
-	localID := management.Elev.IP
+    elevID := management.Elev.ID
 
 	orderManagement.GlobalStateMutex.Lock()
 	defer orderManagement.GlobalStateMutex.Unlock()
 
-	// Gjenopprett cab-orders hvis de fantes fra før
-	oldState, exists := orderManagement.GlobalState.States[localID]
-	if exists {
-		for f := 0; f < management.NumFloors; f++ {
-			if oldState.CabRequests[f] {
-				management.Elev.Orders[f][elevio.BT_Cab].OrderPlaced = true
-				management.Elev.Orders[f][elevio.BT_Cab].Finished = false
-				management.Elev.Orders[f][elevio.BT_Cab].ElevIP = management.Elev.IP
-			}
-		}
-	}
+    // Gjenopprett cab-orders hvis de fantes fra før 
+    oldState, exists := orderManagement.GlobalState.States[elevID]
+    if exists {
+        for f := 0; f < management.NumFloors; f++ {
+            if oldState.CabRequests[f] {
+                management.Elev.Orders[f][elevio.BT_Cab].OrderPlaced = true
+                management.Elev.Orders[f][elevio.BT_Cab].Finished = false
+                management.Elev.Orders[f][elevio.BT_Cab].ElevID = management.Elev.ID
+            }
+        }
+    }
 
-	// Registrer oss selv i GlobalState
-	orderManagement.GlobalState.States[localID] = orderManagement.ConvertElevatorToJSON(management.Elev)
+    // Registrer oss selv i GlobalState 
+    orderManagement.GlobalState.States[elevID] = orderManagement.ConvertElevatorToJSON(management.Elev)
 }
