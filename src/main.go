@@ -20,9 +20,6 @@ import (
 // -------------------------------------------------------------------------------------------
 
 func main() {
-	// -------------------------------------------------------------------------------------------
-	// Retrieving ID and network ports on startup
-	// -------------------------------------------------------------------------------------------
 
 	// -------------------------------------------------------------------------------------------
 	// Initializing channels
@@ -42,24 +39,23 @@ func main() {
 	// -------------------------------------------------------------------------------------------
 
 	portCfg := network.PortConfig{
-		PeerDiscoveryPort: 15657,    // Random ports, must be same for all
+		PeerDiscoveryPort: 15657, // Random ports, must be same for all
 		MessageBcastPort:  15658,
 		LocalID:           "",
 	}
+	networkConn := network.InitNetwork(portCfg) // Returns network channels and local IP
+	//broadCastInterval := 20 * time.Millisecond
 
 	// -------------------------------------------------------------------------------------------
-	// Initialise elevator and network
+	// Initialise elevator, globalstate and network
 	// -------------------------------------------------------------------------------------------
 
-	networkConn := network.InitNetwork(portCfg)  // Returns network channels and local IP
-	localIP := networkConn.LocalID
-	
-	elevator.ElevatorInit(localIP, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
-	//faultTolerance.RecoverOnStartup(GlobalStateRx)
-	orderManagement.InitGlobalState(localIP)
-	
-	go elevator.RunElevator(elevChannels)
-	
+	localID := networkConn.LocalID
+	elevator.ElevatorInit(localID, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
+	orderManagement.InitGlobalState(localID)
+	// faultTolerance.RecoverOnStartup(GlobalStateRx)	// when starting up
+	//go network.SendGlobalStatePeriodically(networkConn.GlobalStateTx, broadCastInterval)
+	go elevator.RunElevator(elevChannels, networkConn)
 	select {}
 }
 

@@ -10,21 +10,15 @@ import (
 	"time"
 
 	"heislab/management"
-	"heislab/orderManagement"
 	"heislab/network/bcast"
 	"heislab/network/localip"
 	"heislab/network/peers"
+	"heislab/orderManagement"
 )
 
 type NetworkChannels struct {
 	RcvChannel   chan management.Elevator
 	BcastChannel chan management.Elevator
-}
-
-func BcastElevInfo(BcastChannel chan management.Elevator) {
-	time.Sleep(2 * time.Millisecond)
-	BcastChannel <- management.Elev
-	// TODO
 }
 
 // har ikke testet denne
@@ -34,7 +28,7 @@ func ListenAndMergeGlobalState(rx <-chan orderManagement.GlobalStateType) {
 	}
 }
 
-//har ikke testet denne
+// har ikke testet denne
 func SendGlobalStatePeriodically(tx chan<- orderManagement.GlobalStateType, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -52,6 +46,19 @@ func SendGlobalStatePeriodically(tx chan<- orderManagement.GlobalStateType, inte
 		// Send kopien
 		tx <- msg
 	}
+}
+
+// sends global state once
+func SendGlobalState(tx chan<- orderManagement.GlobalStateType) {
+	orderManagement.UpdateLocalGlobalState()
+
+	// Ta kopi under mutex
+	orderManagement.GlobalStateMutex.Lock()
+	msg := orderManagement.GlobalState
+	orderManagement.GlobalStateMutex.Unlock()
+
+	// Send kopien
+	tx <- msg
 }
 
 type PortConfig struct {
@@ -72,12 +79,11 @@ type NetworkConn struct {
 	GlobalStateRx <-chan orderManagement.GlobalStateType
 }
 
-
 // InitNetwork initializes network goroutines for:
 //	1. Peer discovery (Tx and Rx)
 //		-> Sends heartbeats and keeps track of peers
 //	2. Global state broadcasts (Tx and Rx)
-// 
+//
 // Also initializes and returns channels for network interactions:
 //   - myID: the node ID used on the network
 //   - peerTxEnabled: send true/false to enable/disable announcing your presence
@@ -98,8 +104,8 @@ func InitNetwork(cfg PortConfig) NetworkConn {
 
 	// --- peer discovery channels ---
 	peerTxEnabled := make(chan bool, 1)
-	peerTxEnabled <- true								// true -> Sends heartbeats
-	peerUpdates   := make(chan peers.PeerUpdate, 16)
+	peerTxEnabled <- true // true -> Sends heartbeats
+	peerUpdates := make(chan peers.PeerUpdate, 16)
 
 	go peers.Transmitter(cfg.PeerDiscoveryPort, myID, peerTxEnabled)
 	go peers.Receiver(cfg.PeerDiscoveryPort, peerUpdates)

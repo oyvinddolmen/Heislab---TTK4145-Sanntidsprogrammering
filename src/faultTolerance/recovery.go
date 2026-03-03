@@ -1,55 +1,52 @@
 package faultTolerance
 
 import (
+	"fmt"
 	"heislab/elevio"
 	"heislab/management"
 	"heislab/orderManagement"
-	"fmt"
 	"time"
 )
 
-// Called once when elevator boots
-
+// Called once when elevator boots. Checks if other elevs has your cab orders
 func RecoverOnStartup(rx <-chan orderManagement.GlobalStateType) {
+	timeout := time.After(1 * time.Second)
 
-    timeout := time.After(1 * time.Second)
+	// Vent på eksisterende GlobalState
+	for {
+		select {
 
-    // Vent på eksisterende GlobalState 
-    for {
-        select {
+		case gs := <-rx:
+			orderManagement.GlobalStateMutex.Lock()
+			orderManagement.GlobalState = gs
+			orderManagement.GlobalStateMutex.Unlock()
+			goto RECOVER
 
-        case gs := <-rx:
-            orderManagement.GlobalStateMutex.Lock()
-            orderManagement.GlobalState = gs
-            orderManagement.GlobalStateMutex.Unlock()
-            goto RECOVER
-
-        case <-timeout:
-            fmt.Println("No GlobalState received on startup, starting fresh")
-            goto RECOVER
-        }
-    }
+		case <-timeout:
+			fmt.Println("No GlobalState received on startup, starting fresh")
+			goto RECOVER
+		}
+	}
 
 RECOVER:
 
-    localID := management.Elev.IP
+	localID := management.Elev.IP
 
-    orderManagement.GlobalStateMutex.Lock()
-    defer orderManagement.GlobalStateMutex.Unlock()
+	orderManagement.GlobalStateMutex.Lock()
+	defer orderManagement.GlobalStateMutex.Unlock()
 
-    // Gjenopprett cab-orders hvis de fantes fra før 
-    oldState, exists := orderManagement.GlobalState.States[localID]
-    if exists {
-        for f := 0; f < management.NumFloors; f++ {
-            if oldState.CabRequests[f] {
-                management.Elev.Orders[f][elevio.BT_Cab].OrderPlaced = true
-                management.Elev.Orders[f][elevio.BT_Cab].Finished = false
-                management.Elev.Orders[f][elevio.BT_Cab].ElevIP = management.Elev.IP
-            }
-        }
-    }
+	// Gjenopprett cab-orders hvis de fantes fra før
+	oldState, exists := orderManagement.GlobalState.States[localID]
+	if exists {
+		for f := 0; f < management.NumFloors; f++ {
+			if oldState.CabRequests[f] {
+				management.Elev.Orders[f][elevio.BT_Cab].OrderPlaced = true
+				management.Elev.Orders[f][elevio.BT_Cab].Finished = false
+				management.Elev.Orders[f][elevio.BT_Cab].ElevIP = management.Elev.IP
+			}
+		}
+	}
 
-    // Registrer oss selv i GlobalState 
-    orderManagement.GlobalState.States[localID] = orderManagement.ConvertElevatorToJSON(management.Elev)
+	// Registrer oss selv i GlobalState
+	orderManagement.GlobalState.States[localID] = orderManagement.ConvertElevatorToJSON(management.Elev)
 }
-
