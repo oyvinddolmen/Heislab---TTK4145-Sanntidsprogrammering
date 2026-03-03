@@ -22,12 +22,12 @@ const (
 type State int
 
 const (
-	INIT        = 1
-	IDLE        = 2
-	MOVING      = 3
-	STOP        = 4
-	OBSTRUCTION = 5
-	OFFLINE     = 6
+	Elev_Init        = 1
+	Elev_Idle        = 2
+	Elev_Moving      = 3
+	Elev_Stop        = 4
+	Elev_Obstruction = 5
+	Elev_Offline     = 6
 )
 
 type Direction int

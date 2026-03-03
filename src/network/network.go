@@ -55,7 +55,7 @@ func SendGlobalState(tx chan<- orderManagement.GlobalStateType) {
 type PortConfig struct {
 	PeerDiscoveryPort int    // Used by peers.Transmitter/Receiver (heartbeats)
 	MessageBcastPort  int    // Used by bcast.Transmitter/Receiver (global state)
-	ElevID           string
+	LocalID           string
 }
 
 type NetworkConn struct {
@@ -85,7 +85,7 @@ func InitNetwork(config PortConfig) NetworkConn {
 	heartbeatEnabled := make(chan bool, 1)
 	peerUpdates := make(chan peers.PeerUpdate, 16)
 
-	go peers.Transmitter(config.PeerDiscoveryPort, config.ElevID, heartbeatEnabled)
+	go peers.Transmitter(config.PeerDiscoveryPort, config.LocalID, heartbeatEnabled)
 	go peers.Receiver(config.PeerDiscoveryPort, peerUpdates)
 
 	// --- global state channels ---

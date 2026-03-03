@@ -71,12 +71,11 @@ func main() {
 	broadCastInterval := 20 * time.Millisecond
 
 	// -------------------------------------------------------------------------------------------
-	// Initialise elevator, globalstate and network
+	// Initialise elevator, global state and network
 	// -------------------------------------------------------------------------------------------
 
-	localID := networkConn.LocalID
-	elevator.ElevatorInit(localID, elevAddr, management.NumFloors)
-	orderManagement.InitGlobalState(localID)
+	elevator.InitElevator(elevID, elevAddr, management.NumFloors)
+	orderManagement.InitGlobalState(elevID)
 	faultTolerance.RecoverOnStartup(networkConn.GlobalStateRx)
 	go network.ListenAndMergeGlobalState(networkConn.GlobalStateRx)
 	go network.SendGlobalStatePeriodically(networkConn.GlobalStateTx, broadCastInterval)

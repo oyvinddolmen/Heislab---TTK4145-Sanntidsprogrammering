@@ -15,7 +15,7 @@ import (
 
 func InitFSM(elevID string, NumFloors int) {
 	noOrder := management.Order{Floor: -1, ButtonType: -1, ElevID: "", Finished: false}
-	setElevState(management.INIT)
+	setElevState(management.Elev_Init)
 	management.Elev.ID = elevID
 	management.Elev.Floor = -1
 	management.Elev.LastFloor = 0
@@ -60,7 +60,7 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 	for {
 		switch management.Elev.State {
 
-		case management.IDLE:
+		case management.Elev_Idle:
 			select {
 
 			case <-elevChannels.WorldViewUpdate:
@@ -70,17 +70,17 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 					management.Elev.LastFloor)
 
 				if getMoveDir() != management.Dir_Idle {
-					setElevState(management.MOVING)
+					setElevState(management.Elev_Moving)
 				}
 
 			case <-elevChannels.Obstruction:
-				setElevState(management.OBSTRUCTION)
+				setElevState(management.Elev_Obstruction)
 
 			case <-elevChannels.StopBtn:
 				if management.Elev.Floor != -1 {
-					setElevState(management.OBSTRUCTION)
+					setElevState(management.Elev_Obstruction)
 				} else {
-					setElevState(management.STOP)
+					setElevState(management.Elev_Stop)
 				}
 
 			case btnPress := <-elevChannels.BtnPresses:
@@ -110,24 +110,24 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 				)
 
 				if getMoveDir() != management.Dir_Idle {
-					setElevState(management.MOVING)
+					setElevState(management.Elev_Moving)
 				}
 
 				fmt.Println("Current order: ", management.Elev.CurrentOrder.Floor)
 			}
 
-		case management.MOVING:
+		case management.Elev_Moving:
 			select {
 
 			case <-elevChannels.WorldViewUpdate:
 				orderManagement.RunHallAssigner()
 				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
 				if management.Elev.MoveDir != management.Dir_Idle {
-					setElevState(management.MOVING)
+					setElevState(management.Elev_Moving)
 				}
 
 			case <-elevChannels.StopBtn:
-				setElevState(management.STOP)
+				setElevState(management.Elev_Stop)
 
 			case floor := <-elevChannels.LastFloor:
 				setElevLastFloor(floor)
@@ -138,7 +138,7 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 					orderManagement.CompleteCurrentOrder()
 					reachedFloorLightsOff(floor)
 					setElevFloor(floor)
-					setElevState(management.OBSTRUCTION)
+					setElevState(management.Elev_Obstruction)
 				}
 
 			case btnPress := <-elevChannels.BtnPresses:
@@ -167,7 +167,7 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 
 			}
 
-		case management.STOP:
+		case management.Elev_Stop:
 			select {
 
 			case btnPress := <-elevChannels.BtnPresses:
@@ -188,13 +188,13 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
 			case <-elevChannels.StopBtn:
-				setElevState(management.IDLE)
+				setElevState(management.Elev_Idle)
 
 			case <-elevChannels.WorldViewUpdate:
 				orderManagement.RunHallAssigner()
 			}
 
-		case management.OBSTRUCTION:
+		case management.Elev_Obstruction:
 			select {
 
 			case <-doorTimer.C:
@@ -202,7 +202,7 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 					// stay in state OBSTRUCTION
 				} else {
 					elevio.SetDoorOpenLamp(false)
-					setElevState(management.IDLE)
+					setElevState(management.Elev_Idle)
 				}
 
 			case obstructed := <-elevChannels.Obstruction:
@@ -241,16 +241,16 @@ func setElevState(state management.State) {
 	management.Elev.State = state
 
 	switch state {
-	case management.STOP:
+	case management.Elev_Stop:
 		onStopEntry()
 
-	case management.IDLE:
+	case management.Elev_Idle:
 		onIdleEntry()
 
-	case management.MOVING:
+	case management.Elev_Moving:
 		onMovingEntry()
 
-	case management.OBSTRUCTION:
+	case management.Elev_Obstruction:
 		onObstructionEntry()
 	}
 
@@ -311,7 +311,7 @@ func onIdleEntry() {
 		management.Elev.LastFloor)
 
 	if management.Elev.MoveDir != management.Dir_Idle {
-		setElevState(management.MOVING)
+		setElevState(management.Elev_Moving)
 	}
 }
 

@@ -11,7 +11,7 @@ type GlobalStateType struct {
 	HallRequests        [][2]bool                                        // [floor][0=up,1=down]
 	HallRequestsVersion [][2]int                                         //incremented by one when matching hallRequest is updated
 	States              map[string]hallRequestAssigner.ElevatorStateJSON // elevatorID -> state
-	LocalIP             string
+	LocalID             string
 }
 
 var (
@@ -48,17 +48,17 @@ func ConvertElevatorToJSON(e management.Elevator) hallRequestAssigner.ElevatorSt
 	}
 }
 
-func convertState(s management.State) string {
-	switch s {
-	case management.IDLE:
+func convertState(state management.State) string {
+	switch state {
+	case management.Elev_Idle:
 		return "idle"
-	case management.MOVING:
+	case management.Elev_Moving:
 		return "moving"
-	case management.INIT:
+	case management.Elev_Init:
 		return "moving"
-	case management.STOP:
+	case management.Elev_Stop:
 		return "STOP"
-	case management.OFFLINE:
+	case management.Elev_Offline:
 		return "offline"
 	default:
 		return "idle"
