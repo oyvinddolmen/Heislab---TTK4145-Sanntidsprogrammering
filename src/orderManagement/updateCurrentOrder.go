@@ -111,6 +111,7 @@ func CompleteCurrentOrder() {
 
 		// Oppdater lokal heis
 		e.Orders[f][b].Finished = true
+		e.Orders[f][b].OrderPlaced = false
 		e.CurrentOrder.Finished = true
 		e.CurrentOrder.OrderPlaced = false
 

@@ -271,7 +271,7 @@ func onIdleEntry() {
 	elevio.SetStopLamp(false)
 	setMoveDir(management.Dir_Idle)
 
-	//orderManagement.RunHallAssigner()
+	orderManagement.RunHallAssigner()
 	driveToDestination(
 		management.Elev.CurrentOrder.Floor,
 		management.Elev.LastFloor)
