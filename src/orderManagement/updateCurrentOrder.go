@@ -49,7 +49,7 @@ func UpdateCurrentOrder() {
 	}
 
 	// Ingen ordre funnet → gå IDLE
-	e.State = management.Elev_Idle
+	e.State = management.IDLE
 	e.MoveDir = management.Dir_Idle
 }
 
@@ -65,7 +65,7 @@ func assignUp(startFloor int) bool {
 			if order.OrderPlaced && !order.Finished {
 				e.CurrentOrder = *order
 				e.MoveDir = management.Dir_Up
-				e.State = management.Elev_Moving
+				e.State = management.MOVING
 				return true
 			}
 		}
@@ -89,7 +89,7 @@ func assignDown(startFloor int) bool {
 			if order.OrderPlaced && !order.Finished {
 				e.CurrentOrder = *order
 				e.MoveDir = management.Dir_Down
-				e.State = management.Elev_Moving
+				e.State = management.MOVING
 				return true
 			}
 		}

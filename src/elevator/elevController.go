@@ -21,12 +21,12 @@ func goToGroundFloor() {
 	}
 	elevio.SetMotorDirection(elevio.MD_Stop)
 	elevio.SetFloorIndicator(0)
-	setElevState(management.Elev_Idle)
+	setElevState(management.IDLE)
 }
 
 func InitElevator(elevID string, adress string, numFloors int) {
 	elevio.Init(adress, numFloors) // To run several simulators, each terminal/simulator needs unique adress
-	setElevState(management.Elev_Init)
+	setElevState(management.INIT)
 	initLights(numFloors)
 	InitFSM(elevID, numFloors)
 	goToGroundFloor()
@@ -83,7 +83,7 @@ func findMovingDirection(destination int, lastFloor int) elevio.MotorDirection {
 
 // Checks if elevator has reached floor
 func reachedDestination(floor int) bool {
-	if management.Elev.State == management.Elev_Moving && floor == management.Elev.CurrentOrder.Floor {
+	if management.Elev.State == management.MOVING && floor == management.Elev.CurrentOrder.Floor {
 		return true
 	} else {
 		return false

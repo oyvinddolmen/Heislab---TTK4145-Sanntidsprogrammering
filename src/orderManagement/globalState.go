@@ -50,15 +50,15 @@ func ConvertElevatorToJSON(e management.Elevator) hallRequestAssigner.ElevatorSt
 
 func convertState(state management.State) string {
 	switch state {
-	case management.Elev_Idle:
+	case management.IDLE:
 		return "idle"
-	case management.Elev_Moving:
+	case management.MOVING:
 		return "moving"
-	case management.Elev_Init:
+	case management.INIT:
 		return "moving"
-	case management.Elev_Stop:
+	case management.STOP:
 		return "STOP"
-	case management.Elev_Offline:
+	case management.OFFLINE:
 		return "offline"
 	default:
 		return "idle"
