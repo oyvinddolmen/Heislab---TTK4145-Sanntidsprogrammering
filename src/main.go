@@ -28,6 +28,8 @@ func main() {
 	and RUNNING MUTLIPLE ELEVATORS
 	go run . -simPort 15657 -peersPort 20001 -bcastPort 20002
 	go run . -simPort 15667 -peersPort 20001 -bcastPort 20002
+
+	dersom du bare ønsker å kjøre en heis kan du starte simulatoren og heisen som vanlig uten å legge til ports
 	*/
 	simHost := flag.String("simHost", "localhost", "Simulator host for elevio.Init")
 	simPort := flag.Int("simPort", 15657, "Simulator port for elevio.Init")
