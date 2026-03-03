@@ -43,7 +43,7 @@ func applyAssignments(assignments map[string][][2]bool) {
 	}
 	fmt.Println("assigned: ",assigned)
 	for floor := 0; floor < management.NumFloors; floor++ {
-		for btn := 0; btn < 2; btn++ { // only hall buttons
+		for btn := 0; btn < management.CabButton; btn++ { // only hall buttons
 			if assigned[floor][btn] {
 				management.Elev.Orders[floor][btn].OrderPlaced = true
 				management.Elev.Orders[floor][btn].ElevIP = management.Elev.IP

@@ -59,16 +59,10 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 	for {
 		switch management.Elev.State {
 
-		// -------------------------------------------------------------------------------------------
-		// CASE: IDLE
-		// -------------------------------------------------------------------------------------------
-
 		case management.IDLE:
 			select {
 
-			// only triggered from outside events (getting broadcast from another elevator)
 			case <-elevChannels.WorldViewUpdate:
-				//orderManagement.MergeGlobalState()
 				orderManagement.RunHallAssigner()
 				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
 				if getMoveDir() != management.Dir_Idle {
@@ -86,44 +80,36 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 				}
 
 			case btnPress := <-elevChannels.BtnPresses:
+				order := orderManagement.CreateOrder(btnPress)
 
-				// elevator already at the floor -> open doors
-				if management.Elev.Floor == btnPress.Floor {
-					setElevState(management.OBSTRUCTION)
-				} else {
-					// if order received by other elevators
-					//PROBLEM: ORDEREN LEGGES FØRST I STATEN. MÅ FØRST KJØRE HALLASSIGNER I TILFELLE DET ER EN AV DE ANDRE SOM EGNT BØR TA DEN
-					//Men HALLASSIGNER RETURNERER BARE ASSIGNED SOM FALSE.. PGA 2 HEISER?
-					network.SendGlobalState(networkChannels.GlobalStateTx)
-
-					order := orderManagement.CreateOrder(btnPress)
+				if order.ButtonType == management.CabButton {
 					orderManagement.AddOrderToOrders(order)
-					orderManagement.IncremtHallRequestVersion(order)
 					orderManagement.UpdateLocalGlobalState()
-					orderManagement.RunHallAssigner()
+				} else {
+					orderManagement.AddHallRequestToGlobalState(order)
+					orderManagement.IncremtHallRequestVersion(order)
+				}
 
-					fmt.Println("Valid order floor", order.Floor, "btn: ", btnPress.Button)
-					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
+				network.SendGlobalState(networkChannels.GlobalStateTx)
+				orderManagement.RunHallAssigner()
 
-					driveToDestination(
-						management.Elev.CurrentOrder.Floor,
-						management.Elev.LastFloor)
-					if getMoveDir() != management.Dir_Idle {
-						setElevState(management.MOVING)
-					}
+				fmt.Println("Valid order floor", order.Floor, "btn:", btnPress.Button)
+				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
+
+				driveToDestination(
+					management.Elev.CurrentOrder.Floor,
+					management.Elev.LastFloor,
+				)
+
+				if getMoveDir() != management.Dir_Idle {
+					setElevState(management.MOVING)
 				}
 			}
-
-		// -------------------------------------------------------------------------------------------
-		// CASE: MOVING
-		// -------------------------------------------------------------------------------------------
 
 		case management.MOVING:
 			select {
 
-			// only triggered from outside events (getting broadcast from another elevator)
 			case <-elevChannels.WorldViewUpdate:
-				//orderManagement.MergeGlobalState()
 				orderManagement.RunHallAssigner()
 				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
 				if management.Elev.MoveDir != management.Dir_Idle {
@@ -137,7 +123,6 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 				setElevLastFloor(floor)
 				elevio.SetFloorIndicator(floor)
 
-				// reaching the destination -> stop, turn off lights, remove order. State -> DOOROPEN
 				if reachedDestination(floor) {
 					stopElevator()
 					orderManagement.CompleteCurrentOrder()
@@ -147,58 +132,61 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 				}
 
 			case btnPress := <-elevChannels.BtnPresses:
-				// BROADCAST GLOBALSTATE
-
 				order := orderManagement.CreateOrder(btnPress)
-				orderManagement.AddOrderToOrders(order)
-				fmt.Println("Valid order floor", order.Floor, "btn: ", btnPress.Button)
-				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
-				orderManagement.IncremtHallRequestVersion(order)
-				orderManagement.UpdateLocalGlobalState()
+				if order.ButtonType == management.CabButton {
+					orderManagement.AddOrderToOrders(order)
+					orderManagement.UpdateLocalGlobalState()
+				} else {
+					orderManagement.AddHallRequestToGlobalState(order)
+					orderManagement.IncremtHallRequestVersion(order)
+				}
+
+				network.SendGlobalState(networkChannels.GlobalStateTx)
 				orderManagement.RunHallAssigner()
+
+				fmt.Println("Valid order floor", order.Floor, "btn:", btnPress.Button)
+				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
 				driveToDestination(
 					management.Elev.CurrentOrder.Floor,
-					management.Elev.LastFloor)
+					management.Elev.LastFloor,
+				)
 			}
-
-		// -------------------------------------------------------------------------------------------
-		// CASE: STOP BUTTON ACTIVE
-		// -------------------------------------------------------------------------------------------
 
 		case management.STOP:
 			select {
 
 			case btnPress := <-elevChannels.BtnPresses:
+				order := orderManagement.CreateOrder(btnPress)
 
-				// if order received by other elevators
-				if orderManagement.OrderConfirmed(btnPress) {
-					order := orderManagement.CreateOrder(btnPress)
+				if order.ButtonType == management.CabButton {
 					orderManagement.AddOrderToOrders(order)
+					orderManagement.UpdateLocalGlobalState()
+				} else {
+					orderManagement.AddHallRequestToGlobalState(order)
 					orderManagement.IncremtHallRequestVersion(order)
-					fmt.Println("Valid order floor", order.Floor, "btn: ", btnPress.Button)
-					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 				}
+
+				network.SendGlobalState(networkChannels.GlobalStateTx)
+				orderManagement.RunHallAssigner()
+
+				fmt.Println("Valid order floor", order.Floor, "btn:", btnPress.Button)
+				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
 			case <-elevChannels.StopBtn:
 				setElevState(management.IDLE)
 
 			case <-elevChannels.WorldViewUpdate:
-				//orderManagement.MergeGlobalState()
 				orderManagement.RunHallAssigner()
 			}
-
-		// -------------------------------------------------------------------------------------------
-		// CASE: OBSTRUCTION/DOOR-OPEN
-		// -------------------------------------------------------------------------------------------
 
 		case management.OBSTRUCTION:
 			select {
 
 			case <-doorTimer.C:
 				if elevio.GetObstruction() {
-					// stay in Obstruction state
+					// stay
 				} else {
 					elevio.SetDoorOpenLamp(false)
 					setElevState(management.IDLE)
@@ -208,7 +196,6 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 				if !obstructed {
 					doorTimer.Reset(doorOpenDuration)
 				}
-
 			}
 		}
 	}

@@ -35,8 +35,8 @@ func InitGlobalState(localIP string) {
 func ConvertElevatorToJSON(e management.Elevator) hallRequestAssigner.ElevatorStateJSON {
 
 	cabRequests := make([]bool, management.NumFloors)
-	for f := 0; f < management.NumFloors; f++ {
-		cabRequests[f] = e.Orders[f][2].OrderPlaced // 2 = Cab button
+	for floor := 0; floor < management.NumFloors; floor++ {
+		cabRequests[floor] = e.Orders[floor][management.CabButton].OrderPlaced 
 	}
 
 	return hallRequestAssigner.ElevatorStateJSON{
@@ -82,15 +82,14 @@ func UpdateLocalGlobalState() {
 	GlobalState.States[management.Elev.IP] = ConvertElevatorToJSON(management.Elev)
 }
 
-// Update hall requests from Elev.Orders
-func UpdateHallRequests() {
+func AddHallRequestToGlobalState(order management.Order) {
 	GlobalStateMutex.Lock()
 	defer GlobalStateMutex.Unlock()
 
-	for f := 0; f < management.NumFloors; f++ {
-		GlobalState.HallRequests[f][0] = management.Elev.Orders[f][0].OrderPlaced // HallUp
-		GlobalState.HallRequests[f][1] = management.Elev.Orders[f][1].OrderPlaced // HallDown
-	}
+	floor := order.Floor
+	button := order.ButtonType  // 0 = up, 1 = down
+
+	GlobalState.HallRequests[floor][button] = true
 }
 
 func PrintGlobalState() {

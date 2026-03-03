@@ -15,6 +15,7 @@ import (
 const (
 	NumFloors  = 4
 	NumButtons = 3
+	CabButton  = 2
 )
 
 type State int
