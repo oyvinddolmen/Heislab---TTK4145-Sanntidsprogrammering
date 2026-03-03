@@ -36,7 +36,7 @@ func ConvertElevatorToJSON(e management.Elevator) hallRequestAssigner.ElevatorSt
 
 	cabRequests := make([]bool, management.NumFloors)
 	for floor := 0; floor < management.NumFloors; floor++ {
-		cabRequests[floor] = e.Orders[floor][management.CabButton].OrderPlaced 
+		cabRequests[floor] = e.Orders[floor][management.CabButton].OrderPlaced
 	}
 
 	return hallRequestAssigner.ElevatorStateJSON{
@@ -87,7 +87,7 @@ func AddHallRequestToGlobalState(order management.Order) {
 	defer GlobalStateMutex.Unlock()
 
 	floor := order.Floor
-	button := order.ButtonType  // 0 = up, 1 = down
+	button := order.ButtonType // 0 = up, 1 = down
 
 	GlobalState.HallRequests[floor][button] = true
 }
@@ -179,7 +179,6 @@ func chooseLatestHallRequestVersions(gs GlobalStateType) {
 
 func IncremtHallRequestVersion(btnPress management.Order) {
 	GlobalState.HallRequestsVersion[btnPress.Floor][btnPress.ButtonType]++
-	fmt.Print("+ på Version, ordre LAGT TIL")
 }
 
 // Set dead elevator behavior to "offline" and redistribute orders

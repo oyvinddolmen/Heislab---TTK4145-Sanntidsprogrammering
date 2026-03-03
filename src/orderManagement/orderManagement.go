@@ -56,3 +56,7 @@ func PrintOrders() {
 func AddOrderToOrders(order management.Order) {
 	management.Elev.Orders[order.Floor][int(order.ButtonType)] = order
 }
+
+func GetCurrentOrderFloor() int {
+	return management.Elev.CurrentOrder.Floor
+}

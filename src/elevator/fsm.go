@@ -64,7 +64,10 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 
 			case <-elevChannels.WorldViewUpdate:
 				orderManagement.RunHallAssigner()
-				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
+				driveToDestination(
+					management.Elev.CurrentOrder.Floor,
+					management.Elev.LastFloor)
+
 				if getMoveDir() != management.Dir_Idle {
 					setElevState(management.MOVING)
 				}
@@ -190,7 +193,7 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 
 			case <-doorTimer.C:
 				if elevio.GetObstruction() {
-					// stay
+					// stay in state OBSTRUCTION
 				} else {
 					elevio.SetDoorOpenLamp(false)
 					setElevState(management.IDLE)
@@ -249,6 +252,10 @@ func setElevFloor(floor int) {
 
 func getMoveDir() management.Direction {
 	return management.Elev.MoveDir
+}
+
+func getFloor() int {
+	return management.Elev.Floor
 }
 
 // -------------------------------------------------------------------------------------------
