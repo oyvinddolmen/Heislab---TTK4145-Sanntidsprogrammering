@@ -3,7 +3,10 @@ package orderManagement
 import (
 	"heislab/elevio"
 	"heislab/management"
+<<<<<<< HEAD
 	"fmt"
+=======
+>>>>>>> Oyvind
 )
 
 // ---------------------------------------------------------------------
@@ -105,6 +108,10 @@ func CompleteCurrentOrder() {
 	e := &management.Elev
 	f := e.CurrentOrder.Floor
 	b := e.CurrentOrder.ButtonType
+<<<<<<< HEAD
+=======
+	localID := e.IP
+>>>>>>> Oyvind
 
 	// --- CAB ORDER ---
 	if b == elevio.BT_Cab {

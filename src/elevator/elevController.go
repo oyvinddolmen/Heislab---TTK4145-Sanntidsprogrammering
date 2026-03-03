@@ -7,7 +7,6 @@ package elevator
 // OWN LIGHTCONTROLLER FILE UNDER ELEVATOR?? !!!!!!!!!!!!!!!!!!!! YES
 
 import (
-	"fmt"
 	"heislab/elevio"
 	"heislab/management"
 )
@@ -58,7 +57,6 @@ func findMovingDirection(destination int, lastFloor int) elevio.MotorDirection {
 
 	// safety measure
 	if destination < 0 {
-		fmt.Println("Destination -1/noOrder")
 		return elevio.MD_Stop
 	}
 
@@ -106,17 +104,13 @@ func stopElevator() {
 
 // sets motordirection in direction of newOrder and changes Elev.MoveDir.
 func driveToDestination(destination int, lastFloor int) {
-	fmt.Println("Destination:", destination, " ||| lastFloor:", lastFloor)
 	moveDir := findMovingDirection(destination, lastFloor)
 	elevio.SetMotorDirection(moveDir)
 	setMoveDir(management.Direction(moveDir))
 
-	fmt.Println("Current destination", destination)
-	fmt.Println("moveDir:", moveDir)
 }
 
 // turns on doorOpenLight
 func openDoor() {
 	elevio.SetDoorOpenLamp(true)
-	fmt.Println("Doors opening")
 }
