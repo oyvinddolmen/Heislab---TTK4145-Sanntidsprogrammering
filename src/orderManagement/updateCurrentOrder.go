@@ -3,7 +3,6 @@ package orderManagement
 import (
 	"heislab/elevio"
 	"heislab/management"
-	"strconv"
 )
 
 // ---------------------------------------------------------------------
@@ -105,7 +104,7 @@ func CompleteCurrentOrder() {
 	e := &management.Elev
 	f := e.CurrentOrder.Floor
 	b := e.CurrentOrder.ButtonType
-	localID := strconv.Itoa(e.ID)
+	localID := e.IP
 
 	// --- CAB ORDER ---
 	if b == elevio.BT_Cab {

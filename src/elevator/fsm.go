@@ -20,13 +20,13 @@ func InitFSM(localIP string, NumFloors int) {
 	management.Elev.LastFloor = 0
 	management.Elev.MoveDir = management.Dir_Down
 	management.Elev.CurrentOrder = noOrder
-	for i := 0; i < NumFloors; i++ {
-		for j := 0; j < management.NumButtons; j++ {
-			management.Elev.Orders[i][j].Floor = i
-			management.Elev.Orders[i][j].ButtonType = elevio.ButtonType(j)
-			management.Elev.Orders[i][j].ElevIP = ""
-			management.Elev.Orders[i][j].Finished = false
-			management.Elev.Orders[i][j].OrderPlaced = false
+	for floor := 0; floor < NumFloors; floor++ {
+		for button := 0; button < management.NumButtons; button++ {
+			management.Elev.Orders[floor][button].Floor = floor
+			management.Elev.Orders[floor][button].ButtonType = elevio.ButtonType(button)
+			management.Elev.Orders[floor][button].ElevIP = ""
+			management.Elev.Orders[floor][button].Finished = false
+			management.Elev.Orders[floor][button].OrderPlaced = false
 		}
 	}
 }
@@ -69,16 +69,14 @@ func runFSM(channels management.ElevChannels) {
 			case <-channels.WorldViewUpdate:
 				orderManagement.RunHallAssigner()
 				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
-				if management.Elev.MoveDir != management.Dir_Idle {
+				if getMoveDir() != management.Dir_Idle {
 					setElevState(management.MOVING)
 				}
 
-			case obstruction := <-channels.Obstruction:
-				fmt.Println("Obstruction: ", obstruction)
+			case <-channels.Obstruction:
 				setElevState(management.OBSTRUCTION)
 
-			case stop := <-channels.StopBtn:
-				fmt.Println("Stop-btn: ", stop)
+			case <-channels.StopBtn:
 				if management.Elev.Floor != -1 {
 					setElevState(management.OBSTRUCTION)
 				} else {
@@ -91,20 +89,19 @@ func runFSM(channels management.ElevChannels) {
 				if management.Elev.Floor == btnPress.Floor {
 					setElevState(management.OBSTRUCTION)
 				} else {
-					// if order received by other elevators
-					if orderManagement.OrderConfirmed(btnPress) {
-						order := orderManagement.CreateOrder(btnPress)
-						orderManagement.AddOrderToOrders(order)
-						fmt.Println("Valid order floor", order.Floor, "btn: ", btnPress.Button)
-						elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
+					// Update globalorder (do we need to get order confirmed by other elevs?)
 
-						orderManagement.RunHallAssigner()
-						driveToDestination(
-							management.Elev.CurrentOrder.Floor,
-							management.Elev.LastFloor)
-						if management.Elev.MoveDir != management.Dir_Idle {
-							setElevState(management.MOVING)
-						}
+					order := orderManagement.CreateOrder(btnPress)
+					orderManagement.AddOrderToOrders(order)
+					fmt.Println("Valid order floor", order.Floor, "btn: ", btnPress.Button)
+					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
+
+					orderManagement.RunHallAssigner()
+					driveToDestination(
+						management.Elev.CurrentOrder.Floor,
+						management.Elev.LastFloor)
+					if management.Elev.MoveDir != management.Dir_Idle {
+						setElevState(management.MOVING)
 					}
 				}
 			}
@@ -124,14 +121,12 @@ func runFSM(channels management.ElevChannels) {
 					setElevState(management.MOVING)
 				}
 
-			case stop := <-channels.StopBtn:
-				fmt.Println("Stop-btn", stop)
+			case <-channels.StopBtn:
 				setElevState(management.STOP)
 
 			case floor := <-channels.LastFloor:
 				setElevLastFloor(floor)
 				elevio.SetFloorIndicator(floor)
-				fmt.Println("Reached floor:", floor)
 
 				// reaching the destination -> stop, turn off lights, remove order. State -> DOOROPEN
 				if reachedDestination(floor) {
@@ -175,8 +170,7 @@ func runFSM(channels management.ElevChannels) {
 					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 				}
 
-			case stop := <-channels.StopBtn:
-				fmt.Println("Stop-btn: ", stop)
+			case <-channels.StopBtn:
 				setElevState(management.IDLE)
 
 			case <-channels.WorldViewUpdate:
@@ -212,7 +206,7 @@ func runFSM(channels management.ElevChannels) {
 // FSM set functions
 // -------------------------------------------------------------------------------------------
 
-// sets elev state and calls onStateEntry functions
+// sets elev state and calls onStateEntry functions // TODO cahnge to 2 functions
 func setElevState(state management.State) {
 	prev := management.Elev.State
 	management.Elev.State = state
@@ -244,6 +238,14 @@ func setElevLastFloor(lastFloor int) {
 
 func setElevFloor(floor int) {
 	management.Elev.Floor = floor
+}
+
+// -------------------------------------------------------------------------------------------
+// FSM get functions
+// -------------------------------------------------------------------------------------------
+
+func getMoveDir() management.Direction {
+	return management.Elev.MoveDir
 }
 
 // -------------------------------------------------------------------------------------------
@@ -280,6 +282,7 @@ func onIdleEntry() {
 	}
 }
 
+// stops motor, sets moveDir, starts new doorTimer
 func onObstructionEntry() {
 	elevio.SetMotorDirection(elevio.MD_Stop)
 	setMoveDir(management.Dir_Idle)
