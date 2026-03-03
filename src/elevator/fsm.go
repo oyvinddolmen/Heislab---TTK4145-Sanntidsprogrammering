@@ -80,7 +80,11 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 				}
 
 			case btnPress := <-elevChannels.BtnPresses:
+				
 				order := orderManagement.CreateOrder(btnPress)
+				if(order.Floor == management.Elev.Floor){
+					orderManagement.CompleteCurrentOrder()
+				}
 
 				if order.ButtonType == management.CabButton {
 					orderManagement.AddOrderToOrders(order)
