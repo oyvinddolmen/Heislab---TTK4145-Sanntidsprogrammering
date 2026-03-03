@@ -11,7 +11,7 @@ type GlobalStateType struct {
 	HallRequests        [][2]bool                                        // [floor][0=up,1=down]
 	HallRequestsVersion [][2]int                                         //incremented by one when matching hallRequest is updated
 	States              map[string]hallRequestAssigner.ElevatorStateJSON // elevatorID -> state
-	LocalID             string
+	LocalIP             string
 }
 
 var (
@@ -19,16 +19,15 @@ var (
 	GlobalStateMutex sync.Mutex
 )
 
-func InitGlobalState(localID string) {
+func InitGlobalState(localIP string) {
 	GlobalStateMutex.Lock()
 	defer GlobalStateMutex.Unlock()
 
 	GlobalState.HallRequests = make([][2]bool, management.NumFloors)
 	GlobalState.HallRequestsVersion = make([][2]int, management.NumFloors)
 	GlobalState.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
-	GlobalState.LocalID = localID
+	GlobalState.LocalIP = localIP
 
-	GlobalState.States[management.Elev.IP] = ConvertElevatorToJSON(management.Elev)
 	GlobalState.States[management.Elev.IP] = ConvertElevatorToJSON(management.Elev)
 }
 
@@ -112,7 +111,7 @@ func PrintGlobalState() {
 	}
 
 	// ---- Hall Assignments ----
-	fmt.Println("\nHallRequestsAssigned:")
+	fmt.Println("\nHallRequestsVersions:")
 	for f := 0; f < len(GlobalState.HallRequestsVersion); f++ {
 		up := GlobalState.HallRequestsVersion[f][0]
 		down := GlobalState.HallRequestsVersion[f][1]
@@ -145,7 +144,7 @@ func MergeGlobalState(gs GlobalStateType) {
 	defer GlobalStateMutex.Unlock()
 
 	localID := management.Elev.IP
-	senderID := gs.LocalID
+	senderID := gs.LocalIP
 
 	if senderID != localID {
 		if st, exists := gs.States[senderID]; exists {

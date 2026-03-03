@@ -52,11 +52,14 @@ func main() {
 	// -------------------------------------------------------------------------------------------
 
 	networkConn := network.InitNetwork(portCfg)  // Returns network channels and local IP
-	localID := networkConn.LocalID
-	orderManagement.InitGlobalState(localID)
-	elevator.ElevatorInit(localID, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
+	localIP := networkConn.LocalID
+	
+	elevator.ElevatorInit(localIP, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
 	//faultTolerance.RecoverOnStartup(GlobalStateRx)
+	orderManagement.InitGlobalState(localIP)
+	
 	go elevator.RunElevator(elevChannels)
+	
 	select {}
 }
 
