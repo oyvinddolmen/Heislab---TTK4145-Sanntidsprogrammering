@@ -7,7 +7,6 @@ import (
 )
 
 func RunHallAssigner() error {
-	UpdateLocalGlobalState()
 	GlobalStateMutex.Lock()
 	// Copy HallRequests
 	hallRequests := make([][2]bool, len(GlobalState.HallRequests))
@@ -35,7 +34,6 @@ func RunHallAssigner() error {
 func applyAssignments(assignments map[string][][2]bool) {
 
 	GlobalStateMutex.Lock()
-	defer GlobalStateMutex.Unlock()
 
 	localID := management.Elev.ID
 
@@ -43,7 +41,7 @@ func applyAssignments(assignments map[string][][2]bool) {
 	if !exists {
 		return
 	}
-
+	fmt.Println("assigned: ",assigned)
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for btn := 0; btn < 2; btn++ { // only hall buttons
 			if assigned[floor][btn] {
@@ -52,6 +50,8 @@ func applyAssignments(assignments map[string][][2]bool) {
 			}
 		}
 	}
+
+	GlobalStateMutex.Unlock()
 
 	UpdateCurrentOrder()
 }

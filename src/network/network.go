@@ -27,6 +27,33 @@ func BcastElevInfo(BcastChannel chan management.Elevator) {
 	// TODO
 }
 
+// har ikke testet denne
+func ListenAndMergeGlobalState(rx <-chan orderManagement.GlobalStateType) {
+	for msg := range rx {
+		orderManagement.MergeGlobalState(msg)
+	}
+}
+
+//har ikke testet denne
+func SendGlobalStatePeriodically(tx chan<- orderManagement.GlobalStateType, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+
+		// Oppdater egen state før sending
+		orderManagement.UpdateLocalGlobalState()
+
+		// Ta kopi under mutex
+		orderManagement.GlobalStateMutex.Lock()
+		msg := orderManagement.GlobalState
+		orderManagement.GlobalStateMutex.Unlock()
+
+		// Send kopien
+		tx <- msg
+	}
+}
+
 type PortConfig struct {
 	PeerDiscoveryPort int    // Used by peers.Transmitter/Receiver (heartbeats)
 	MessageBcastPort  int    // Used by bcast.Transmitter/Receiver (global state)

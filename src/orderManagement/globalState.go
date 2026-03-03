@@ -9,7 +9,7 @@ import (
 
 type GlobalStateType struct {
 	HallRequests         [][2]bool // [floor][0=up,1=down]
-	HallRequestsAssigned [][2]string
+	HallRequestsVersion [][2]int //incremented by one when matching hallRequest is updated
 	States               map[string]hallRequestAssigner.ElevatorStateJSON // elevatorID -> state
 	LocalID		 		 string
 }
@@ -24,7 +24,7 @@ func InitGlobalState(localID string) {
 	defer GlobalStateMutex.Unlock()
 
 	GlobalState.HallRequests = make([][2]bool, management.NumFloors)
-	GlobalState.HallRequestsAssigned = make([][2]string, management.NumFloors)
+	GlobalState.HallRequestsVersion = make([][2]int, management.NumFloors)
 	GlobalState.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
 	GlobalState.LocalID = localID
 
@@ -113,10 +113,10 @@ func PrintGlobalState() {
 
 	// ---- Hall Assignments ----
 	fmt.Println("\nHallRequestsAssigned:")
-	for f := 0; f < len(GlobalState.HallRequestsAssigned); f++ {
-		up := GlobalState.HallRequestsAssigned[f][0]
-		down := GlobalState.HallRequestsAssigned[f][1]
-		fmt.Printf("  Floor %d: Up=%s Down=%s\n", f, up, down)
+	for f := 0; f < len(GlobalState.HallRequestsVersion); f++ {
+		up := GlobalState.HallRequestsVersion[f][0]
+		down := GlobalState.HallRequestsVersion[f][1]
+		fmt.Printf("  Floor %d:  Up Version = %d Down Version = %d\n", f, up, down)
 	}
 
 	// ---- Elevator States ----
@@ -138,4 +138,67 @@ func PrintGlobalState() {
 	}
 
 	fmt.Println("\n====================================")
+}
+
+
+func MergeGlobalState(gs GlobalStateType) {
+	GlobalStateMutex.Lock()
+	defer GlobalStateMutex.Unlock()
+
+	localID := management.Elev.ID
+	senderID := gs.LocalID
+
+	if senderID != localID {
+		if st, exists := gs.States[senderID]; exists {
+			GlobalState.States[senderID] = st
+		}
+	}
+
+	chooseLatestHallRequestVersions(gs)
+}
+
+func chooseLatestHallRequestVersions(gs GlobalStateType){
+	for f := 0; f < management.NumFloors; f++ {
+	for b := 0; b < 2; b++ {
+
+		localVersion := GlobalState.HallRequestsVersion[f][b]
+		remoteVersion := gs.HallRequestsVersion[f][b]
+
+		switch {
+		case remoteVersion > localVersion:
+			// Remote er nyere → overta verdi og versjon
+			GlobalState.HallRequests[f][b] = gs.HallRequests[f][b]
+			GlobalState.HallRequestsVersion[f][b] = remoteVersion
+
+		case remoteVersion == localVersion:
+			// Samme versjon → true vinner
+			if gs.HallRequests[f][b] {
+				GlobalState.HallRequests[f][b] = true
+			}
+		}
+	}
+}
+}
+
+func IncremtHallRequestVersion(btnPress management.Order){
+	GlobalState.HallRequestsVersion[btnPress.Floor][btnPress.ButtonType]++
+	fmt.Print("+ på Version, ordre LAGT TIL")
+}
+
+// Set dead elevator behavior to "offline" and redistribute orders
+func SetElevatorToOffline(deadID string) {
+
+	GlobalStateMutex.Lock()
+
+	state, exists := GlobalState.States[deadID]
+	if !exists {
+		GlobalStateMutex.Unlock()
+		return
+	}
+
+	state.Behavior = "offline"
+	GlobalState.States[deadID] = state
+
+	GlobalStateMutex.Unlock()
+
 }

@@ -53,54 +53,9 @@ func checkForDeadElevators() {
 
 		if now.Sub(t) > HeartbeatTimeout {
 
-			handleElevatorFailure(id)
+			orderManagement.SetElevatorToOffline(id)
 			delete(lastSeen, id)
-			handleElevatorFailure(id)
-			delete(lastSeen, id)
-		}
-	}
-}
-
-// Set dead elevator behavior to "offline" and redistribute orders
-func handleElevatorFailure(deadID string) {
-
-	orderManagement.GlobalStateMutex.Lock()
-
-	state, exists := orderManagement.GlobalState.States[deadID]
-	if !exists {
-		orderManagement.GlobalStateMutex.Unlock()
-		return
-	}
-
-	state.Behavior = "offline"
-	orderManagement.GlobalState.States[deadID] = state
-
-	orderManagement.GlobalStateMutex.Unlock()
-
-	releaseHallOrders(deadID)
-
-	orderManagement.RunHallAssigner()
-
-	// broadcast her via channel
-}
-
-// Release hall orders belonging to dead elevator
-func releaseHallOrders(deadID string) {
-
-	orderManagement.GlobalStateMutex.Lock()
-	defer orderManagement.GlobalStateMutex.Unlock()
-
-	for f := 0; f < management.NumFloors; f++ {
-		for btn := 0; btn < 2; btn++ {
-
-			if orderManagement.GlobalState.HallRequestsAssigned[f][btn] == deadID {
-
-				// sett tilbake som aktiv request
-				orderManagement.GlobalState.HallRequests[f][btn] = true
-
-				// fjern assignment
-				orderManagement.GlobalState.HallRequestsAssigned[f][btn] = ""
-			}
+			orderManagement.RunHallAssigner()
 		}
 	}
 }

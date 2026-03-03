@@ -67,6 +67,7 @@ func runFSM(channels management.ElevChannels) {
 
 			// only triggered from outside events (getting broadcast from another elevator)
 			case <-channels.WorldViewUpdate:
+				//orderManagement.MergeGlobalState()
 				orderManagement.RunHallAssigner()
 				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
 				if management.Elev.MoveDir != management.Dir_Idle {
@@ -86,19 +87,24 @@ func runFSM(channels management.ElevChannels) {
 				}
 
 			case btnPress := <-channels.BtnPresses:
-
+				
 				// elevator already at the floor -> open doors
 				if management.Elev.Floor == btnPress.Floor {
 					setElevState(management.OBSTRUCTION)
 				} else {
 					// if order received by other elevators
+					//PROBLEM: ORDEREN LEGGES FØRST I STATEN. MÅ FØRST KJØRE HALLASSIGNER I TILFELLE DET ER EN AV DE ANDRE SOM EGNT BØR TA DEN
+					//Men HALLASSIGNER RETURNERER BARE ASSIGNED SOM FALSE.. PGA 2 HEISER?
 					if orderManagement.OrderConfirmed(btnPress) {
 						order := orderManagement.CreateOrder(btnPress)
 						orderManagement.AddOrderToOrders(order)
 						fmt.Println("Valid order floor", order.Floor, "btn: ", btnPress.Button)
 						elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
+						orderManagement.IncremtHallRequestVersion(order)
+						orderManagement.UpdateLocalGlobalState()
 						orderManagement.RunHallAssigner()
+
 						driveToDestination(
 							management.Elev.CurrentOrder.Floor,
 							management.Elev.LastFloor)
@@ -118,6 +124,7 @@ func runFSM(channels management.ElevChannels) {
 
 			// only triggered from outside events (getting broadcast from another elevator)
 			case <-channels.WorldViewUpdate:
+				//orderManagement.MergeGlobalState()
 				orderManagement.RunHallAssigner()
 				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
 				if management.Elev.MoveDir != management.Dir_Idle {
@@ -149,7 +156,9 @@ func runFSM(channels management.ElevChannels) {
 					orderManagement.AddOrderToOrders(order)
 					fmt.Println("Valid order floor", order.Floor, "btn: ", btnPress.Button)
 					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
-
+					
+					orderManagement.IncremtHallRequestVersion(order)
+					orderManagement.UpdateLocalGlobalState()
 					orderManagement.RunHallAssigner()
 
 					driveToDestination(
@@ -171,6 +180,7 @@ func runFSM(channels management.ElevChannels) {
 				if orderManagement.OrderConfirmed(btnPress) {
 					order := orderManagement.CreateOrder(btnPress)
 					orderManagement.AddOrderToOrders(order)
+					orderManagement.IncremtHallRequestVersion(order)
 					fmt.Println("Valid order floor", order.Floor, "btn: ", btnPress.Button)
 					elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 				}
@@ -180,6 +190,7 @@ func runFSM(channels management.ElevChannels) {
 				setElevState(management.IDLE)
 
 			case <-channels.WorldViewUpdate:
+				//orderManagement.MergeGlobalState()
 				orderManagement.RunHallAssigner()
 			}
 
