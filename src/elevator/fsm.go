@@ -83,9 +83,9 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 				}
 
 			case btnPress := <-elevChannels.BtnPresses:
-				
+
 				order := orderManagement.CreateOrder(btnPress)
-				if(order.Floor == management.Elev.Floor){
+				if order.Floor == management.Elev.Floor {
 					orderManagement.CompleteCurrentOrder()
 				}
 
@@ -111,6 +111,8 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 				if getMoveDir() != management.Dir_Idle {
 					setElevState(management.MOVING)
 				}
+
+				fmt.Println("Current order: ", management.Elev.CurrentOrder.Floor)
 			}
 
 		case management.MOVING:
@@ -159,6 +161,9 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 					management.Elev.CurrentOrder.Floor,
 					management.Elev.LastFloor,
 				)
+
+				fmt.Println("Current order: ", management.Elev.CurrentOrder.Floor)
+
 			}
 
 		case management.STOP:
@@ -203,6 +208,23 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 				if !obstructed {
 					doorTimer.Reset(doorOpenDuration)
 				}
+
+			case btnPress := <-elevChannels.BtnPresses:
+				order := orderManagement.CreateOrder(btnPress)
+
+				if order.ButtonType == management.CabButton {
+					orderManagement.AddOrderToOrders(order)
+					orderManagement.UpdateLocalGlobalState()
+				} else {
+					orderManagement.AddHallRequestToGlobalState(order)
+					orderManagement.IncremtHallRequestVersion(order)
+				}
+
+				network.SendGlobalState(networkChannels.GlobalStateTx)
+				orderManagement.RunHallAssigner()
+
+				fmt.Println("Valid order floor", order.Floor, "btn:", btnPress.Button)
+				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 			}
 		}
 	}
