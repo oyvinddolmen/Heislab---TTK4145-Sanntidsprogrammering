@@ -18,7 +18,7 @@ var failureMutex sync.Mutex
 
 // Called whenever we receive state from another elevator
 func RegisterHeartbeat(id string) {
-	localID := management.Elev.ID
+	localID := management.Elev.IP
 	if id == localID {
 		// Ignore self
 		return
@@ -43,7 +43,7 @@ func checkForDeadElevators() {
 	defer failureMutex.Unlock()
 
 	now := time.Now()
-	localID := management.Elev.ID
+	localID := management.Elev.IP
 
 	for id, t := range lastSeen {
 

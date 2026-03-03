@@ -12,10 +12,10 @@ import (
 // Initialize state-machine
 // -------------------------------------------------------------------------------------------
 
-func InitFSM(localID string, NumFloors int) {
-	noOrder := management.Order{Floor: -1, ButtonType: -1, ElevID: "", Finished: false}
+func InitFSM(localIP string, NumFloors int) {
+	noOrder := management.Order{Floor: -1, ButtonType: -1, ElevIP: "", Finished: false}
 	setElevState(management.INIT)
-	management.Elev.ID = localID
+	management.Elev.IP = localIP
 	management.Elev.Floor = -1
 	management.Elev.LastFloor = 0
 	management.Elev.MoveDir = management.Dir_Down

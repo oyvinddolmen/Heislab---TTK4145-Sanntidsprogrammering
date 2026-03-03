@@ -44,13 +44,13 @@ type Order struct {
 	OrderPlaced bool
 	Floor       int
 	ButtonType  elevio.ButtonType
-	ElevID      string // Empty string if no elevator is assigned, else the ID of the elevator assigned
+	ElevIP      string // Empty string if no elevator is assigned, else the ID of the elevator assigned
 	Finished    bool
 }
 
 type Elevator struct {
 	State        State
-	ID           string
+	IP           string
 	Floor        int // -1 if between floors
 	LastFloor    int
 	MoveDir      Direction

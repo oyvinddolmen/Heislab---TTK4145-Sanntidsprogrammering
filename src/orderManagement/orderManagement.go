@@ -25,7 +25,7 @@ func OrderConfirmed(elevio.ButtonEvent) bool {
 
 // checks if any other elevators is attending this order
 func OrderNotTaken(order management.Order) bool {
-	if order.ElevID == "" {
+	if order.ElevIP == "" {
 		return true
 	} else {
 		return false
@@ -37,7 +37,7 @@ func CreateOrder(btnPress elevio.ButtonEvent) management.Order {
 		OrderPlaced: true,
 		Floor:       btnPress.Floor,
 		ButtonType:  btnPress.Button,
-		ElevID:      "",
+		ElevIP:      "",
 		Finished:    false,
 	}
 
@@ -48,7 +48,7 @@ func PrintOrders() {
 	for f := 0; f < management.NumFloors; f++ {
 		for b := 0; b < management.NumButtons; b++ {
 			order := management.Elev.Orders[f][b]
-			fmt.Printf("Floor: %d Button: %d IP: %s OrderPlaced: %t\n", order.Floor, order.ButtonType, order.ElevID, order.OrderPlaced)
+			fmt.Printf("Floor: %d Button: %d IP: %s OrderPlaced: %t\n", order.Floor, order.ButtonType, order.ElevIP, order.OrderPlaced)
 		}
 	}
 }

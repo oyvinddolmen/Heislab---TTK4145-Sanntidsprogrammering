@@ -32,7 +32,7 @@ func RecoverOnStartup(rx <-chan orderManagement.GlobalStateType) {
 
 RECOVER:
 
-    localID := management.Elev.ID
+    localID := management.Elev.IP
 
     orderManagement.GlobalStateMutex.Lock()
     defer orderManagement.GlobalStateMutex.Unlock()
@@ -44,7 +44,7 @@ RECOVER:
             if oldState.CabRequests[f] {
                 management.Elev.Orders[f][elevio.BT_Cab].OrderPlaced = true
                 management.Elev.Orders[f][elevio.BT_Cab].Finished = false
-                management.Elev.Orders[f][elevio.BT_Cab].ElevID = management.Elev.ID
+                management.Elev.Orders[f][elevio.BT_Cab].ElevIP = management.Elev.IP
             }
         }
     }

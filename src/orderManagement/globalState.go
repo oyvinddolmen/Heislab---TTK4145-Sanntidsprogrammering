@@ -1,22 +1,22 @@
 package orderManagement
 
 import (
+	"fmt"
+	"heislab/hallRequestAssigner"
 	"heislab/management"
 	"sync"
-	"heislab/hallRequestAssigner"
-	"fmt"
 )
 
 type GlobalStateType struct {
-	HallRequests         [][2]bool // [floor][0=up,1=down]
-	HallRequestsVersion [][2]int //incremented by one when matching hallRequest is updated
-	States               map[string]hallRequestAssigner.ElevatorStateJSON // elevatorID -> state
-	LocalID		 		 string
+	HallRequests        [][2]bool                                        // [floor][0=up,1=down]
+	HallRequestsVersion [][2]int                                         //incremented by one when matching hallRequest is updated
+	States              map[string]hallRequestAssigner.ElevatorStateJSON // elevatorID -> state
+	LocalID             string
 }
 
 var (
-    GlobalState GlobalStateType
-    GlobalStateMutex sync.Mutex
+	GlobalState      GlobalStateType
+	GlobalStateMutex sync.Mutex
 )
 
 func InitGlobalState(localID string) {
@@ -28,8 +28,8 @@ func InitGlobalState(localID string) {
 	GlobalState.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
 	GlobalState.LocalID = localID
 
-	GlobalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
-	GlobalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
+	GlobalState.States[management.Elev.IP] = ConvertElevatorToJSON(management.Elev)
+	GlobalState.States[management.Elev.IP] = ConvertElevatorToJSON(management.Elev)
 }
 
 // Convert elevator to JSON elevator state
@@ -80,7 +80,7 @@ func UpdateLocalGlobalState() {
 	GlobalStateMutex.Lock()
 	defer GlobalStateMutex.Unlock()
 
-	GlobalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
+	GlobalState.States[management.Elev.IP] = ConvertElevatorToJSON(management.Elev)
 }
 
 // Update hall requests from Elev.Orders
@@ -140,12 +140,11 @@ func PrintGlobalState() {
 	fmt.Println("\n====================================")
 }
 
-
 func MergeGlobalState(gs GlobalStateType) {
 	GlobalStateMutex.Lock()
 	defer GlobalStateMutex.Unlock()
 
-	localID := management.Elev.ID
+	localID := management.Elev.IP
 	senderID := gs.LocalID
 
 	if senderID != localID {
@@ -157,30 +156,30 @@ func MergeGlobalState(gs GlobalStateType) {
 	chooseLatestHallRequestVersions(gs)
 }
 
-func chooseLatestHallRequestVersions(gs GlobalStateType){
+func chooseLatestHallRequestVersions(gs GlobalStateType) {
 	for f := 0; f < management.NumFloors; f++ {
-	for b := 0; b < 2; b++ {
+		for b := 0; b < 2; b++ {
 
-		localVersion := GlobalState.HallRequestsVersion[f][b]
-		remoteVersion := gs.HallRequestsVersion[f][b]
+			localVersion := GlobalState.HallRequestsVersion[f][b]
+			remoteVersion := gs.HallRequestsVersion[f][b]
 
-		switch {
-		case remoteVersion > localVersion:
-			// Remote er nyere → overta verdi og versjon
-			GlobalState.HallRequests[f][b] = gs.HallRequests[f][b]
-			GlobalState.HallRequestsVersion[f][b] = remoteVersion
+			switch {
+			case remoteVersion > localVersion:
+				// Remote er nyere → overta verdi og versjon
+				GlobalState.HallRequests[f][b] = gs.HallRequests[f][b]
+				GlobalState.HallRequestsVersion[f][b] = remoteVersion
 
-		case remoteVersion == localVersion:
-			// Samme versjon → true vinner
-			if gs.HallRequests[f][b] {
-				GlobalState.HallRequests[f][b] = true
+			case remoteVersion == localVersion:
+				// Samme versjon → true vinner
+				if gs.HallRequests[f][b] {
+					GlobalState.HallRequests[f][b] = true
+				}
 			}
 		}
 	}
 }
-}
 
-func IncremtHallRequestVersion(btnPress management.Order){
+func IncremtHallRequestVersion(btnPress management.Order) {
 	GlobalState.HallRequestsVersion[btnPress.Floor][btnPress.ButtonType]++
 	fmt.Print("+ på Version, ordre LAGT TIL")
 }
