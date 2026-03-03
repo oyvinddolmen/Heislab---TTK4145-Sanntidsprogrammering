@@ -63,7 +63,7 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 		case management.IDLE:
 			select {
 
-			case <-elevChannels.WorldViewUpdate:
+			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssigner()
 				driveToDestination(
 					management.Elev.CurrentOrder.Floor,
@@ -119,7 +119,7 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 		case management.MOVING:
 			select {
 
-			case <-elevChannels.WorldViewUpdate:
+			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssigner()
 				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
 				if management.Elev.MoveDir != management.Dir_Idle {
@@ -190,7 +190,7 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 			case <-elevChannels.StopBtn:
 				setElevState(management.IDLE)
 
-			case <-elevChannels.WorldViewUpdate:
+			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssigner()
 			}
 
@@ -226,6 +226,10 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 
 				fmt.Println("Valid order floor", order.Floor, "btn:", btnPress.Button)
 				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
+
+			case <-networkChannels.WorldViewUpdate:
+				orderManagement.RunHallAssigner()
+
 			}
 		}
 	}

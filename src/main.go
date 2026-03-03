@@ -25,8 +25,8 @@ func main() {
 	.\SimElevatorServer.exe --port 15657
 	.\SimElevatorServer.exe --port 15667
 	and RUNNING MUTLIPLE ELEVATORS
-	go run . -simPort 15657 -peersPort 20001 -bcastPort 20002
-	go run . -simPort 15667 -peersPort 20001 -bcastPort 20002
+	go run . -simPort 15657 -peersPort 20001 -bcastPort 20002 -id 1
+	go run . -simPort 15667 -peersPort 20001 -bcastPort 20002 -id 2
 
 	dersom du bare ønsker å kjøre en heis kan du starte simulatoren og heisen som vanlig uten å legge til ports
 	*/
@@ -35,7 +35,7 @@ func main() {
 	simAddr := flag.String("simAddr", "", "Full simulator address host:port (overrides simHost/simPort)")
 	peersPort := flag.Int("peersPort", 15667, "UDP port for peer discovery (must be same for all elevators)")
 	bcastPort := flag.Int("bcastPort", 15668, "UDP port for global state broadcast (must be same for all elevators)")
-	localIDFlag := flag.String("id", "", "Optional local network ID (default auto-generated)")
+	elevIDFlag := flag.String("id", "", "Optional local network ID (default auto-generated)")
 	flag.Parse()
 
 	elevAddr := *simAddr
@@ -43,19 +43,18 @@ func main() {
 		elevAddr = fmt.Sprintf("%s:%d", *simHost, *simPort)
 	}
 
-	elevID := management.GetElevID()
+	elevID := *elevIDFlag
 
 	// -------------------------------------------------------------------------------------------
 	// Initializing channels
 	// -------------------------------------------------------------------------------------------
 
 	elevChannels := management.ElevChannels{
-		MotorDirection:  make(chan int),
-		LastFloor:       make(chan int),
-		Obstruction:     make(chan bool),
-		StopBtn:         make(chan bool),
-		BtnPresses:      make(chan elevio.ButtonEvent),
-		WorldViewUpdate: make(chan bool),
+		MotorDirection: make(chan int),
+		LastFloor:      make(chan int),
+		Obstruction:    make(chan bool),
+		StopBtn:        make(chan bool),
+		BtnPresses:     make(chan elevio.ButtonEvent),
 	}
 
 	// -------------------------------------------------------------------------------------------
@@ -65,7 +64,7 @@ func main() {
 	portCfg := network.PortConfig{
 		PeerDiscoveryPort: *peersPort,
 		MessageBcastPort:  *bcastPort,
-		LocalID:           *localIDFlag,
+		LocalID:           *elevIDFlag,
 	}
 	networkConn := network.InitNetwork(portCfg) // Returns network channels and local IP
 	broadCastInterval := 20 * time.Millisecond
@@ -77,14 +76,11 @@ func main() {
 	elevator.InitElevator(elevID, elevAddr, management.NumFloors)
 	orderManagement.InitGlobalState(elevID)
 	faultTolerance.RecoverOnStartup(networkConn.GlobalStateRx)
-	go network.ListenAndMergeGlobalState(networkConn.GlobalStateRx)
+	go network.ListenAndMergeGlobalState(networkConn.GlobalStateRx, networkConn.WorldViewUpdate)
 	go network.SendGlobalStatePeriodically(networkConn.GlobalStateTx, broadCastInterval)
 	go elevator.RunElevator(elevChannels, networkConn)
 	select {}
 }
-
-
-
 
 /*
 import (

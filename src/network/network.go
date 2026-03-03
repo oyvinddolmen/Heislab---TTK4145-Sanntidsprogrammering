@@ -13,9 +13,14 @@ import (
 )
 
 // har ikke testet denne
-func ListenAndMergeGlobalState(rx <-chan orderManagement.GlobalStateType) {
+func ListenAndMergeGlobalState(rx <-chan orderManagement.GlobalStateType, worldViewChannel chan<- struct{}) {
 	for msg := range rx {
 		orderManagement.MergeGlobalState(msg)
+
+		select {
+		case worldViewChannel <- struct{}{}:
+		default:
+		}
 	}
 }
 
@@ -53,19 +58,22 @@ func SendGlobalState(tx chan<- orderManagement.GlobalStateType) {
 }
 
 type PortConfig struct {
-	PeerDiscoveryPort int    // Used by peers.Transmitter/Receiver (heartbeats)
-	MessageBcastPort  int    // Used by bcast.Transmitter/Receiver (global state)
+	PeerDiscoveryPort int // Used by peers.Transmitter/Receiver (heartbeats)
+	MessageBcastPort  int // Used by bcast.Transmitter/Receiver (global state)
 	LocalID           string
 }
 
 type NetworkConn struct {
 	// Peer discovery
 	HeartbeatEnabled chan<- bool
-	PeerUpdates   <-chan peers.PeerUpdate
+	PeerUpdates      <-chan peers.PeerUpdate
 
 	// GlobalState messaging
 	GlobalStateTx chan<- orderManagement.GlobalStateType
 	GlobalStateRx <-chan orderManagement.GlobalStateType
+
+	// world view update
+	WorldViewUpdate chan struct{}
 }
 
 // InitNetwork initializes network goroutines for:
@@ -91,14 +99,16 @@ func InitNetwork(config PortConfig) NetworkConn {
 	// --- global state channels ---
 	globalStateTx := make(chan orderManagement.GlobalStateType, 16)
 	globalStateRx := make(chan orderManagement.GlobalStateType, 16)
+	worldViewUpdate := make(chan struct{}, 1)
 
 	go bcast.Transmitter(config.MessageBcastPort, globalStateTx)
 	go bcast.Receiver(config.MessageBcastPort, globalStateRx)
 
 	return NetworkConn{
 		HeartbeatEnabled: heartbeatEnabled,
-		PeerUpdates:   	  peerUpdates,
-		GlobalStateTx: 	  globalStateTx,
+		PeerUpdates:      peerUpdates,
+		GlobalStateTx:    globalStateTx,
 		GlobalStateRx:    globalStateRx,
+		WorldViewUpdate:  worldViewUpdate,
 	}
 }

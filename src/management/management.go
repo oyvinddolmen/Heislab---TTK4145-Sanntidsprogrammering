@@ -6,7 +6,6 @@ package management
 
 import (
 	"heislab/elevio"
-	"os"
 )
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -61,12 +60,11 @@ type Elevator struct {
 }
 
 type ElevChannels struct {
-	MotorDirection  chan int
-	LastFloor       chan int
-	Obstruction     chan bool
-	StopBtn         chan bool
-	BtnPresses      chan elevio.ButtonEvent // Getting buttonpresses on the physical control box
-	WorldViewUpdate chan bool
+	MotorDirection chan int
+	LastFloor      chan int
+	Obstruction    chan bool
+	StopBtn        chan bool
+	BtnPresses     chan elevio.ButtonEvent // Getting buttonpresses on the physical control box
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -74,11 +72,3 @@ type ElevChannels struct {
 // ---------------------------------------------------------------------------------------------------------------------
 var Elev Elevator
 var OtherElevs []Elevator
-
-func GetElevID() string {
-	if len(os.Args) < 2 {
-		panic("Usage: go run main.go <elevatorID>")
-	}
-
-	return os.Args[1]
-}
