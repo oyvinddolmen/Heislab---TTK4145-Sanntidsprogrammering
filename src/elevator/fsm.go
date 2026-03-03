@@ -12,19 +12,20 @@ import (
 // Initialize state-machine
 // -------------------------------------------------------------------------------------------
 
-func InitFSM(localIP string, NumFloors int) {
-	noOrder := management.Order{Floor: -1, ButtonType: -1, ElevIP: "", Finished: false}
+func InitFSM(elevID string, NumFloors int) {
+	noOrder := management.Order{Floor: -1, ButtonType: -1, ElevID: "", Finished: false}
 	setElevState(management.INIT)
-	management.Elev.IP = localIP
+	management.Elev.ID = elevID
 	management.Elev.Floor = -1
 	management.Elev.LastFloor = 0
 	management.Elev.MoveDir = management.Dir_Down
 	management.Elev.CurrentOrder = noOrder
+
 	for floor := 0; floor < NumFloors; floor++ {
 		for button := 0; button < management.NumButtons; button++ {
 			management.Elev.Orders[floor][button].Floor = floor
 			management.Elev.Orders[floor][button].ButtonType = elevio.ButtonType(button)
-			management.Elev.Orders[floor][button].ElevIP = ""
+			management.Elev.Orders[floor][button].ElevID = ""
 			management.Elev.Orders[floor][button].Finished = false
 			management.Elev.Orders[floor][button].OrderPlaced = false
 		}
@@ -218,7 +219,7 @@ func runFSM(channels management.ElevChannels) {
 // FSM set functions
 // -------------------------------------------------------------------------------------------
 
-// sets elev state and calls onStateEntry functions // TODO cahnge to 2 functions
+// Sets elev state and calls onStateEntry functions // TODO cahnge to 2 functions
 func setElevState(state management.State) {
 	prev := management.Elev.State
 	management.Elev.State = state

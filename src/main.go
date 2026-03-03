@@ -2,7 +2,6 @@ package main
 
 import (
 	//"fmt"
-	//"fmt"
 	"heislab/elevator"
 	"heislab/elevio"
 
@@ -11,7 +10,6 @@ import (
 	"heislab/orderManagement"
 
 	"heislab/network"
-	//"os"
 	//"strconv"
 )
 
@@ -23,6 +21,8 @@ func main() {
 	// -------------------------------------------------------------------------------------------
 	// Retrieving ID and network ports on startup
 	// -------------------------------------------------------------------------------------------
+
+	elevID := management.GetElevID()
 
 	// -------------------------------------------------------------------------------------------
 	// Initializing channels
@@ -41,24 +41,27 @@ func main() {
 	// Initialize network
 	// -------------------------------------------------------------------------------------------
 
-	portCfg := network.PortConfig{
+	portConfig := network.PortConfig{
 		PeerDiscoveryPort: 15657,    // Random ports, must be same for all
 		MessageBcastPort:  15658,
-		LocalID:           "",
+		ElevID:            elevID,
 	}
+	networkConn := network.InitNetwork(portConfig)  // Returns network channels
 
 	// -------------------------------------------------------------------------------------------
-	// Initialise elevator and network
+	// Initialize elevator
 	// -------------------------------------------------------------------------------------------
 
-	networkConn := network.InitNetwork(portCfg)  // Returns network channels and local IP
-	localID := networkConn.LocalID
-	orderManagement.InitGlobalState(localID)
-	elevator.ElevatorInit(localID, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
+	orderManagement.InitGlobalState(elevID)
+	elevator.InitElevator(elevID, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
 	//faultTolerance.RecoverOnStartup(GlobalStateRx)
 	go elevator.RunElevator(elevChannels)
+
 	select {}
 }
+
+
+
 
 /*
 import (

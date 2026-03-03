@@ -24,11 +24,11 @@ func goToGroundFloor() {
 	setElevState(management.IDLE)
 }
 
-func ElevatorInit(localID string, adress string, numFloors int) {
+func InitElevator(elevID string, adress string, numFloors int) {
 	elevio.Init(adress, numFloors) // To run several simulators, each terminal/simulator needs unique adress
 	setElevState(management.INIT)
-	lightInit(numFloors)
-	InitFSM(localID, numFloors)
+	initLights(numFloors)
+	InitFSM(elevID, numFloors)
 	goToGroundFloor()
 }
 
@@ -36,7 +36,7 @@ func ElevatorInit(localID string, adress string, numFloors int) {
 // Initalize lights functions
 // ---------------------------------------------------------------------------------------------------------------------
 
-func lightInit(numFloors int) {
+func initLights(numFloors int) {
 	for i := range numFloors {
 		elevio.SetButtonLamp(elevio.BT_Cab, i, false)
 
@@ -81,7 +81,7 @@ func findMovingDirection(destination int, lastFloor int) elevio.MotorDirection {
 // Driving functions
 // ---------------------------------------------------------------------------------------------------------------------
 
-// check if elevator have reached floor
+// Checks if elevator has reached floor
 func reachedDestination(floor int) bool {
 	if management.Elev.State == management.MOVING && floor == management.Elev.CurrentOrder.Floor {
 		return true
@@ -90,7 +90,7 @@ func reachedDestination(floor int) bool {
 	}
 }
 
-// turns off lights when reaching destination floor
+// Turns off lights when reaching destination floor
 func reachedFloorLightsOff(floor int) {
 	elevio.SetButtonLamp(elevio.BT_Cab, floor, false)
 	elevio.SetButtonLamp(elevio.BT_HallUp, floor, false)
@@ -102,7 +102,7 @@ func stopElevator() {
 	management.Elev.MoveDir = management.Dir_Idle
 }
 
-// sets motordirection in direction of newOrder and changes Elev.MoveDir.
+// Sets motordirection in direction of newOrder and changes Elev.MoveDir.
 func driveToDestination(destination int, lastFloor int) {
 	moveDir := findMovingDirection(destination, lastFloor)
 	elevio.SetMotorDirection(moveDir)
@@ -110,7 +110,7 @@ func driveToDestination(destination int, lastFloor int) {
 
 }
 
-// turns on doorOpenLight
+// Turns on doorOpenLight
 func openDoor() {
 	elevio.SetDoorOpenLamp(true)
 }

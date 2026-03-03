@@ -6,6 +6,7 @@ package management
 
 import (
 	"heislab/elevio"
+	"os"
 )
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -44,13 +45,13 @@ type Order struct {
 	OrderPlaced bool
 	Floor       int
 	ButtonType  elevio.ButtonType
-	ElevIP      string // Empty string if no elevator is assigned, else the ID of the elevator assigned
+	ElevID      string // Empty string if no elevator is assigned, else the ID of the elevator assigned
 	Finished    bool
 }
 
 type Elevator struct {
 	State        State
-	IP           string
+	ID           string
 	Floor        int // -1 if between floors
 	LastFloor    int
 	MoveDir      Direction
@@ -72,3 +73,11 @@ type ElevChannels struct {
 // ---------------------------------------------------------------------------------------------------------------------
 var Elev Elevator
 var OtherElevs []Elevator
+
+func GetElevID() string {
+	if len(os.Args) < 2 {
+		panic("Usage: go run main.go <elevatorID>")
+	}
+
+	return os.Args[1]
+}
