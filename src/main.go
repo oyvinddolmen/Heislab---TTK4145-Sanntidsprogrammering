@@ -1,12 +1,13 @@
 package main
 
 import (
-	//"fmt"
-	//"fmt"
+	"flag"
+	"fmt"
 	"heislab/elevator"
 	"heislab/elevio"
+	"time"
 
-	//"heislab/faultTolerance"
+	"heislab/faultTolerance"
 	"heislab/management"
 	"heislab/orderManagement"
 
@@ -20,6 +21,26 @@ import (
 // -------------------------------------------------------------------------------------------
 
 func main() {
+
+	/* RUNNING MULTIPLE SIMULATORS
+	.\SimElevatorServer.exe --port 15657
+	.\SimElevatorServer.exe --port 15667
+	and RUNNING MUTLIPLE ELEVATORS
+	go run . -simPort 15657 -peersPort 20001 -bcastPort 20002
+	go run . -simPort 15667 -peersPort 20001 -bcastPort 20002
+	*/
+	simHost := flag.String("simHost", "localhost", "Simulator host for elevio.Init")
+	simPort := flag.Int("simPort", 15657, "Simulator port for elevio.Init")
+	simAddr := flag.String("simAddr", "", "Full simulator address host:port (overrides simHost/simPort)")
+	peersPort := flag.Int("peersPort", 15667, "UDP port for peer discovery (must be same for all elevators)")
+	bcastPort := flag.Int("bcastPort", 15668, "UDP port for global state broadcast (must be same for all elevators)")
+	localIDFlag := flag.String("id", "", "Optional local network ID (default auto-generated)")
+	flag.Parse()
+
+	elevAddr := *simAddr
+	if elevAddr == "" {
+		elevAddr = fmt.Sprintf("%s:%d", *simHost, *simPort)
+	}
 
 	// -------------------------------------------------------------------------------------------
 	// Initializing channels
@@ -39,22 +60,23 @@ func main() {
 	// -------------------------------------------------------------------------------------------
 
 	portCfg := network.PortConfig{
-		PeerDiscoveryPort: 15657, // Random ports, must be same for all
-		MessageBcastPort:  15658,
-		LocalID:           "",
+		PeerDiscoveryPort: *peersPort,
+		MessageBcastPort:  *bcastPort,
+		LocalID:           *localIDFlag,
 	}
 	networkConn := network.InitNetwork(portCfg) // Returns network channels and local IP
-	//broadCastInterval := 20 * time.Millisecond
+	broadCastInterval := 20 * time.Millisecond
 
 	// -------------------------------------------------------------------------------------------
 	// Initialise elevator, globalstate and network
 	// -------------------------------------------------------------------------------------------
 
 	localID := networkConn.LocalID
-	elevator.ElevatorInit(localID, "localhost:15657", management.NumFloors) // localhost:15657" for simulatoren
+	elevator.ElevatorInit(localID, elevAddr, management.NumFloors)
 	orderManagement.InitGlobalState(localID)
-	// faultTolerance.RecoverOnStartup(GlobalStateRx)	// when starting up
-	//go network.SendGlobalStatePeriodically(networkConn.GlobalStateTx, broadCastInterval)
+	faultTolerance.RecoverOnStartup(networkConn.GlobalStateRx)
+	go network.ListenAndMergeGlobalState(networkConn.GlobalStateRx)
+	go network.SendGlobalStatePeriodically(networkConn.GlobalStateTx, broadCastInterval)
 	go elevator.RunElevator(elevChannels, networkConn)
 	select {}
 }

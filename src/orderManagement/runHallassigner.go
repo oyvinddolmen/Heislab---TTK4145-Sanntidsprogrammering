@@ -32,9 +32,6 @@ func RunHallAssigner() error {
 }
 
 func applyAssignments(assignments map[string][][2]bool) {
-
-	GlobalStateMutex.Lock()
-
 	localID := management.Elev.IP
 
 	assigned, exists := assignments[localID]
@@ -50,8 +47,6 @@ func applyAssignments(assignments map[string][][2]bool) {
 			}
 		}
 	}
-
-	GlobalStateMutex.Unlock()
 
 	UpdateCurrentOrder()
 }
