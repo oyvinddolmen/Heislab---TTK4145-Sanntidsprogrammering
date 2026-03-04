@@ -3,18 +3,13 @@ package faultTolerance
 import (
 	"heislab/management"
 	"heislab/orderManagement"
-	"sync"
 	"time"
-	//"os"
-	//"fmt"
 )
-
 
 const HeartbeatTimeout = 2 * time.Second
 
 // Track last time we heard from each elevator
 var lastSeen = make(map[string]time.Time)
-var failureMutex sync.Mutex
 
 // Called whenever we receive state from another elevator
 func RegisterHeartbeat(elevID string) {
@@ -27,21 +22,17 @@ func RegisterHeartbeat(elevID string) {
 }
 
 // Periodically check if elevators have died
-func StartFailureDetector() {
-
+func StartFailureDetector(gs *orderManagement.GlobalState) {
 	ticker := time.NewTicker(200 * time.Millisecond)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		checkForDeadElevators()
+		checkForDeadElevators(gs)
 	}
 }
 
 // Detect and handle dead elevators
-func checkForDeadElevators() {
-	failureMutex.Lock()
-	defer failureMutex.Unlock()
-
+func checkForDeadElevators(gs *orderManagement.GlobalState) {
 	now := time.Now()
 	localID := management.Elev.ID
 
@@ -52,26 +43,14 @@ func checkForDeadElevators() {
 		}
 
 		if now.Sub(t) > HeartbeatTimeout {
+			// Sett heisen offline i globalState
+			gs.SetElevatorToOffline(id)
 
-			orderManagement.SetElevatorToOffline(id)
+			// Fjern fra lastSeen
 			delete(lastSeen, id)
-			orderManagement.RunHallAssigner()
+
+			// Re-kjør hall assigner med oppdatert state
+			_ = orderManagement.RunHallAssigner(gs)
 		}
 	}
 }
-
-/*
-func GetStartupInput() (int, error) {
-
-	if len(os.Args) != 2 {
-		return 0, fmt.Errorf("usage: go run main.go <ID>")
-	}
-
-	elevID, err := strconv.Atoi(os.Args[1])
-	if err != nil {
-		return 0, fmt.Errorf("ID must be an integer")
-	}
-
-	return elevID, nil
-}
-*/

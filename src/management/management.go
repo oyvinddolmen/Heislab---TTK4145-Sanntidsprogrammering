@@ -46,7 +46,7 @@ type Order struct {
 	Floor       int
 	ButtonType  elevio.ButtonType
 	ElevID      string // Empty string if no elevator is assigned, else the ID of the elevator assigned
-	Finished    bool
+	//Finished    bool
 }
 
 type Elevator struct {

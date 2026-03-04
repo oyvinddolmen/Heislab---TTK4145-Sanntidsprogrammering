@@ -6,24 +6,23 @@ import (
 	"heislab/management"
 )
 
-func RunHallAssigner() error {
+// RunHallAssigner kopierer hall requests og online elevator states,
+// kaller hallRequestAssigner, og oppdaterer lokalt heis-objekt
+func RunHallAssigner(gs *GlobalState) error {
 
-	GlobalStateMutex.Lock()
+	// Lås globalState og kopier hallRequests + online elevator states
+	gs.mu.Lock()
+	hallRequests := append([][2]bool(nil), gs.globalState.HallRequests...)
 
-	// Copy HallRequests
-	hallRequests := make([][2]bool, len(GlobalState.HallRequests))
-	copy(hallRequests, GlobalState.HallRequests)
-
-	// CopyStates (only the online elevators)
 	filtered := make(map[string]hallRequestAssigner.ElevatorStateJSON)
-	for id, s := range GlobalState.States {
+	for id, s := range gs.globalState.States {
 		if s.Behavior != "offline" {
 			filtered[id] = s
 		}
 	}
+	gs.mu.Unlock()
 
-	GlobalStateMutex.Unlock()
-	PrintGlobalState()
+	gs.Print() // debug
 
 	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
 	if err != nil {
@@ -31,19 +30,18 @@ func RunHallAssigner() error {
 		return fmt.Errorf("assigner failed: %w", err)
 	}
 
-	applyAssignments(assignments)
+	applyAssignments(gs, assignments)
 	return nil
 }
 
-func applyAssignments(assignments map[string][][2]bool) {
-	GlobalStateMutex.Lock()
-
+// applyAssignments oppdaterer lokal heis med tildelte hall-orders
+func applyAssignments(gs *GlobalState, assignments map[string][][2]bool) {
 	elevID := management.Elev.ID
-
 	assigned, exists := assignments[elevID]
 	if !exists {
 		return
 	}
+
 	fmt.Println("assigned: ", assigned)
 
 	for floor := 0; floor < management.NumFloors; floor++ {
@@ -55,6 +53,16 @@ func applyAssignments(assignments map[string][][2]bool) {
 		}
 	}
 
-	GlobalStateMutex.Unlock()
-	UpdateCurrentOrder()
+	// Oppdater globalState med nye lokale hall requests
+	gs.mu.Lock()
+	for floor := 0; floor < management.NumFloors; floor++ {
+		for btn := 0; btn < management.CabButton; btn++ {
+			if assigned[floor][btn] {
+				gs.globalState.HallRequests[floor][btn] = true
+			}
+		}
+	}
+	gs.mu.Unlock()
+
+	UpdateCurrentOrder(gs)
 }

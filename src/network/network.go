@@ -1,9 +1,5 @@
 package network
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Calling of communication functions in network-folder
-// ---------------------------------------------------------------------------------------------------------------------
-
 import (
 	"time"
 
@@ -12,48 +8,32 @@ import (
 	"heislab/orderManagement"
 )
 
-// har ikke testet denne
-func ListenAndMergeGlobalState(rx <-chan orderManagement.GlobalStateType, worldViewChannel chan<- orderManagement.GlobalStateType) {
+// ListenAndMergeGlobalState lytter på innkommende worldViews og oppdaterer globalState
+func ListenAndMergeGlobalState(gs *orderManagement.GlobalState, rx <-chan orderManagement.GlobalStateType, worldViewChannel chan<- orderManagement.GlobalStateType) {
 	for worldView := range rx {
-		// if WorldView has changed
-		if orderManagement.NewWorldView(worldView) {
+		if gs.NewWorldView(worldView) {
 			worldViewChannel <- worldView
 		}
-
-		orderManagement.MergeGlobalState(worldView)
+		gs.Merge(worldView)
 	}
 }
 
-// har ikke testet denne
-func SendGlobalStatePeriodically(tx chan<- orderManagement.GlobalStateType, interval time.Duration) {
+// SendGlobalStatePeriodically sender global state med jevne mellomrom
+func SendGlobalStatePeriodically(gs *orderManagement.GlobalState, tx chan<- orderManagement.GlobalStateType, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for range ticker.C {
-
-		// Oppdater egen state før sending
-		orderManagement.UpdateLocalGlobalState()
-
-		// Ta kopi under mutex
-		orderManagement.GlobalStateMutex.Lock()
-		msg := orderManagement.GlobalState
-		orderManagement.GlobalStateMutex.Unlock()
-
-		// Send kopien
-		tx <- msg
+		gs.UpdateLocalGlobalState()           // oppdater egen state
+		msg := gs.GetCopy()                   // ta sikker kopi under mutex
+		tx <- msg                             // send
 	}
 }
 
-// sends global state once
-func SendGlobalState(tx chan<- orderManagement.GlobalStateType) {
-	orderManagement.UpdateLocalGlobalState()
-
-	// Ta kopi under mutex
-	orderManagement.GlobalStateMutex.Lock()
-	msg := orderManagement.GlobalState
-	orderManagement.GlobalStateMutex.Unlock()
-
-	// Send kopien
+// SendGlobalState sender global state én gang
+func SendGlobalState(gs *orderManagement.GlobalState, tx chan<- orderManagement.GlobalStateType) {
+	gs.UpdateLocalGlobalState()
+	msg := gs.GetCopy()
 	tx <- msg
 }
 
@@ -72,22 +52,11 @@ type NetworkConn struct {
 	GlobalStateTx chan<- orderManagement.GlobalStateType
 	GlobalStateRx <-chan orderManagement.GlobalStateType
 
-	// world view update
+	// World view update
 	WorldViewUpdate chan orderManagement.GlobalStateType
 }
 
-// InitNetwork initializes network goroutines for:
-//	1. Peer discovery (Tx and Rx)
-//		-> Sends heartbeats and keeps track of peers
-//	2. Global state broadcasts (Tx and Rx)
-//
-// Also initializes and returns channels for network interactions:
-//   - myID: the node ID used on the network
-//   - peerTxEnabled: send true/false to enable/disable announcing your presence
-//   - peerUpdates: stream of PeerUpdate (New/Lost/Peers)
-//	 - globalStateTx: broadcast transmitting channel
-// 	 - globalStateRx: broadcast receiving channel
-
+// InitNetwork initializes network goroutines for peer discovery and global state broadcasts
 func InitNetwork(config PortConfig) NetworkConn {
 	// --- peer discovery channels ---
 	heartbeatEnabled := make(chan bool, 1)

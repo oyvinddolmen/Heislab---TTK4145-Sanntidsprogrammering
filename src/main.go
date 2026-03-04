@@ -5,37 +5,38 @@ import (
 	"fmt"
 	"heislab/elevator"
 	"heislab/elevio"
-	"time"
-
 	"heislab/faultTolerance"
 	"heislab/management"
-	"heislab/orderManagement"
-
 	"heislab/network"
-	//"strconv"
+	"heislab/orderManagement"
+	"time"
 )
-
-// -------------------------------------------------------------------------------------------
-// Main
-// -------------------------------------------------------------------------------------------
 
 func main() {
 
-	/* RUNNING MULTIPLE SIMULATORS
+	/*
+	RUNNING MULTIPLE SIMULATORS
 	.\SimElevatorServer.exe --port 15657
 	.\SimElevatorServer.exe --port 15667
-	and RUNNING MUTLIPLE ELEVATORS
+
+	RUNNING MULTIPLE ELEVATORS
 	go run . -simPort 15657 -peersPort 20001 -bcastPort 20002 -id 1
 	go run . -simPort 15667 -peersPort 20001 -bcastPort 20002 -id 2
 
-	dersom du bare ønsker å kjøre en heis kan du starte simulatoren og heisen som vanlig uten å legge til ports
+	Hvis du bare vil kjøre én heis:
+	start simulator og kjør uten ports.
 	*/
-	simHost := flag.String("simHost", "localhost", "Simulator host for elevio.Init")
-	simPort := flag.Int("simPort", 15657, "Simulator port for elevio.Init")
+
+	// ------------------------------------------------
+	// Flags
+	// ------------------------------------------------
+
+	simHost := flag.String("simHost", "localhost", "Simulator host")
+	simPort := flag.Int("simPort", 15657, "Simulator port")
 	simAddr := flag.String("simAddr", "", "Full simulator address host:port (overrides simHost/simPort)")
-	peersPort := flag.Int("peersPort", 15667, "UDP port for peer discovery (must be same for all elevators)")
-	bcastPort := flag.Int("bcastPort", 15668, "UDP port for global state broadcast (must be same for all elevators)")
-	elevIDFlag := flag.String("id", "", "Optional local network ID (default auto-generated)")
+	peersPort := flag.Int("peersPort", 15667, "UDP port for peer discovery")
+	bcastPort := flag.Int("bcastPort", 15668, "UDP port for global state broadcast")
+	elevIDFlag := flag.String("id", "", "Elevator ID (optional)")
 	flag.Parse()
 
 
@@ -46,9 +47,9 @@ func main() {
 
 	elevID := *elevIDFlag
 
-	// -------------------------------------------------------------------------------------------
-	// Initializing channels
-	// -------------------------------------------------------------------------------------------
+	// ------------------------------------------------
+	// Channels
+	// ------------------------------------------------
 
 	elevChannels := management.ElevChannels{
 		MotorDirection: make(chan int),
@@ -58,28 +59,57 @@ func main() {
 		BtnPresses:     make(chan elevio.ButtonEvent),
 	}
 
-	// -------------------------------------------------------------------------------------------
-	// Initialize network
-	// -------------------------------------------------------------------------------------------
+	// ------------------------------------------------
+	// Network
+	// ------------------------------------------------
 
 	portCfg := network.PortConfig{
 		PeerDiscoveryPort: *peersPort,
 		MessageBcastPort:  *bcastPort,
 		LocalID:           elevID,
 	}
-	networkConn := network.InitNetwork(portCfg) // Returns network channels and local IP
-	broadCastInterval := 20 * time.Millisecond
 
-	// -------------------------------------------------------------------------------------------
-	// Initialise elevator, global state and network
-	// -------------------------------------------------------------------------------------------
+	networkConn := network.InitNetwork(portCfg)
+	broadcastInterval := 20 * time.Millisecond
+
+	// ------------------------------------------------
+	// Initialize elevator hardware
+	// ------------------------------------------------
 
 	elevator.InitElevator(elevID, elevAddr, management.NumFloors)
-	orderManagement.InitGlobalState(elevID)
-	faultTolerance.RecoverOnStartup(networkConn.GlobalStateRx)
-	go network.ListenAndMergeGlobalState(networkConn.GlobalStateRx, networkConn.WorldViewUpdate)
-	go network.SendGlobalStatePeriodically(networkConn.GlobalStateTx, broadCastInterval)
-	go elevator.RunElevator(elevChannels, networkConn)
+
+	// ------------------------------------------------
+	// Initialize GlobalState (THIS is the important line)
+	// ------------------------------------------------
+
+	// ------------------------------------------------
+	// Fault tolerance recovery
+	// ------------------------------------------------
+
+	faultTolerance.RecoverOnStartup(gs, networkConn.GlobalStateRx)
+
+	// ------------------------------------------------
+	// Network goroutines
+	// ------------------------------------------------
+
+	go network.ListenAndMergeGlobalState(
+		gs,
+		networkConn.GlobalStateRx,
+		networkConn.WorldViewUpdate,
+	)
+
+	go network.SendGlobalStatePeriodically(
+		gs,
+		networkConn.GlobalStateTx,
+		broadcastInterval,
+	)
+
+	// ------------------------------------------------
+	// Start elevator FSM
+	// ------------------------------------------------
+
+	go elevator.RunElevator(gs, elevChannels, networkConn)
+
 	select {}
 }
 

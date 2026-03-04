@@ -8,20 +8,15 @@ import (
 	"time"
 )
 
-// Called once when elevator boots. Checks if other elevs has your cab orders
-func RecoverOnStartup(rx <-chan orderManagement.GlobalStateType) {
+func RecoverOnStartup(gs *orderManagement.GlobalState, rx <-chan orderManagement.GlobalStateType) {
 	timeout := time.After(1 * time.Second)
 
 	// Vent på eksisterende GlobalState
 	for {
 		select {
-
 		case globalState := <-rx:
-			orderManagement.GlobalStateMutex.Lock()
-			orderManagement.GlobalState = globalState
-			orderManagement.GlobalStateMutex.Unlock()
+			gs.Merge(globalState) // merge innkommende state
 			goto RECOVER
-
 		case <-timeout:
 			fmt.Println("No GlobalState received on startup, starting fresh")
 			goto RECOVER
@@ -32,22 +27,17 @@ RECOVER:
 
 	elevID := management.Elev.ID
 
-	orderManagement.GlobalStateMutex.Lock()
-	defer orderManagement.GlobalStateMutex.Unlock()
-	orderManagement.GlobalState.LocalID = elevID
-
 	// Gjenopprett cab-orders hvis de fantes fra før
-	oldState, exists := orderManagement.GlobalState.States[elevID]
-	if exists {
+	if oldState, exists := gs.GetElevatorState(elevID); exists {
 		for floor := 0; floor < management.NumFloors; floor++ {
 			if oldState.CabRequests[floor] {
 				management.Elev.Orders[floor][elevio.BT_Cab].OrderPlaced = true
-				management.Elev.Orders[floor][elevio.BT_Cab].Finished = false
-				management.Elev.Orders[floor][elevio.BT_Cab].ElevID = management.Elev.ID
+				//management.Elev.Orders[floor][elevio.BT_Cab].Finished = false
+				management.Elev.Orders[floor][elevio.BT_Cab].ElevID = elevID
 			}
 		}
 	}
 
-	// Registrer oss selv i GlobalState
-	orderManagement.GlobalState.States[elevID] = orderManagement.ConvertElevatorToJSON(management.Elev)
+	// Registrer oss selv i GlobalState via metode
+	gs.SetElevatorState(elevID, orderManagement.ConvertElevatorToJSON(management.Elev))
 }

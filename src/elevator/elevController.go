@@ -7,27 +7,28 @@ package elevator
 import (
 	"heislab/elevio"
 	"heislab/management"
+	"heislab/orderManagement"
 )
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Initalize elevator functions
 // ---------------------------------------------------------------------------------------------------------------------
 
-func goToGroundFloor() {
+func goToGroundFloor(gs *orderManagement.GlobalState) {
 	elevio.SetMotorDirection(elevio.MD_Down)
 	for elevio.GetFloor() != 0 {
 	}
 	elevio.SetMotorDirection(elevio.MD_Stop)
 	elevio.SetFloorIndicator(0)
-	setElevState(management.ElevIdle)
+	setElevState(gs,management.ElevIdle)
 }
 
 func InitElevator(elevID string, adress string, numFloors int) {
 	elevio.Init(adress, numFloors) // To run several simulators, each terminal/simulator needs unique adress
-	setElevState(management.ElevInit)
-	initLights(numFloors)
+	InitLights(numFloors)
 	InitFSM(elevID, numFloors)
-	goToGroundFloor()
+	gs := orderManagement.NewGlobalState(elevID)
+	goToGroundFloor(gs)
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -80,7 +81,7 @@ func stopElevator() {
 func driveToDestination(destination int, lastFloor int) {
 	moveDir := findMovingDirection(destination, lastFloor)
 	elevio.SetMotorDirection(moveDir)
-	setMoveDir(management.Direction(moveDir))
+	setMotorFromDir()
 }
 
 // Turns on doorOpenLight
