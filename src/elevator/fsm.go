@@ -15,20 +15,20 @@ import (
 
 func InitFSM(elevID string, NumFloors int) {
 	noOrder := management.Order{Floor: -1, ButtonType: -1, ElevID: "", Finished: false}
-	setElevState(management.INIT)
+	setElevState(management.ElevInit)
 	management.Elev.ID = elevID
 	management.Elev.Floor = -1
 	management.Elev.LastFloor = 0
-	management.Elev.MoveDir = management.Dir_Down
+	management.Elev.MoveDir = management.DirDown
 	management.Elev.CurrentOrder = noOrder
 
-	for f := 0; f < NumFloors; f++ {
-		for b := 0; b < management.NumButtons; b++ {
-			management.Elev.Orders[f][b].Floor = f
-			management.Elev.Orders[f][b].ButtonType = elevio.ButtonType(b)
-			management.Elev.Orders[f][b].ElevID = ""
-			management.Elev.Orders[f][b].Finished = false
-			management.Elev.Orders[f][b].OrderPlaced = false
+	for floor := 0; floor < NumFloors; floor++ {
+		for button := 0; button < management.NumButtons; button++ {
+			management.Elev.Orders[floor][button].Floor = floor
+			management.Elev.Orders[floor][button].ButtonType = elevio.ButtonType(button)
+			management.Elev.Orders[floor][button].ElevID = ""
+			management.Elev.Orders[floor][button].Finished = false
+			management.Elev.Orders[floor][button].OrderPlaced = false
 		}
 	}
 }
@@ -63,7 +63,7 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 	for {
 		switch management.Elev.State {
 
-		case management.IDLE:
+		case management.ElevIdle:
 			select {
 
 			case <-networkChannels.WorldViewUpdate:
@@ -73,18 +73,18 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 					management.Elev.CurrentOrder.Floor,
 					management.Elev.LastFloor)
 
-				if getMoveDir() != management.Dir_Idle {
-					setElevState(management.MOVING)
+				if getMoveDir() != management.DirIdle {
+					setElevState(management.ElevMoving)
 				}
 
 			case <-elevChannels.Obstruction:
-				setElevState(management.OBSTRUCTION)
+				setElevState(management.ElevObstruction)
 
 			case <-elevChannels.StopBtn:
 				if management.Elev.Floor != -1 {
-					setElevState(management.OBSTRUCTION)
+					setElevState(management.ElevObstruction)
 				} else {
-					setElevState(management.STOP)
+					setElevState(management.ElevStop)
 				}
 
 			case btnPress := <-elevChannels.BtnPresses:
@@ -113,26 +113,26 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 					management.Elev.LastFloor,
 				)
 
-				if getMoveDir() != management.Dir_Idle {
-					setElevState(management.MOVING)
+				if getMoveDir() != management.DirIdle {
+					setElevState(management.ElevMoving)
 				}
 
 				fmt.Println("Current order: ", management.Elev.CurrentOrder.Floor)
 			}
 
-		case management.MOVING:
+		case management.ElevMoving:
 			select {
 
 			case <-networkChannels.WorldViewUpdate:
 				setHallLightOnAllPanels()
 				orderManagement.RunHallAssigner()
 				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
-				if management.Elev.MoveDir != management.Dir_Idle {
-					setElevState(management.MOVING)
+				if management.Elev.MoveDir != management.DirIdle {
+					setElevState(management.ElevMoving)
 				}
 
 			case <-elevChannels.StopBtn:
-				setElevState(management.STOP)
+				setElevState(management.ElevMoving)
 
 			case floor := <-elevChannels.LastFloor:
 				setElevLastFloor(floor)
@@ -143,7 +143,7 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 					orderManagement.CompleteCurrentOrder()
 					reachedFloorLightsOff(floor)
 					setElevFloor(floor)
-					setElevState(management.OBSTRUCTION)
+					setElevState(management.ElevObstruction)
 				}
 
 			case btnPress := <-elevChannels.BtnPresses:
@@ -172,7 +172,7 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 
 			}
 
-		case management.STOP:
+		case management.ElevStop:
 			select {
 
 			case <-networkChannels.WorldViewUpdate:
@@ -197,11 +197,11 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
 			case <-elevChannels.StopBtn:
-				setElevState(management.IDLE)
+				setElevState(management.ElevIdle)
 
 			}
 
-		case management.OBSTRUCTION:
+		case management.ElevObstruction:
 			select {
 
 			case <-networkChannels.WorldViewUpdate:
@@ -213,7 +213,7 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 					// stay in state OBSTRUCTION
 				} else {
 					elevio.SetDoorOpenLamp(false)
-					setElevState(management.IDLE)
+					setElevState(management.ElevIdle)
 				}
 
 			case obstructed := <-elevChannels.Obstruction:
@@ -253,16 +253,16 @@ func setElevState(state management.State) {
 	management.Elev.State = state
 
 	switch state {
-	case management.STOP:
+	case management.ElevStop:
 		onStopEntry()
 
-	case management.IDLE:
+	case management.ElevIdle:
 		onIdleEntry()
 
-	case management.MOVING:
+	case management.ElevMoving:
 		onMovingEntry()
 
-	case management.OBSTRUCTION:
+	case management.ElevObstruction:
 		onObstructionEntry()
 	}
 
@@ -300,7 +300,7 @@ func getFloor() int {
 // turns on stopLamp, sets Dir_Idle and goes to OBSTRUCTION/STOP state depending on elevator position
 func onStopEntry() {
 	elevio.SetStopLamp(true)
-	setMoveDir(management.Dir_Idle)
+	setMoveDir(management.DirIdle)
 	elevio.SetMotorDirection(elevio.MD_Stop)
 }
 
@@ -315,22 +315,22 @@ func onMovingEntry() {
 func onIdleEntry() {
 	elevio.SetDoorOpenLamp(false)
 	elevio.SetStopLamp(false)
-	setMoveDir(management.Dir_Idle)
+	setMoveDir(management.DirIdle)
 
 	orderManagement.RunHallAssigner()
 	driveToDestination(
 		management.Elev.CurrentOrder.Floor,
 		management.Elev.LastFloor)
 
-	if management.Elev.MoveDir != management.Dir_Idle {
-		setElevState(management.MOVING)
+	if management.Elev.MoveDir != management.DirIdle {
+		setElevState(management.ElevMoving)
 	}
 }
 
 // stops motor, sets moveDir, starts new doorTimer
 func onObstructionEntry() {
 	elevio.SetMotorDirection(elevio.MD_Stop)
-	setMoveDir(management.Dir_Idle)
+	setMoveDir(management.DirIdle)
 	openDoor()
 	if doorTimer != nil {
 		doorTimer.Stop()

@@ -21,20 +21,20 @@ const (
 type State int
 
 const (
-	INIT        = 1
-	IDLE        = 2
-	MOVING      = 3
-	STOP        = 4
-	OBSTRUCTION = 5
-	OFFLINE     = 6
+	ElevInit    	= 1
+	ElevIdle        = 2
+	ElevMoving      = 3
+	ElevStop        = 4
+	ElevObstruction = 5
+	ElevOffline     = 6
 )
 
 type Direction int
 
 const (
-	Dir_Down Direction = -1
-	Dir_Idle Direction = 0
-	Dir_Up   Direction = 1
+	DirDown Direction = -1
+	DirIdle Direction = 0
+	DirUp   Direction = 1
 )
 
 // ---------------------------------------------------------------------------------------------------------------------
