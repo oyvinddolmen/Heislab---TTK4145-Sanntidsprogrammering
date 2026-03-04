@@ -38,6 +38,7 @@ func main() {
 	elevIDFlag := flag.String("id", "", "Optional local network ID (default auto-generated)")
 	flag.Parse()
 
+
 	elevAddr := *simAddr
 	if elevAddr == "" {
 		elevAddr = fmt.Sprintf("%s:%d", *simHost, *simPort)

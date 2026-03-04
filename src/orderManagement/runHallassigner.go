@@ -2,11 +2,12 @@ package orderManagement
 
 import (
 	"fmt"
-	"heislab/management"
 	"heislab/hallRequestAssigner"
+	"heislab/management"
 )
 
 func RunHallAssigner() error {
+
 	GlobalStateMutex.Lock()
 
 	// Copy HallRequests
@@ -23,9 +24,10 @@ func RunHallAssigner() error {
 
 	GlobalStateMutex.Unlock()
 	PrintGlobalState()
-	
+
 	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
 	if err != nil {
+		fmt.Println("Hallassigner failed")
 		return fmt.Errorf("assigner failed: %w", err)
 	}
 
@@ -34,7 +36,6 @@ func RunHallAssigner() error {
 }
 
 func applyAssignments(assignments map[string][][2]bool) {
-
 	GlobalStateMutex.Lock()
 
 	elevID := management.Elev.ID
@@ -44,7 +45,7 @@ func applyAssignments(assignments map[string][][2]bool) {
 		return
 	}
 	fmt.Println("assigned: ", assigned)
-	
+
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for btn := 0; btn < management.CabButton; btn++ { // only hall buttons
 			if assigned[floor][btn] {

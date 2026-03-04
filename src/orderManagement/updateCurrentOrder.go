@@ -11,7 +11,6 @@ import (
 // ---------------------------------------------------------------------
 func UpdateCurrentOrder() {
 	elevator := &management.Elev
-
 	// Hvis vi allerede har en aktiv ordre som ikke er ferdig: gjør ingenting
 	if elevator.CurrentOrder.OrderPlaced && !elevator.CurrentOrder.Finished {
 		return
