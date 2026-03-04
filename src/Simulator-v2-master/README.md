@@ -16,6 +16,12 @@ In terminal inside Simulator folder:
 dmd -w -g src\sim_server.d src\timer_event.d -ofSimElevatorServer.exe
 .\SimElevatorServer.exe
  
+
+Running the simulator on Linux
+===========
+dmd -w -g src/sim_server.d src/timer_event.d -ofSimElevatorServer
+
+ 
 Executables
 ===========
  
