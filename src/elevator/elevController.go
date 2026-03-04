@@ -23,12 +23,13 @@ func goToGroundFloor(gs *orderManagement.GlobalState) {
 	setElevState(gs,management.ElevIdle)
 }
 
-func InitElevator(elevID string, adress string, numFloors int) {
+func InitElevator(elevID string, adress string, numFloors int) *orderManagement.GlobalState {
 	elevio.Init(adress, numFloors) // To run several simulators, each terminal/simulator needs unique adress
 	InitLights(numFloors)
 	InitFSM(elevID, numFloors)
 	gs := orderManagement.NewGlobalState(elevID)
 	goToGroundFloor(gs)
+	return gs
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

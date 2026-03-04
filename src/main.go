@@ -8,7 +8,6 @@ import (
 	"heislab/faultTolerance"
 	"heislab/management"
 	"heislab/network"
-	"heislab/orderManagement"
 	"time"
 )
 
@@ -76,7 +75,7 @@ func main() {
 	// Initialize elevator hardware
 	// ------------------------------------------------
 
-	elevator.InitElevator(elevID, elevAddr, management.NumFloors)
+	gs := elevator.InitElevator(elevID, elevAddr, management.NumFloors)
 
 	// ------------------------------------------------
 	// Initialize GlobalState (THIS is the important line)
@@ -86,7 +85,7 @@ func main() {
 	// Fault tolerance recovery
 	// ------------------------------------------------
 
-	faultTolerance.RecoverOnStartup(gs, networkConn.GlobalStateRx)
+	faultTolerance.RecoverOnStartup(gs,networkConn.GlobalStateRx)
 
 	// ------------------------------------------------
 	// Network goroutines
