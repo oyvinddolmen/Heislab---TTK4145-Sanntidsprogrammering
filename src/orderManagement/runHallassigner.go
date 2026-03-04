@@ -8,8 +8,7 @@ import (
 
 // RunHallAssigner kopierer hall requests og online elevator states,
 // kaller hallRequestAssigner, og oppdaterer lokalt heis-objekt
-func RunHallAssigner(gs *GlobalState) error {
-
+func RunHallAssigner(gs *GlobalState) {
 	// Lås globalState og kopier hallRequests + online elevator states
 	gs.mu.Lock()
 	hallRequests := append([][2]bool(nil), gs.globalState.HallRequests...)
@@ -26,15 +25,14 @@ func RunHallAssigner(gs *GlobalState) error {
 
 	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
 	if err != nil {
-		return fmt.Errorf("assigner failed: %w", err)
+		fmt.Println("assigner failed: %w", err)
 	}
 
-	applyAssignments(gs, assignments)
-	return nil
+	applyAssignments(assignments)
 }
 
 // applyAssignments oppdaterer lokal heis med tildelte hall-orders
-func applyAssignments(gs *GlobalState, assignments map[string][][2]bool) {
+func applyAssignments(assignments map[string][][2]bool) {
 	elevID := management.Elev.ID
 	assigned, exists := assignments[elevID]
 	if !exists {
@@ -52,16 +50,6 @@ func applyAssignments(gs *GlobalState, assignments map[string][][2]bool) {
 		}
 	}
 
-	// Oppdater globalState med nye lokale hall requests
-	gs.mu.Lock()
-	for floor := 0; floor < management.NumFloors; floor++ {
-		for btn := 0; btn < management.CabButton; btn++ {
-			if assigned[floor][btn] {
-				gs.globalState.HallRequests[floor][btn] = true
-			}
-		}
-	}
-	gs.mu.Unlock()
-
-	UpdateCurrentOrder(gs)
+	UpdateCurrentOrder()
+	fmt.Println("current order:", management.Elev.CurrentOrder.Floor)
 }
