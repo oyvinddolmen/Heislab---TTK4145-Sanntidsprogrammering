@@ -117,7 +117,9 @@ func runFSM(
 				}
 
 				network.SendGlobalState(gs, networkChannels.GlobalStateTx)
-				orderManagement.RunHallAssigner(gs)
+				fmt.Println(orderManagement.RunHallAssigner(gs))
+
+				fmt.Println("Valid order floor", order.Floor, "btn:", btnPress.Button)
 				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
 				driveToDestination(
