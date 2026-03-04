@@ -58,6 +58,7 @@ func RunElevator(elevChannels management.ElevChannels, networkChannels network.N
 
 // TODO: dersom man legger inn en cab-order mens dørene er åpne blir den ikke håndtert av heisen
 // TODO: heisen blir noen ganger stuck (med døren åpen??) og vil ikke kjøre noe sted
+//TODO: legger man inn en hallorder i samme etasje som heisen er i går ikke dørene opp
 
 func runFSM(elevChannels management.ElevChannels, networkChannels network.NetworkConn) {
 	for {
@@ -91,15 +92,17 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 
 				order := orderManagement.CreateOrder(btnPress)
 				if order.Floor == management.Elev.Floor {
-					orderManagement.CompleteCurrentOrder()
-				}
+					setElevState(management.ElevObstruction)
+					continue
 
-				if order.ButtonType == management.CabButton {
-					orderManagement.AddOrderToOrders(order)
-					orderManagement.UpdateLocalGlobalState()
 				} else {
-					orderManagement.AddHallRequestToGlobalState(order)
-					orderManagement.IncremtHallRequestVersion(order)
+					if order.ButtonType == management.CabButton {
+						orderManagement.AddOrderToOrders(order)
+						orderManagement.UpdateLocalGlobalState()
+					} else {
+						orderManagement.AddHallRequestToGlobalState(order)
+						orderManagement.IncremtHallRequestVersion(order)
+					}
 				}
 
 				network.SendGlobalState(networkChannels.GlobalStateTx)
@@ -132,7 +135,7 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 				}
 
 			case <-elevChannels.StopBtn:
-				setElevState(management.ElevMoving)
+				setElevState(management.ElevStop)
 
 			case floor := <-elevChannels.LastFloor:
 				setElevLastFloor(floor)
@@ -197,8 +200,11 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
 			case <-elevChannels.StopBtn:
-				setElevState(management.ElevIdle)
-
+				if getFloor() != -1 {
+					setElevState(management.ElevObstruction)
+				} else {
+					setElevState(management.ElevIdle)
+				}
 			}
 
 		case management.ElevObstruction:
@@ -233,7 +239,6 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 				}
 
 				network.SendGlobalState(networkChannels.GlobalStateTx)
-				orderManagement.RunHallAssigner()
 
 				fmt.Println("Valid order floor", order.Floor, "btn:", btnPress.Button)
 				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
@@ -253,14 +258,14 @@ func setElevState(state management.State) {
 	management.Elev.State = state
 
 	switch state {
-	case management.ElevStop:
-		onStopEntry()
-
 	case management.ElevIdle:
 		onIdleEntry()
 
 	case management.ElevMoving:
 		onMovingEntry()
+
+	case management.ElevStop:
+		onStopEntry()
 
 	case management.ElevObstruction:
 		onObstructionEntry()
