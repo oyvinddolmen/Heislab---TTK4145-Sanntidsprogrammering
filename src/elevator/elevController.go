@@ -1,10 +1,8 @@
 package elevator
 
 // ---------------------------------------------------------------------------------------------------------------------
-// In charge of physical elevator functions and driving-logic 
+// In charge of physical elevator functions and driving-logic
 // ---------------------------------------------------------------------------------------------------------------------
-
-// OWN LIGHTCONTROLLER FILE UNDER ELEVATOR?? !!!!!!!!!!!!!!!!!!!! YES
 
 import (
 	"heislab/elevio"
@@ -89,4 +87,3 @@ func driveToDestination(destination int, lastFloor int) {
 func openDoor() {
 	elevio.SetDoorOpenLamp(true)
 }
-

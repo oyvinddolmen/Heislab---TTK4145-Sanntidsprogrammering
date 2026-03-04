@@ -6,12 +6,9 @@ import (
 	"heislab/management"
 )
 
-// ---------------------------------------------------------------------
 // UpdateCurrentOrder: velger neste ordre for heisen basert på GlobalState
-// ---------------------------------------------------------------------
 func UpdateCurrentOrder() {
 	elevator := &management.Elev
-
 	// Hvis vi allerede har en aktiv ordre som ikke er ferdig: gjør ingenting
 	if elevator.CurrentOrder.OrderPlaced && !elevator.CurrentOrder.Finished {
 		return
@@ -53,9 +50,7 @@ func UpdateCurrentOrder() {
 	elevator.MoveDir = management.DirIdle
 }
 
-// ---------------------------------------------------------------------
 // assignUp: finn første ordre oppover fra startFloor
-// ---------------------------------------------------------------------
 func assignUp(startFloor int) bool {
 	elevator := &management.Elev
 
@@ -73,9 +68,7 @@ func assignUp(startFloor int) bool {
 	return false
 }
 
-// ---------------------------------------------------------------------
 // assignDown: finn første ordre nedover fra startFloor
-// ---------------------------------------------------------------------
 func assignDown(startFloor int) bool {
 	elevator := &management.Elev
 
@@ -97,9 +90,7 @@ func assignDown(startFloor int) bool {
 	return false
 }
 
-// ---------------------------------------------------------------------
 // call when elevator has reached CurrentOrder.Floor
-// ---------------------------------------------------------------------
 func CompleteCurrentOrder() {
 
 	elevator := &management.Elev
