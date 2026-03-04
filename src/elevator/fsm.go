@@ -306,7 +306,7 @@ func getFloor() int {
 func onStopEntry() {
 	elevio.SetStopLamp(true)
 	setMoveDir(management.DirIdle)
-	elevio.SetMotorDirection(elevio.MD_Stop)
+	elevio.SetMotorDirection(elevio.MotorDirStop)
 }
 
 // turns off door-open and stop-light when going to state MOVING
@@ -334,7 +334,7 @@ func onIdleEntry() {
 
 // stops motor, sets moveDir, starts new doorTimer
 func onObstructionEntry() {
-	elevio.SetMotorDirection(elevio.MD_Stop)
+	elevio.SetMotorDirection(elevio.MotorDirStop)
 	setMoveDir(management.DirIdle)
 	openDoor()
 	if doorTimer != nil {
