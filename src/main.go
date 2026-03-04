@@ -48,7 +48,7 @@ func main() {
 	// -------------------------------------------------------------------------------------------
 	// Initializing channels
 	// -------------------------------------------------------------------------------------------
-	//
+
 	elevChannels := management.ElevChannels{
 		MotorDirection: make(chan int),
 		LastFloor:      make(chan int),
