@@ -16,9 +16,9 @@ func RecoverOnStartup(rx <-chan orderManagement.GlobalStateType) {
 	for {
 		select {
 
-		case gs := <-rx:
+		case globalState := <-rx:
 			orderManagement.GlobalStateMutex.Lock()
-			orderManagement.GlobalState = gs
+			orderManagement.GlobalState = globalState
 			orderManagement.GlobalStateMutex.Unlock()
 			goto RECOVER
 
@@ -39,11 +39,11 @@ RECOVER:
 	// Gjenopprett cab-orders hvis de fantes fra før
 	oldState, exists := orderManagement.GlobalState.States[elevID]
 	if exists {
-		for f := 0; f < management.NumFloors; f++ {
-			if oldState.CabRequests[f] {
-				management.Elev.Orders[f][elevio.BT_Cab].OrderPlaced = true
-				management.Elev.Orders[f][elevio.BT_Cab].Finished = false
-				management.Elev.Orders[f][elevio.BT_Cab].ElevID = management.Elev.ID
+		for floor := 0; floor < management.NumFloors; floor++ {
+			if oldState.CabRequests[floor] {
+				management.Elev.Orders[floor][elevio.BT_Cab].OrderPlaced = true
+				management.Elev.Orders[floor][elevio.BT_Cab].Finished = false
+				management.Elev.Orders[floor][elevio.BT_Cab].ElevID = management.Elev.ID
 			}
 		}
 	}
