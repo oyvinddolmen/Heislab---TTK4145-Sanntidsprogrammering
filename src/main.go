@@ -14,16 +14,16 @@ import (
 func main() {
 
 	/*
-	RUNNING MULTIPLE SIMULATORS
-	.\SimElevatorServer.exe --port 15657
-	.\SimElevatorServer.exe --port 15667
+		RUNNING MULTIPLE SIMULATORS
+		.\SimElevatorServer.exe --port 15657
+		.\SimElevatorServer.exe --port 15667
 
-	RUNNING MULTIPLE ELEVATORS
-	go run . -simPort 15657 -peersPort 20001 -bcastPort 20002 -id 1
-	go run . -simPort 15667 -peersPort 20001 -bcastPort 20002 -id 2
+		RUNNING MULTIPLE ELEVATORS
+		go run . -simPort 15657 -peersPort 20001 -bcastPort 20002 -id 1
+		go run . -simPort 15667 -peersPort 20001 -bcastPort 20002 -id 2
 
-	Hvis du bare vil kjøre én heis:
-	start simulator og kjør uten ports.
+		Hvis du bare vil kjøre én heis:
+		start simulator og kjør uten ports.
 	*/
 
 	// ------------------------------------------------
@@ -37,7 +37,6 @@ func main() {
 	bcastPort := flag.Int("bcastPort", 15668, "UDP port for global state broadcast")
 	elevIDFlag := flag.String("id", "", "Elevator ID (optional)")
 	flag.Parse()
-
 
 	elevAddr := *simAddr
 	if elevAddr == "" {
@@ -85,7 +84,7 @@ func main() {
 	// Fault tolerance recovery
 	// ------------------------------------------------
 
-	faultTolerance.RecoverOnStartup(gs,networkConn.GlobalStateRx)
+	faultTolerance.RecoverOnStartup(gs, networkConn.GlobalStateRx)
 
 	// ------------------------------------------------
 	// Network goroutines

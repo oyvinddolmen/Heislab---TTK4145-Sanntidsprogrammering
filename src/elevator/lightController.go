@@ -6,13 +6,6 @@ import (
 	"heislab/orderManagement"
 )
 
-// Turns off lights when reaching destination floor
-func ReachedFloorLightsOff(floor int) {
-	elevio.SetButtonLamp(elevio.CabButton, floor, false)
-	elevio.SetButtonLamp(elevio.HallUpButton, floor, false)
-	elevio.SetButtonLamp(elevio.HallDownButton, floor, false)
-}
-
 // Turns off all hall and cab lights
 func InitLights(numFloors int) {
 	for i := 0; i < numFloors; i++ {
@@ -27,15 +20,22 @@ func InitLights(numFloors int) {
 	}
 }
 
-// Sets hall lights based on active orders
-func SetHallLightOnAllPanels(gs *orderManagement.GlobalState) {
+func setHallLightOnAllPanels(gs *orderManagement.GlobalState) {
+	state := gs.GetCopy()
+
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for btn := 0; btn < 2; btn++ {
-			// Hent hall-request under mutex via GetCopy()
-			state := gs.GetCopy()
-			on := state.HallRequests[floor][btn]
-
-			elevio.SetButtonLamp(elevio.ButtonType(btn), floor, on)
+			elevio.SetButtonLamp(
+				elevio.ButtonType(btn),
+				floor,
+				state.HallRequests[floor][btn],
+			)
 		}
 	}
+}
+
+func reachedFloorLightsOff(floor int) {
+	elevio.SetButtonLamp(elevio.CabButton, floor, false)
+	elevio.SetButtonLamp(elevio.HallUpButton, floor, false)
+	elevio.SetButtonLamp(elevio.HallDownButton, floor, false)
 }

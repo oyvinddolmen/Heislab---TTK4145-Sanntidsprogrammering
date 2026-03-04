@@ -20,7 +20,7 @@ func goToGroundFloor(gs *orderManagement.GlobalState) {
 	}
 	elevio.SetMotorDirection(elevio.MotorDirStop)
 	elevio.SetFloorIndicator(0)
-	setElevState(gs,management.ElevIdle)
+	setElevState(gs, management.ElevIdle)
 }
 
 func InitElevator(elevID string, adress string, numFloors int) *orderManagement.GlobalState {
