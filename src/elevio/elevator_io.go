@@ -17,17 +17,17 @@ var _conn net.Conn
 type MotorDirection int
 
 const (
-	MD_Up   MotorDirection = 1
-	MD_Down MotorDirection = -1
-	MD_Stop MotorDirection = 0
+	MotorDirUp   MotorDirection = 1
+	MotorDirDown MotorDirection = -1
+	MotorDirStop MotorDirection = 0
 )
 
 type ButtonType int
 
 const (
-	BT_HallUp   ButtonType = 0
-	BT_HallDown ButtonType = 1
-	BT_Cab      ButtonType = 2
+	HallUpButton   ButtonType = 0
+	HallDownButton ButtonType = 1
+	CabButton      ButtonType = 2
 )
 
 type ButtonEvent struct {

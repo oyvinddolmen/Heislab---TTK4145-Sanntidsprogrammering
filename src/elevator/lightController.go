@@ -8,21 +8,21 @@ import (
 
 // Turns off lights when reaching destination floor
 func ReachedFloorLightsOff(floor int) {
-	elevio.SetButtonLamp(elevio.BT_Cab, floor, false)
-	elevio.SetButtonLamp(elevio.BT_HallUp, floor, false)
-	elevio.SetButtonLamp(elevio.BT_HallDown, floor, false)
+	elevio.SetButtonLamp(elevio.CabButton, floor, false)
+	elevio.SetButtonLamp(elevio.HallUpButton, floor, false)
+	elevio.SetButtonLamp(elevio.HallDownButton, floor, false)
 }
 
 // Turns off all hall and cab lights
 func InitLights(numFloors int) {
 	for i := 0; i < numFloors; i++ {
-		elevio.SetButtonLamp(elevio.BT_Cab, i, false)
+		elevio.SetButtonLamp(elevio.CabButton, i, false)
 
 		if i < numFloors-1 {
-			elevio.SetButtonLamp(elevio.BT_HallUp, i, false)
+			elevio.SetButtonLamp(elevio.HallUpButton, i, false)
 		}
 		if i > 0 {
-			elevio.SetButtonLamp(elevio.BT_HallDown, i, false)
+			elevio.SetButtonLamp(elevio.HallDownButton, i, false)
 		}
 	}
 }

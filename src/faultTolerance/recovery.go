@@ -31,9 +31,9 @@ RECOVER:
 	if oldState, exists := gs.GetElevatorState(elevID); exists {
 		for floor := 0; floor < management.NumFloors; floor++ {
 			if oldState.CabRequests[floor] {
-				management.Elev.Orders[floor][elevio.BT_Cab].OrderPlaced = true
-				//management.Elev.Orders[floor][elevio.BT_Cab].Finished = false
-				management.Elev.Orders[floor][elevio.BT_Cab].ElevID = elevID
+				management.Elev.Orders[floor][elevio.CabButton].OrderPlaced = true
+				//management.Elev.Orders[floor][elevio.CabButton].Finished = false
+				management.Elev.Orders[floor][elevio.CabButton].ElevID = elevID
 			}
 		}
 	}

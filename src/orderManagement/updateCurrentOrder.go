@@ -99,7 +99,8 @@ func CompleteCurrentOrder(gs *GlobalState) {
 	button := elevator.CurrentOrder.ButtonType
 
 	// --- CAB ORDER ---
-	if button == elevio.BT_Cab {
+	if button == elevio.CabButton {
+
 		// Oppdater lokal heis
 		//elevator.Orders[floor][button].Finished = true
 		elevator.Orders[floor][button].OrderPlaced = false

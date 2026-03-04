@@ -15,10 +15,10 @@ import (
 // ---------------------------------------------------------------------------------------------------------------------
 
 func goToGroundFloor(gs *orderManagement.GlobalState) {
-	elevio.SetMotorDirection(elevio.MD_Down)
+	elevio.SetMotorDirection(elevio.MotorDirDown)
 	for elevio.GetFloor() != 0 {
 	}
-	elevio.SetMotorDirection(elevio.MD_Stop)
+	elevio.SetMotorDirection(elevio.MotorDirStop)
 	elevio.SetFloorIndicator(0)
 	setElevState(gs,management.ElevIdle)
 }
@@ -40,23 +40,23 @@ func findMovingDirection(destination int, lastFloor int) elevio.MotorDirection {
 
 	// safety measure
 	if destination < 0 {
-		return elevio.MD_Stop
+		return elevio.MotorDirStop
 	}
 
 	switch {
 	case destination > lastFloor:
 		management.Elev.MoveDir = management.DirUp
-		return elevio.MD_Up
+		return elevio.MotorDirUp
 	case destination < lastFloor:
 		management.Elev.MoveDir = management.DirDown
-		return elevio.MD_Down
+		return elevio.MotorDirDown
 	default:
 		if elevio.GetFloor() == -1 {
 			management.Elev.MoveDir = management.DirDown
-			return elevio.MD_Down // if between two floors, always go down (maybe better solution later, lastMovingDir variable?)
+			return elevio.MotorDirDown // if between two floors, always go down (maybe better solution later, lastMovingDir variable?)
 		}
 		management.Elev.MoveDir = management.DirIdle
-		return elevio.MD_Stop
+		return elevio.MotorDirStop
 	}
 }
 
@@ -74,7 +74,7 @@ func reachedDestination(floor int) bool {
 // ---------------------------------------------------------------------------------------------------------------------
 
 func stopElevator() {
-	elevio.SetMotorDirection(elevio.MD_Stop)
+	elevio.SetMotorDirection(elevio.MotorDirStop)
 	management.Elev.MoveDir = management.DirIdle
 }
 

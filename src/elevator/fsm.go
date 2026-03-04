@@ -284,9 +284,9 @@ func setHallLightOnAllPanels(gs *orderManagement.GlobalState) {
 }
 
 func reachedFloorLightsOff(floor int) {
-	elevio.SetButtonLamp(elevio.BT_Cab, floor, false)
-	elevio.SetButtonLamp(elevio.BT_HallUp, floor, false)
-	elevio.SetButtonLamp(elevio.BT_HallDown, floor, false)
+	elevio.SetButtonLamp(elevio.CabButton, floor, false)
+	elevio.SetButtonLamp(elevio.HallUpButton, floor, false)
+	elevio.SetButtonLamp(elevio.HallDownButton, floor, false)
 }
 
 // -------------------------------------------------------------------------------------------
@@ -350,16 +350,16 @@ func onObstructionEntry() {
 // -------------------------------------------------------------------------------------------
 
 func setMotorStop() {
-	elevio.SetMotorDirection(elevio.MD_Stop)
+	elevio.SetMotorDirection(elevio.MotorDirStop)
 }
 
 func setMotorFromDir() {
 	switch management.Elev.MoveDir {
 	case management.DirUp:
-		elevio.SetMotorDirection(elevio.MD_Up)
+		elevio.SetMotorDirection(elevio.MotorDirUp)
 	case management.DirDown:
-		elevio.SetMotorDirection(elevio.MD_Down)
+		elevio.SetMotorDirection(elevio.MotorDirDown)
 	default:
-		elevio.SetMotorDirection(elevio.MD_Stop)
+		elevio.SetMotorDirection(elevio.MotorDirStop)
 	}
 }
