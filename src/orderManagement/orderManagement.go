@@ -38,7 +38,7 @@ func CreateOrder(btnPress elevio.ButtonEvent) management.Order {
 		Floor:       btnPress.Floor,
 		ButtonType:  btnPress.Button,
 		ElevID:      "",
-		Finished:    false,
+		//Finished:    false,
 	}
 
 	return order

@@ -9,32 +9,35 @@ import (
 
 type GlobalStateType struct {
 	HallRequests        [][2]bool                                        // [floor][0=up,1=down]
-	HallRequestsVersion [][2]int                                         //incremented by one when matching hallRequest is updated
+	HallRequestsVersion [][2]int                                         // incremented by one when matching hallRequest is updated
 	States              map[string]hallRequestAssigner.ElevatorStateJSON // elevatorID -> state
 	LocalID             string
 }
 
-var (
-	GlobalState      GlobalStateType
-	GlobalStateMutex sync.Mutex
-)
-
-func InitGlobalState(elevID string) {
-	GlobalStateMutex.Lock()
-	defer GlobalStateMutex.Unlock()
-
-	GlobalState.HallRequests = make([][2]bool, management.NumFloors)
-	GlobalState.HallRequestsVersion = make([][2]int, management.NumFloors)
-	GlobalState.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
-	GlobalState.LocalID = elevID
-
-	GlobalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
-	GlobalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
+// GlobalState kapsler globalState + mutex
+type GlobalState struct {
+	mu          sync.Mutex
+	globalState GlobalStateType
 }
 
-// Convert elevator to JSON elevator state
-func ConvertElevatorToJSON(e management.Elevator) hallRequestAssigner.ElevatorStateJSON {
+// Constructor
+func NewGlobalState(elevID string) *GlobalState {
+	gs := &GlobalState{}
 
+	gs.globalState.HallRequests = make([][2]bool, management.NumFloors)
+	gs.globalState.HallRequestsVersion = make([][2]int, management.NumFloors)
+	gs.globalState.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
+	gs.globalState.LocalID = elevID
+
+	// initial local elevator state
+	gs.globalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
+
+	return gs
+}
+
+// -------------------- State Conversion --------------------
+
+func ConvertElevatorToJSON(e management.Elevator) hallRequestAssigner.ElevatorStateJSON {
 	cabRequests := make([]bool, management.NumFloors)
 	for floor := 0; floor < management.NumFloors; floor++ {
 		cabRequests[floor] = e.Orders[floor][management.CabButton].OrderPlaced
@@ -76,160 +79,125 @@ func convertDirection(direction management.Direction) string {
 	}
 }
 
-func UpdateLocalGlobalState() {
-	GlobalStateMutex.Lock()
-	defer GlobalStateMutex.Unlock()
+// -------------------- Public Methods --------------------
 
-	GlobalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
+func (gs *GlobalState) UpdateLocalGlobalState() {
+	gs.mu.Lock()
+	defer gs.mu.Unlock()
+	gs.globalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
 }
 
-func AddHallRequestToGlobalState(order management.Order) {
-	GlobalStateMutex.Lock()
-	defer GlobalStateMutex.Unlock()
-
-	floor := order.Floor
-	button := order.ButtonType // 0 = up, 1 = down
-
-	GlobalState.HallRequests[floor][button] = true
+func (gs *GlobalState) AddHallRequest(order management.Order) {
+	gs.mu.Lock()
+	defer gs.mu.Unlock()
+	gs.globalState.HallRequests[order.Floor][order.ButtonType] = true
 }
 
-func PrintGlobalState() {
-
-	GlobalStateMutex.Lock()
-	defer GlobalStateMutex.Unlock()
-
-	fmt.Println("====================================")
-	fmt.Println("           GLOBAL STATE             ")
-	fmt.Println("====================================")
-
-	// ---- Hall Requests ----
-	fmt.Println("\nHallRequests:")
-	for f := 0; f < len(GlobalState.HallRequests); f++ {
-		up := GlobalState.HallRequests[f][0]
-		down := GlobalState.HallRequests[f][1]
-		fmt.Printf("  Floor %d: Up=%v Down=%v\n", f, up, down)
-	}
-
-	// ---- Hall Assignments ----
-	fmt.Println("\nHallRequestsVersions:")
-	for f := 0; f < len(GlobalState.HallRequestsVersion); f++ {
-		up := GlobalState.HallRequestsVersion[f][0]
-		down := GlobalState.HallRequestsVersion[f][1]
-		fmt.Printf("  Floor %d:  Up Version = %d Down Version = %d\n", f, up, down)
-	}
-
-	// ---- Elevator States ----
-	fmt.Println("\nElevator States:")
-	for id, state := range GlobalState.States {
-
-		fmt.Printf("\n  Elevator %s\n", id)
-		fmt.Printf("    Behaviour : %s\n", state.Behavior)
-		fmt.Printf("    Floor     : %d\n", state.Floor)
-		fmt.Printf("    Direction : %s\n", state.Direction)
-
-		fmt.Printf("    CabRequests: ")
-		for f := 0; f < len(state.CabRequests); f++ {
-			if state.CabRequests[f] {
-				fmt.Printf("[%d] ", f)
-			}
-		}
-		fmt.Println()
-	}
-
-	fmt.Println("\n====================================")
+func (gs *GlobalState) IncrementHallRequestVersion(order management.Order) {
+	gs.mu.Lock()
+	defer gs.mu.Unlock()
+	gs.globalState.HallRequestsVersion[order.Floor][order.ButtonType]++
 }
 
-func MergeGlobalState(globalState GlobalStateType) {
-	GlobalStateMutex.Lock()
-	defer GlobalStateMutex.Unlock()
+func (gs *GlobalState) SetElevatorToOffline(deadID string) {
+	gs.mu.Lock()
+	defer gs.mu.Unlock()
 
-	localID := management.Elev.ID
-	senderID := globalState.LocalID
+	elevState, exists := gs.globalState.States[deadID]
+	if !exists {
+		return
+	}
+
+	elevState.Behavior = "offline"
+	gs.globalState.States[deadID] = elevState
+}
+
+// -------------------- Merge Logic --------------------
+
+func (gs *GlobalState) Merge(remote GlobalStateType) {
+	gs.mu.Lock()
+	defer gs.mu.Unlock()
+
+	localID := gs.globalState.LocalID
+	senderID := remote.LocalID
 
 	if senderID != localID {
-		if state, exists := globalState.States[senderID]; exists {
-			GlobalState.States[senderID] = state
+		if st, exists := remote.States[senderID]; exists {
+			gs.globalState.States[senderID] = st
 		}
 	}
 
-	chooseLatestHallRequestVersions(globalState)
+	chooseLatestHallRequestVersions(&gs.globalState, remote)
 }
 
-func chooseLatestHallRequestVersions(globalState GlobalStateType) {
+func chooseLatestHallRequestVersions(local *GlobalStateType, remote GlobalStateType) {
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for button := 0; button < 2; button++ {
-
-			localVersion := GlobalState.HallRequestsVersion[floor][button]
-			remoteVersion := globalState.HallRequestsVersion[floor][button]
+			localV := local.HallRequestsVersion[floor][button]
+			remoteV := remote.HallRequestsVersion[floor][button]
 
 			switch {
-			case remoteVersion > localVersion:
-				// Remote er nyere → overta verdi og versjon
-				GlobalState.HallRequests[floor][button] = globalState.HallRequests[floor][button]
-				GlobalState.HallRequestsVersion[floor][button] = remoteVersion
-
-			case remoteVersion == localVersion:
-				// Samme versjon → true vinner
-				if globalState.HallRequests[floor][button] {
-					GlobalState.HallRequests[floor][button] = true
+			case remoteV > localV:
+				local.HallRequests[floor][button] = remote.HallRequests[floor][button]
+				local.HallRequestsVersion[floor][button] = remoteV
+			case remoteV == localV:
+				if remote.HallRequests[floor][button] {
+					local.HallRequests[floor][button] = true
 				}
 			}
 		}
 	}
 }
 
-func IncremtHallRequestVersion(btnPress management.Order) {
-	GlobalState.HallRequestsVersion[btnPress.Floor][btnPress.ButtonType]++
+
+// SetElevatorState setter en spesifikk elevator state i globalState
+func (gs *GlobalState) SetElevatorState(elevID string, state hallRequestAssigner.ElevatorStateJSON) {
+	gs.mu.Lock()
+	defer gs.mu.Unlock()
+	gs.globalState.States[elevID] = state
 }
 
-// Set dead elevator behavior to "offline" and redistribute orders
-func SetElevatorToOffline(deadID string) {
-	GlobalStateMutex.Lock()
-	defer GlobalStateMutex.Unlock()
-
-	state, exists := GlobalState.States[deadID]
-	if !exists {
-		GlobalStateMutex.Unlock()
-		return
-	}
-
-	state.Behavior = "offline"
-	GlobalState.States[deadID] = state
+// GetElevatorState henter state for en spesifikk heis
+func (gs *GlobalState) GetElevatorState(elevID string) (hallRequestAssigner.ElevatorStateJSON, bool) {
+	gs.mu.Lock()
+	defer gs.mu.Unlock()
+	state, ok := gs.globalState.States[elevID]
+	return state, ok
 }
 
-func NewWorldView(newWorldView GlobalStateType) bool {
-	GlobalStateMutex.Lock()
-	defer GlobalStateMutex.Unlock()
+// -------------------- World View Comparison --------------------
 
-	// new hall orders/new versions?
+func (gs *GlobalState) NewWorldView(remote GlobalStateType) bool {
+	gs.mu.Lock()
+	defer gs.mu.Unlock()
+
+	// hall request changes
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for button := 0; button < 2; button++ {
-			localVersion := GlobalState.HallRequestsVersion[floor][button]
-			remoteVersion := newWorldView.HallRequestsVersion[floor][button]
+			localV := gs.globalState.HallRequestsVersion[floor][button]
+			remoteV := remote.HallRequestsVersion[floor][button]
 
-			if remoteVersion > localVersion {
+			if remoteV > localV {
 				return true
 			}
-			if remoteVersion == localVersion &&
-				newWorldView.HallRequests[floor][button] &&
-				!GlobalState.HallRequests[floor][button] {
+			if remoteV == localV && remote.HallRequests[floor][button] && !gs.globalState.HallRequests[floor][button] {
 				return true
 			}
 		}
 	}
 
-	// new info about elev states?
-	senderID := newWorldView.LocalID
+	// elevator state changes
+	senderID := remote.LocalID
 	if senderID == "" || senderID == management.Elev.ID {
 		return false
 	}
 
-	remoteState, ok := newWorldView.States[senderID]
+	remoteState, ok := remote.States[senderID]
 	if !ok {
 		return false
 	}
 
-	localState, exists := GlobalState.States[senderID]
+	localState, exists := gs.globalState.States[senderID]
 	if !exists {
 		return true
 	}
@@ -250,4 +218,49 @@ func NewWorldView(newWorldView GlobalStateType) bool {
 	}
 
 	return false
+}
+
+// -------------------- Safe Getter --------------------
+
+func (gs *GlobalState) GetCopy() GlobalStateType {
+	gs.mu.Lock()
+	defer gs.mu.Unlock()
+
+	copyState := gs.globalState
+
+	// deep copy slices
+	copyState.HallRequests = append([][2]bool(nil), gs.globalState.HallRequests...)
+	copyState.HallRequestsVersion = append([][2]int(nil), gs.globalState.HallRequestsVersion...)
+
+	newMap := make(map[string]hallRequestAssigner.ElevatorStateJSON)
+	for k, v := range gs.globalState.States {
+		newMap[k] = v
+	}
+	copyState.States = newMap
+
+	return copyState
+}
+
+// -------------------- Debug --------------------
+
+func (gs *GlobalState) Print() {
+	gs.mu.Lock()
+	defer gs.mu.Unlock()
+
+	fmt.Println("========== GLOBAL STATE ==========")
+
+	fmt.Println("HallRequests:")
+	for floor := 0; floor < len(gs.globalState.HallRequests); floor++ {
+		up := gs.globalState.HallRequests[floor][0]
+		down := gs.globalState.HallRequests[floor][1]
+		fmt.Printf("Floor %d: Up=%v Down=%v\n", floor, up, down)
+	}
+
+	fmt.Println("\nElevator States:")
+	for id, state := range gs.globalState.States {
+		fmt.Printf("Elevator %s: Floor=%d Dir=%s Behavior=%s\n",
+			id, state.Floor, state.Direction, state.Behavior)
+	}
+
+	fmt.Println("==================================")
 }

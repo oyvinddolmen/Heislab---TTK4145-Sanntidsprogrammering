@@ -27,7 +27,7 @@ func goToGroundFloor() {
 func InitElevator(elevID string, adress string, numFloors int) {
 	elevio.Init(adress, numFloors) // To run several simulators, each terminal/simulator needs unique adress
 	setElevState(management.ElevInit)
-	initLights(numFloors)
+	InitLights(numFloors)
 	InitFSM(elevID, numFloors)
 	goToGroundFloor()
 }
@@ -82,7 +82,7 @@ func stopElevator() {
 func driveToDestination(destination int, lastFloor int) {
 	moveDir := findMovingDirection(destination, lastFloor)
 	elevio.SetMotorDirection(moveDir)
-	setMoveDir(management.Direction(moveDir))
+	setMotorFromDir()
 }
 
 // Turns on doorOpenLight

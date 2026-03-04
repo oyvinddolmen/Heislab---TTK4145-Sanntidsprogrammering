@@ -9,13 +9,13 @@ import (
 // ---------------------------------------------------------------------
 // UpdateCurrentOrder: velger neste ordre for heisen basert på GlobalState
 // ---------------------------------------------------------------------
-func UpdateCurrentOrder() {
+func UpdateCurrentOrder(gs *GlobalState) {
 	elevator := &management.Elev
 
 	// Hvis vi allerede har en aktiv ordre som ikke er ferdig: gjør ingenting
-	if elevator.CurrentOrder.OrderPlaced && !elevator.CurrentOrder.Finished {
-		return
-	}
+	//if elevator.CurrentOrder.OrderPlaced && !elevator.CurrentOrder.Finished {
+	//	return
+	//}
 
 	// Start fra aktuell etasje, eller 0 hvis -1
 	startFloor := elevator.Floor
@@ -39,7 +39,7 @@ func UpdateCurrentOrder() {
 		if assignUp(startFloor) {
 			return
 		}
-	default: // Dir_Idle eller stopper
+	default: // DirIdle eller stopp
 		if assignUp(startFloor) {
 			return
 		}
@@ -62,7 +62,7 @@ func assignUp(startFloor int) bool {
 	for floor := startFloor; floor < management.NumFloors; floor++ {
 		for button := 0; button < management.NumButtons; button++ {
 			order := &elevator.Orders[floor][button]
-			if order.OrderPlaced && !order.Finished {
+			if order.OrderPlaced {
 				elevator.CurrentOrder = *order
 				elevator.MoveDir = management.DirUp
 				elevator.State = management.ElevMoving
@@ -86,7 +86,7 @@ func assignDown(startFloor int) bool {
 	for floor := startFloor; floor >= 0; floor-- {
 		for button := 0; button < management.NumButtons; button++ {
 			order := &elevator.Orders[floor][button]
-			if order.OrderPlaced && !order.Finished {
+			if order.OrderPlaced {
 				elevator.CurrentOrder = *order
 				elevator.MoveDir = management.DirDown
 				elevator.State = management.ElevMoving
@@ -100,37 +100,34 @@ func assignDown(startFloor int) bool {
 // ---------------------------------------------------------------------
 // call when elevator has reached CurrentOrder.Floor
 // ---------------------------------------------------------------------
-func CompleteCurrentOrder() {
-
+func CompleteCurrentOrder(gs *GlobalState) {
 	elevator := &management.Elev
 	floor := elevator.CurrentOrder.Floor
 	button := elevator.CurrentOrder.ButtonType
 
 	// --- CAB ORDER ---
 	if button == elevio.BT_Cab {
-
 		// Oppdater lokal heis
-		elevator.Orders[floor][button].Finished = true
+		//elevator.Orders[floor][button].Finished = true
 		elevator.Orders[floor][button].OrderPlaced = false
-		elevator.CurrentOrder.Finished = true
+		//elevator.CurrentOrder.Finished = true
 		elevator.CurrentOrder.OrderPlaced = false
 
-		UpdateLocalGlobalState()
+		gs.UpdateLocalGlobalState()
 
 	} else {
-
 		// --- HALL ORDER ---
-		elevator.Orders[floor][button].Finished = true
-		elevator.CurrentOrder.Finished = true
+		//elevator.Orders[floor][button].Finished = true
+		//elevator.CurrentOrder.Finished = true
 		elevator.CurrentOrder.OrderPlaced = false
 
-		GlobalStateMutex.Lock()
-		GlobalState.HallRequests[floor][button] = false
-		GlobalStateMutex.Unlock()
+		gs.mu.Lock()
+		gs.globalState.HallRequests[floor][button] = false
+		gs.mu.Unlock()
 
-		IncremtHallRequestVersion(elevator.CurrentOrder)
+		gs.IncrementHallRequestVersion(elevator.CurrentOrder)
 		fmt.Print("+ på Version, ordre FULLFØRT")
 	}
 
-	UpdateCurrentOrder()
+	UpdateCurrentOrder(gs)
 }

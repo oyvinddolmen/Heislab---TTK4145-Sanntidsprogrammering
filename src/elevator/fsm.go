@@ -14,9 +14,10 @@ import (
 // -------------------------------------------------------------------------------------------
 
 func InitFSM(elevID string, NumFloors int) {
-	noOrder := management.Order{Floor: -1, ButtonType: -1, ElevID: "", Finished: false}
-	setElevState(management.ElevInit)
+	noOrder := management.Order{Floor: -1, ButtonType: -1, ElevID: ""}
+
 	management.Elev.ID = elevID
+	management.Elev.State = management.ElevInit
 	management.Elev.Floor = -1
 	management.Elev.LastFloor = 0
 	management.Elev.MoveDir = management.DirDown
@@ -24,11 +25,13 @@ func InitFSM(elevID string, NumFloors int) {
 
 	for floor := 0; floor < NumFloors; floor++ {
 		for button := 0; button < management.NumButtons; button++ {
-			management.Elev.Orders[floor][button].Floor = floor
-			management.Elev.Orders[floor][button].ButtonType = elevio.ButtonType(button)
-			management.Elev.Orders[floor][button].ElevID = ""
-			management.Elev.Orders[floor][button].Finished = false
-			management.Elev.Orders[floor][button].OrderPlaced = false
+			management.Elev.Orders[floor][button] = management.Order{
+				Floor:       floor,
+				ButtonType:  elevio.ButtonType(button),
+				ElevID:      "",
+				//Finished:    false,
+				OrderPlaced: false,
+			}
 		}
 	}
 }
@@ -36,50 +39,58 @@ func InitFSM(elevID string, NumFloors int) {
 // -------------------------------------------------------------------------------------------
 // Timer for door
 // -------------------------------------------------------------------------------------------
-var doorTimer *time.Timer
 
+var doorTimer *time.Timer
 const doorOpenDuration = 2 * time.Second
 
 // -------------------------------------------------------------------------------------------
-// Running elevator and FSM
+// Run Elevator
 // -------------------------------------------------------------------------------------------
 
-func RunElevator(elevChannels management.ElevChannels, networkChannels network.NetworkConn) {
+func RunElevator(
+	gs *orderManagement.GlobalState,
+	elevChannels management.ElevChannels,
+	networkChannels network.NetworkConn,
+) {
 	go elevio.PollFloorSensor(elevChannels.LastFloor)
 	go elevio.PollButtons(elevChannels.BtnPresses)
 	go elevio.PollStopButton(elevChannels.StopBtn)
 	go elevio.PollObstructionSwitch(elevChannels.Obstruction)
-	go runFSM(elevChannels, networkChannels)
+
+	go runFSM(gs, elevChannels, networkChannels)
 }
 
 // -------------------------------------------------------------------------------------------
-// Running FSM function
+// FSM
 // -------------------------------------------------------------------------------------------
 
-// TODO: dersom man legger inn en cab-order mens dørene er åpne blir den ikke håndtert av heisen
-// TODO: heisen blir noen ganger stuck (med døren åpen??) og vil ikke kjøre noe sted
-
-func runFSM(elevChannels management.ElevChannels, networkChannels network.NetworkConn) {
+func runFSM(
+	gs *orderManagement.GlobalState,
+	elevChannels management.ElevChannels,
+	networkChannels network.NetworkConn,
+) {
 	for {
 		switch management.Elev.State {
 
+		// =========================================================
 		case management.ElevIdle:
+
 			select {
 
 			case <-networkChannels.WorldViewUpdate:
-				setHallLightOnAllPanels()
-				orderManagement.RunHallAssigner()
+				setHallLightOnAllPanels(gs)
+				orderManagement.RunHallAssigner(gs)
 				driveToDestination(
 					management.Elev.CurrentOrder.Floor,
-					management.Elev.LastFloor)
-
-				if getMoveDir() != management.DirIdle {
+					management.Elev.LastFloor,
+				)
+				if management.Elev.MoveDir != management.DirIdle {
 					setElevState(management.ElevMoving)
 				}
-
+			
 			case <-elevChannels.Obstruction:
 				setElevState(management.ElevObstruction)
-
+			
 			case <-elevChannels.StopBtn:
 				if management.Elev.Floor != -1 {
 					setElevState(management.ElevObstruction)
@@ -90,22 +101,18 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 			case btnPress := <-elevChannels.BtnPresses:
 
 				order := orderManagement.CreateOrder(btnPress)
-				if order.Floor == management.Elev.Floor {
-					orderManagement.CompleteCurrentOrder()
-				}
 
 				if order.ButtonType == management.CabButton {
 					orderManagement.AddOrderToOrders(order)
-					orderManagement.UpdateLocalGlobalState()
+					gs.UpdateLocalGlobalState()
 				} else {
-					orderManagement.AddHallRequestToGlobalState(order)
-					orderManagement.IncremtHallRequestVersion(order)
+					gs.AddHallRequest(order)
+					gs.IncrementHallRequestVersion(order)
 				}
 
-				network.SendGlobalState(networkChannels.GlobalStateTx)
-				orderManagement.RunHallAssigner()
+				network.SendGlobalState(gs, networkChannels.GlobalStateTx)
+				orderManagement.RunHallAssigner(gs)
 
-				fmt.Println("Valid order floor", order.Floor, "btn:", btnPress.Button)
 				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
 				driveToDestination(
@@ -113,105 +120,111 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 					management.Elev.LastFloor,
 				)
 
-				if getMoveDir() != management.DirIdle {
-					setElevState(management.ElevMoving)
-				}
-
-				fmt.Println("Current order: ", management.Elev.CurrentOrder.Floor)
-			}
-
-		case management.ElevMoving:
-			select {
-
-			case <-networkChannels.WorldViewUpdate:
-				setHallLightOnAllPanels()
-				orderManagement.RunHallAssigner()
-				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
 				if management.Elev.MoveDir != management.DirIdle {
 					setElevState(management.ElevMoving)
 				}
 
-			case <-elevChannels.StopBtn:
-				setElevState(management.ElevMoving)
+			}
 
+		// =========================================================
+		case management.ElevMoving:
+
+			select {
+			
+			case <-networkChannels.WorldViewUpdate:
+				setHallLightOnAllPanels(gs)
+				orderManagement.RunHallAssigner(gs)
+				driveToDestination(
+					management.Elev.CurrentOrder.Floor,
+					management.Elev.LastFloor,
+				)
+				if management.Elev.MoveDir != management.DirIdle {
+					setElevState(management.ElevMoving)
+				}
+			
+			case <-elevChannels.StopBtn:
+				setElevState(management.ElevStop)
+				
 			case floor := <-elevChannels.LastFloor:
-				setElevLastFloor(floor)
+
+				management.Elev.LastFloor = floor
 				elevio.SetFloorIndicator(floor)
 
 				if reachedDestination(floor) {
 					stopElevator()
-					orderManagement.CompleteCurrentOrder()
+					orderManagement.CompleteCurrentOrder(gs)
 					reachedFloorLightsOff(floor)
-					setElevFloor(floor)
+					management.Elev.Floor = floor
 					setElevState(management.ElevObstruction)
 				}
 
 			case btnPress := <-elevChannels.BtnPresses:
+
 				order := orderManagement.CreateOrder(btnPress)
 
 				if order.ButtonType == management.CabButton {
 					orderManagement.AddOrderToOrders(order)
-					orderManagement.UpdateLocalGlobalState()
+					gs.UpdateLocalGlobalState()
 				} else {
-					orderManagement.AddHallRequestToGlobalState(order)
-					orderManagement.IncremtHallRequestVersion(order)
+					gs.AddHallRequest(order)
+					gs.IncrementHallRequestVersion(order)
 				}
 
-				network.SendGlobalState(networkChannels.GlobalStateTx)
-				orderManagement.RunHallAssigner()
+				network.SendGlobalState(gs, networkChannels.GlobalStateTx)
+				orderManagement.RunHallAssigner(gs)
 
-				fmt.Println("Valid order floor", order.Floor, "btn:", btnPress.Button)
 				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
 				driveToDestination(
 					management.Elev.CurrentOrder.Floor,
 					management.Elev.LastFloor,
 				)
-
-				fmt.Println("Current order: ", management.Elev.CurrentOrder.Floor)
-
 			}
 
+		// =========================================================
 		case management.ElevStop:
+
 			select {
 
 			case <-networkChannels.WorldViewUpdate:
-				setHallLightOnAllPanels()
-				orderManagement.RunHallAssigner()
+				setHallLightOnAllPanels(gs)
+				orderManagement.RunHallAssigner(gs)
 
 			case btnPress := <-elevChannels.BtnPresses:
+
 				order := orderManagement.CreateOrder(btnPress)
 
 				if order.ButtonType == management.CabButton {
 					orderManagement.AddOrderToOrders(order)
-					orderManagement.UpdateLocalGlobalState()
+					gs.UpdateLocalGlobalState()
 				} else {
-					orderManagement.AddHallRequestToGlobalState(order)
-					orderManagement.IncremtHallRequestVersion(order)
+					gs.AddHallRequest(order)
+					gs.IncrementHallRequestVersion(order)
 				}
 
-				network.SendGlobalState(networkChannels.GlobalStateTx)
-				orderManagement.RunHallAssigner()
+				network.SendGlobalState(gs, networkChannels.GlobalStateTx)
+				orderManagement.RunHallAssigner(gs)
 
-				fmt.Println("Valid order floor", order.Floor, "btn:", btnPress.Button)
 				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
+				if management.Elev.MoveDir != management.DirIdle {
+					setElevState(management.ElevMoving)
+				}
+				
 			case <-elevChannels.StopBtn:
 				setElevState(management.ElevIdle)
-
 			}
 
 		case management.ElevObstruction:
+
 			select {
 
 			case <-networkChannels.WorldViewUpdate:
-				setHallLightOnAllPanels()
-				orderManagement.RunHallAssigner()
+				setHallLightOnAllPanels(gs)
+				orderManagement.RunHallAssigner(gs)
 
 			case <-doorTimer.C:
-				if elevio.GetObstruction() {
-					// stay in state OBSTRUCTION
-				} else {
+				if !elevio.GetObstruction() {
 					elevio.SetDoorOpenLamp(false)
 					setElevState(management.ElevIdle)
 				}
@@ -220,22 +233,22 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 				if !obstructed {
 					doorTimer.Reset(doorOpenDuration)
 				}
-
+			
 			case btnPress := <-elevChannels.BtnPresses:
+
 				order := orderManagement.CreateOrder(btnPress)
 
 				if order.ButtonType == management.CabButton {
 					orderManagement.AddOrderToOrders(order)
-					orderManagement.UpdateLocalGlobalState()
+					gs.UpdateLocalGlobalState()
 				} else {
-					orderManagement.AddHallRequestToGlobalState(order)
-					orderManagement.IncremtHallRequestVersion(order)
+					gs.AddHallRequest(order)
+					gs.IncrementHallRequestVersion(order)
 				}
 
-				network.SendGlobalState(networkChannels.GlobalStateTx)
-				orderManagement.RunHallAssigner()
+				network.SendGlobalState(gs, networkChannels.GlobalStateTx)
+				orderManagement.RunHallAssigner(gs)
 
-				fmt.Println("Valid order floor", order.Floor, "btn:", btnPress.Button)
 				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 
 			}
@@ -244,24 +257,42 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 }
 
 // -------------------------------------------------------------------------------------------
-// FSM set functions
+// Lights
 // -------------------------------------------------------------------------------------------
 
-// Sets elev state and calls onStateEntry functions // TODO cahnge to 2 functions
+func setHallLightOnAllPanels(gs *orderManagement.GlobalState) {
+	state := gs.GetCopy()
+
+	for floor := 0; floor < management.NumFloors; floor++ {
+		for btn := 0; btn < 2; btn++ {
+			elevio.SetButtonLamp(
+				elevio.ButtonType(btn),
+				floor,
+				state.HallRequests[floor][btn],
+			)
+		}
+	}
+}
+
+func reachedFloorLightsOff(floor int) {
+	elevio.SetButtonLamp(elevio.BT_Cab, floor, false)
+	elevio.SetButtonLamp(elevio.BT_HallUp, floor, false)
+	elevio.SetButtonLamp(elevio.BT_HallDown, floor, false)
+}
+
+// -------------------------------------------------------------------------------------------
+// State transitions
+// -------------------------------------------------------------------------------------------
+
 func setElevState(state management.State) {
 	prev := management.Elev.State
 	management.Elev.State = state
 
 	switch state {
-	case management.ElevStop:
-		onStopEntry()
-
-	case management.ElevIdle:
-		onIdleEntry()
-
 	case management.ElevMoving:
 		onMovingEntry()
-
+	case management.ElevIdle:
+		onIdleEntry()
 	case management.ElevObstruction:
 		onObstructionEntry()
 	}
@@ -269,71 +300,40 @@ func setElevState(state management.State) {
 	fmt.Println("STATE CHANGE:", prev, "->", state)
 }
 
-func setMoveDir(moveDir management.Direction) {
-	management.Elev.MoveDir = moveDir
-}
-
-func setElevLastFloor(lastFloor int) {
-	management.Elev.LastFloor = lastFloor
-}
-
-func setElevFloor(floor int) {
-	management.Elev.Floor = floor
-}
-
-// -------------------------------------------------------------------------------------------
-// FSM get functions
-// -------------------------------------------------------------------------------------------
-
-func getMoveDir() management.Direction {
-	return management.Elev.MoveDir
-}
-
-func getFloor() int {
-	return management.Elev.Floor
-}
-
-// -------------------------------------------------------------------------------------------
-// On-State-Entry functions
-// -------------------------------------------------------------------------------------------
-
-// turns on stopLamp, sets Dir_Idle and goes to OBSTRUCTION/STOP state depending on elevator position
-func onStopEntry() {
-	elevio.SetStopLamp(true)
-	setMoveDir(management.DirIdle)
-	elevio.SetMotorDirection(elevio.MD_Stop)
-}
-
-// turns off door-open and stop-light when going to state MOVING
 func onMovingEntry() {
 	elevio.SetDoorOpenLamp(false)
-	elevio.SetStopLamp(false)
-	setElevFloor(-1)
+	setMotorFromDir()
 }
 
-// open door, turns off stop lamp, calls RunHallAssigner() and driveToDestination()
 func onIdleEntry() {
-	elevio.SetDoorOpenLamp(false)
-	elevio.SetStopLamp(false)
-	setMoveDir(management.DirIdle)
-
-	orderManagement.RunHallAssigner()
-	driveToDestination(
-		management.Elev.CurrentOrder.Floor,
-		management.Elev.LastFloor)
-
-	if management.Elev.MoveDir != management.DirIdle {
-		setElevState(management.ElevMoving)
-	}
+	setMotorStop()
 }
 
-// stops motor, sets moveDir, starts new doorTimer
 func onObstructionEntry() {
-	elevio.SetMotorDirection(elevio.MD_Stop)
-	setMoveDir(management.DirIdle)
-	openDoor()
+	setMotorStop()
+	elevio.SetDoorOpenLamp(true)
+
 	if doorTimer != nil {
 		doorTimer.Stop()
 	}
 	doorTimer = time.NewTimer(doorOpenDuration)
+}
+
+// -------------------------------------------------------------------------------------------
+// Motor helpers
+// -------------------------------------------------------------------------------------------
+
+func setMotorStop() {
+	elevio.SetMotorDirection(elevio.MD_Stop)
+}
+
+func setMotorFromDir() {
+	switch management.Elev.MoveDir {
+	case management.DirUp:
+		elevio.SetMotorDirection(elevio.MD_Up)
+	case management.DirDown:
+		elevio.SetMotorDirection(elevio.MD_Down)
+	default:
+		elevio.SetMotorDirection(elevio.MD_Stop)
+	}
 }
