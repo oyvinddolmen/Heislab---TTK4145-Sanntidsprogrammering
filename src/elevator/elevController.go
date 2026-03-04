@@ -1,7 +1,7 @@
 package elevator
 
 // ---------------------------------------------------------------------------------------------------------------------
-// In charge of driving, driving-logic and setting lights
+// In charge of physical elevator functions and driving-logic 
 // ---------------------------------------------------------------------------------------------------------------------
 
 // OWN LIGHTCONTROLLER FILE UNDER ELEVATOR?? !!!!!!!!!!!!!!!!!!!! YES
@@ -33,23 +33,6 @@ func InitElevator(elevID string, adress string, numFloors int) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Initalize lights functions
-// ---------------------------------------------------------------------------------------------------------------------
-
-func initLights(numFloors int) {
-	for i := range numFloors {
-		elevio.SetButtonLamp(elevio.BT_Cab, i, false)
-
-		if i != numFloors {
-			elevio.SetButtonLamp(elevio.BT_HallUp, i, false)
-		}
-		if i != 0 {
-			elevio.SetButtonLamp(elevio.BT_HallDown, i, false)
-		}
-	}
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
 // Driving logic
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -77,10 +60,6 @@ func findMovingDirection(destination int, lastFloor int) elevio.MotorDirection {
 	}
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Driving functions
-// ---------------------------------------------------------------------------------------------------------------------
-
 // Checks if elevator has reached floor
 func reachedDestination(floor int) bool {
 	if management.Elev.State == management.MOVING && floor == management.Elev.CurrentOrder.Floor {
@@ -90,12 +69,9 @@ func reachedDestination(floor int) bool {
 	}
 }
 
-// Turns off lights when reaching destination floor
-func reachedFloorLightsOff(floor int) {
-	elevio.SetButtonLamp(elevio.BT_Cab, floor, false)
-	elevio.SetButtonLamp(elevio.BT_HallUp, floor, false)
-	elevio.SetButtonLamp(elevio.BT_HallDown, floor, false)
-}
+// ---------------------------------------------------------------------------------------------------------------------
+// Elevator hardware related functions
+// ---------------------------------------------------------------------------------------------------------------------
 
 func stopElevator() {
 	elevio.SetMotorDirection(elevio.MD_Stop)
@@ -107,10 +83,10 @@ func driveToDestination(destination int, lastFloor int) {
 	moveDir := findMovingDirection(destination, lastFloor)
 	elevio.SetMotorDirection(moveDir)
 	setMoveDir(management.Direction(moveDir))
-
 }
 
 // Turns on doorOpenLight
 func openDoor() {
 	elevio.SetDoorOpenLamp(true)
 }
+

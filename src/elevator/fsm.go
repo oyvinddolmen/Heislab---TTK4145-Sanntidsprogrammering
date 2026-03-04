@@ -22,13 +22,13 @@ func InitFSM(elevID string, NumFloors int) {
 	management.Elev.MoveDir = management.Dir_Down
 	management.Elev.CurrentOrder = noOrder
 
-	for floor := 0; floor < NumFloors; floor++ {
-		for button := 0; button < management.NumButtons; button++ {
-			management.Elev.Orders[floor][button].Floor = floor
-			management.Elev.Orders[floor][button].ButtonType = elevio.ButtonType(button)
-			management.Elev.Orders[floor][button].ElevID = ""
-			management.Elev.Orders[floor][button].Finished = false
-			management.Elev.Orders[floor][button].OrderPlaced = false
+	for f := 0; f < NumFloors; f++ {
+		for b := 0; b < management.NumButtons; b++ {
+			management.Elev.Orders[f][b].Floor = f
+			management.Elev.Orders[f][b].ButtonType = elevio.ButtonType(b)
+			management.Elev.Orders[f][b].ElevID = ""
+			management.Elev.Orders[f][b].Finished = false
+			management.Elev.Orders[f][b].OrderPlaced = false
 		}
 	}
 }
@@ -56,6 +56,9 @@ func RunElevator(elevChannels management.ElevChannels, networkChannels network.N
 // Running FSM function
 // -------------------------------------------------------------------------------------------
 
+// TODO: dersom man legger inn en cab-order mens dørene er åpne blir den ikke håndtert av heisen
+// TODO: heisen blir noen ganger stuck (med døren åpen??) og vil ikke kjøre noe sted
+
 func runFSM(elevChannels management.ElevChannels, networkChannels network.NetworkConn) {
 	for {
 		switch management.Elev.State {
@@ -64,6 +67,7 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 			select {
 
 			case <-networkChannels.WorldViewUpdate:
+				setHallLightOnAllPanels()
 				orderManagement.RunHallAssigner()
 				driveToDestination(
 					management.Elev.CurrentOrder.Floor,
@@ -120,6 +124,7 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 			select {
 
 			case <-networkChannels.WorldViewUpdate:
+				setHallLightOnAllPanels()
 				orderManagement.RunHallAssigner()
 				driveToDestination(management.Elev.CurrentOrder.Floor, management.Elev.LastFloor)
 				if management.Elev.MoveDir != management.Dir_Idle {
@@ -170,6 +175,10 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 		case management.STOP:
 			select {
 
+			case <-networkChannels.WorldViewUpdate:
+				setHallLightOnAllPanels()
+				orderManagement.RunHallAssigner()
+
 			case btnPress := <-elevChannels.BtnPresses:
 				order := orderManagement.CreateOrder(btnPress)
 
@@ -190,12 +199,14 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 			case <-elevChannels.StopBtn:
 				setElevState(management.IDLE)
 
-			case <-networkChannels.WorldViewUpdate:
-				orderManagement.RunHallAssigner()
 			}
 
 		case management.OBSTRUCTION:
 			select {
+
+			case <-networkChannels.WorldViewUpdate:
+				setHallLightOnAllPanels()
+				orderManagement.RunHallAssigner()
 
 			case <-doorTimer.C:
 				if elevio.GetObstruction() {
@@ -226,9 +237,6 @@ func runFSM(elevChannels management.ElevChannels, networkChannels network.Networ
 
 				fmt.Println("Valid order floor", order.Floor, "btn:", btnPress.Button)
 				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
-
-			case <-networkChannels.WorldViewUpdate:
-				orderManagement.RunHallAssigner()
 
 			}
 		}

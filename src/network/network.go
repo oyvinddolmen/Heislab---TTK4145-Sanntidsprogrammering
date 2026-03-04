@@ -13,14 +13,14 @@ import (
 )
 
 // har ikke testet denne
-func ListenAndMergeGlobalState(rx <-chan orderManagement.GlobalStateType, worldViewChannel chan<- struct{}) {
-	for msg := range rx {
-		orderManagement.MergeGlobalState(msg)
-
-		select {
-		case worldViewChannel <- struct{}{}:
-		default:
+func ListenAndMergeGlobalState(rx <-chan orderManagement.GlobalStateType, worldViewChannel chan<- orderManagement.GlobalStateType) {
+	for worldView := range rx {
+		// if WorldView has changed
+		if orderManagement.NewWorldView(worldView) {
+			worldViewChannel <- worldView
 		}
+
+		orderManagement.MergeGlobalState(worldView)
 	}
 }
 
@@ -73,7 +73,7 @@ type NetworkConn struct {
 	GlobalStateRx <-chan orderManagement.GlobalStateType
 
 	// world view update
-	WorldViewUpdate chan struct{}
+	WorldViewUpdate chan orderManagement.GlobalStateType
 }
 
 // InitNetwork initializes network goroutines for:
@@ -99,7 +99,7 @@ func InitNetwork(config PortConfig) NetworkConn {
 	// --- global state channels ---
 	globalStateTx := make(chan orderManagement.GlobalStateType, 16)
 	globalStateRx := make(chan orderManagement.GlobalStateType, 16)
-	worldViewUpdate := make(chan struct{}, 1)
+	worldViewUpdate := make(chan orderManagement.GlobalStateType, 16)
 
 	go bcast.Transmitter(config.MessageBcastPort, globalStateTx)
 	go bcast.Receiver(config.MessageBcastPort, globalStateRx)

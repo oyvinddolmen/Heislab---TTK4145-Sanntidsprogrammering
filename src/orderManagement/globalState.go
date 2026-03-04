@@ -196,3 +196,58 @@ func SetElevatorToOffline(deadID string) {
 	state.Behavior = "offline"
 	GlobalState.States[deadID] = state
 }
+
+func NewWorldView(newWorldView GlobalStateType) bool {
+	GlobalStateMutex.Lock()
+	defer GlobalStateMutex.Unlock()
+
+	// new hall orders/new versions?
+	for f := 0; f < management.NumFloors; f++ {
+		for b := 0; b < 2; b++ {
+			localV := GlobalState.HallRequestsVersion[f][b]
+			remoteV := newWorldView.HallRequestsVersion[f][b]
+
+			if remoteV > localV {
+				return true
+			}
+			if remoteV == localV &&
+				newWorldView.HallRequests[f][b] &&
+				!GlobalState.HallRequests[f][b] {
+				return true
+			}
+		}
+	}
+
+	// new info about elev states?
+	senderID := newWorldView.LocalID
+	if senderID == "" || senderID == management.Elev.ID {
+		return false
+	}
+
+	remoteState, ok := newWorldView.States[senderID]
+	if !ok {
+		return false
+	}
+
+	localState, exists := GlobalState.States[senderID]
+	if !exists {
+		return true
+	}
+
+	if remoteState.Behavior != localState.Behavior ||
+		remoteState.Floor != localState.Floor ||
+		remoteState.Direction != localState.Direction {
+		return true
+	}
+
+	if len(remoteState.CabRequests) != len(localState.CabRequests) {
+		return true
+	}
+	for i := range remoteState.CabRequests {
+		if remoteState.CabRequests[i] != localState.CabRequests[i] {
+			return true
+		}
+	}
+
+	return false
+}
