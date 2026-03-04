@@ -77,7 +77,7 @@ func assignUp(startFloor int) bool {
 // assignDown: finn første ordre nedover fra startFloor
 // ---------------------------------------------------------------------
 func assignDown(startFloor int) bool {
-	e := &management.Elev
+	elevator := &management.Elev
 
 	if startFloor >= management.NumFloors {
 		startFloor = management.NumFloors - 1
@@ -85,11 +85,11 @@ func assignDown(startFloor int) bool {
 
 	for f := startFloor; f >= 0; f-- {
 		for b := 0; b < management.NumButtons; b++ {
-			order := &e.Orders[f][b]
+			order := &elevator.Orders[f][b]
 			if order.OrderPlaced && !order.Finished {
-				e.CurrentOrder = *order
-				e.MoveDir = management.Dir_Down
-				e.State = management.MOVING
+				elevator.CurrentOrder = *order
+				elevator.MoveDir = management.Dir_Down
+				elevator.State = management.MOVING
 				return true
 			}
 		}
