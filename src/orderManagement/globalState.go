@@ -50,15 +50,15 @@ func ConvertElevatorToJSON(e management.Elevator) hallRequestAssigner.ElevatorSt
 
 func convertState(state management.State) string {
 	switch state {
-	case management.IDLE:
+	case management.ElevIdle:
 		return "idle"
-	case management.MOVING:
+	case management.ElevMoving:
 		return "moving"
-	case management.INIT:
+	case management.ElevInit:
 		return "moving"
-	case management.STOP:
+	case management.ElevStop:
 		return "STOP"
-	case management.OFFLINE:
+	case management.ElevOffline:
 		return "offline"
 	default:
 		return "idle"
@@ -67,9 +67,9 @@ func convertState(state management.State) string {
 
 func convertDirection(direction management.Direction) string {
 	switch direction {
-	case management.Dir_Up:
+	case management.DirUp:
 		return "up"
-	case management.Dir_Down:
+	case management.DirDown:
 		return "down"
 	default:
 		return "stop"
@@ -147,31 +147,31 @@ func MergeGlobalState(globalState GlobalStateType) {
 	senderID := globalState.LocalID
 
 	if senderID != localID {
-		if st, exists := globalState.States[senderID]; exists {
-			GlobalState.States[senderID] = st
+		if state, exists := globalState.States[senderID]; exists {
+			GlobalState.States[senderID] = state
 		}
 	}
 
 	chooseLatestHallRequestVersions(globalState)
 }
 
-func chooseLatestHallRequestVersions(gs GlobalStateType) {
-	for f := 0; f < management.NumFloors; f++ {
-		for b := 0; b < 2; b++ {
+func chooseLatestHallRequestVersions(globalState GlobalStateType) {
+	for floor := 0; floor < management.NumFloors; floor++ {
+		for button := 0; button < 2; button++ {
 
-			localVersion := GlobalState.HallRequestsVersion[f][b]
-			remoteVersion := gs.HallRequestsVersion[f][b]
+			localVersion := GlobalState.HallRequestsVersion[floor][button]
+			remoteVersion := globalState.HallRequestsVersion[floor][button]
 
 			switch {
 			case remoteVersion > localVersion:
 				// Remote er nyere → overta verdi og versjon
-				GlobalState.HallRequests[f][b] = gs.HallRequests[f][b]
-				GlobalState.HallRequestsVersion[f][b] = remoteVersion
+				GlobalState.HallRequests[floor][button] = globalState.HallRequests[floor][button]
+				GlobalState.HallRequestsVersion[floor][button] = remoteVersion
 
 			case remoteVersion == localVersion:
 				// Samme versjon → true vinner
-				if gs.HallRequests[f][b] {
-					GlobalState.HallRequests[f][b] = true
+				if globalState.HallRequests[floor][button] {
+					GlobalState.HallRequests[floor][button] = true
 				}
 			}
 		}
@@ -202,17 +202,17 @@ func NewWorldView(newWorldView GlobalStateType) bool {
 	defer GlobalStateMutex.Unlock()
 
 	// new hall orders/new versions?
-	for f := 0; f < management.NumFloors; f++ {
-		for b := 0; b < 2; b++ {
-			localV := GlobalState.HallRequestsVersion[f][b]
-			remoteV := newWorldView.HallRequestsVersion[f][b]
+	for floor := 0; floor < management.NumFloors; floor++ {
+		for button := 0; button < 2; button++ {
+			localVersion := GlobalState.HallRequestsVersion[floor][button]
+			remoteVersion := newWorldView.HallRequestsVersion[floor][button]
 
-			if remoteV > localV {
+			if remoteVersion > localVersion {
 				return true
 			}
-			if remoteV == localV &&
-				newWorldView.HallRequests[f][b] &&
-				!GlobalState.HallRequests[f][b] {
+			if remoteVersion == localVersion &&
+				newWorldView.HallRequests[floor][button] &&
+				!GlobalState.HallRequests[floor][button] {
 				return true
 			}
 		}
