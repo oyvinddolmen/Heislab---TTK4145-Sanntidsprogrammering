@@ -6,91 +6,113 @@ import (
 	"heislab/management"
 )
 
-// UpdateCurrentOrder: velger neste ordre for heisen basert på GlobalState
 // ---------------------------------------------------------------------
-func UpdateCurrentOrder(gs *GlobalState) {
-	elevator := &management.Elev
-	// Hvis vi allerede har en aktiv ordre som ikke er ferdig: gjør ingenting
-	//if elevator.CurrentOrder.OrderPlaced && !elevator.CurrentOrder.Finished {
+// UpdateCurrentOrder: velger neste ordre for heisen basert på localElevator
+// ---------------------------------------------------------------------
+func UpdateCurrentOrder() {
+	e := &management.Elev
+	fmt.Println("Movedir før UpdatecurrentOrder ", e.MoveDir)
+
+	// Hvis vi allerede har en aktiv ordre → behold den
+	//if e.CurrentOrder.OrderPlaced {
+	//	fmt.Println("returnerte ingenting")
 	//	return
 	//}
 
-	// Start fra aktuell etasje, eller 0 hvis -1
-	startFloor := elevator.Floor
+	// Start fra gjeldende etasje, eller siste etasje hvis mellom etasjer
+	startFloor := e.Floor
 	if startFloor < 0 {
-		startFloor = 0
+		startFloor = e.LastFloor
+		if startFloor < 0 {
+			startFloor = 0
+		}
 	}
 
-	// Velg retning basert på tidligere retning
-	switch elevator.MoveDir {
+	found := false
+	switch e.MoveDir {
+
 	case management.DirUp:
-		if assignUp(startFloor) {
-			return
+		found = assignUp(e, startFloor)
+		if !found {
+			found = assignDown(e, startFloor)
 		}
-		if assignDown(startFloor) {
-			return
-		}
+
 	case management.DirDown:
-		if assignDown(startFloor) {
-			return
+		found = assignDown(e, startFloor)
+		if !found {
+			found = assignUp(e, startFloor)
 		}
-		if assignUp(startFloor) {
-			return
-		}
-	default: // DirIdle eller stopp
-		if assignUp(startFloor) {
-			return
-		}
-		if assignDown(startFloor) {
-			return
+
+	default: // Idle
+		found = assignUp(e, startFloor)
+		if !found {
+			found = assignDown(e, startFloor)
 		}
 	}
 
-	// Ingen ordre funnet → gå IDLE
-	elevator.State = management.ElevIdle
-	elevator.MoveDir = management.DirIdle
+	// Ingen ordre funnet → sett heis til idle
+	if !found {
+		management.Elev.State = management.ElevIdle
+	}
 }
 
 // assignUp: finn første ordre oppover fra startFloor
-func assignUp(startFloor int) bool {
-	elevator := &management.Elev
-
+// ---------------------------------------------------------------------
+func assignUp(e *management.Elevator, startFloor int) bool {
 	for floor := startFloor; floor < management.NumFloors; floor++ {
 		for button := 0; button < management.NumButtons; button++ {
-			order := &elevator.Orders[floor][button]
+			order := &e.Orders[floor][button]
 			if order.OrderPlaced {
-				elevator.CurrentOrder = *order
-				elevator.MoveDir = management.DirUp
-				elevator.State = management.ElevMoving
+				Ordre := *order
+				fmt.Println("Ordre satt: ", Ordre.Floor)
+				setCurrentOrder(e,order)
 				return true
 			}
 		}
 	}
+	fmt.Println("returnerte ingenting OPP")
 	return false
 }
 
 // assignDown: finn første ordre nedover fra startFloor
-func assignDown(startFloor int) bool {
-	elevator := &management.Elev
-
+// ---------------------------------------------------------------------
+func assignDown(e *management.Elevator, startFloor int) bool {
 	if startFloor >= management.NumFloors {
 		startFloor = management.NumFloors - 1
 	}
 
 	for floor := startFloor; floor >= 0; floor-- {
 		for button := 0; button < management.NumButtons; button++ {
-			order := &elevator.Orders[floor][button]
+			order := &e.Orders[floor][button]
 			if order.OrderPlaced {
-				elevator.CurrentOrder = *order
-				elevator.MoveDir = management.DirDown
-				elevator.State = management.ElevMoving
+				Ordre := *order
+				fmt.Println("Ordre satt: ", Ordre.Floor)
+				e.CurrentOrder = Ordre
+				setCurrentOrder(e,order)
 				return true
 			}
 		}
 	}
+	fmt.Println("returnerte ingenting NED")
+
 	return false
 }
 
+func setCurrentOrder(e *management.Elevator, order *management.Order) {
+	e.CurrentOrder = *order
+
+	if order.Floor > e.Floor {
+		e.MoveDir = management.DirUp
+	} else if order.Floor < e.Floor {
+		e.MoveDir = management.DirDown
+	} else {
+		// Samme etasje → åpne dør
+		e.MoveDir = management.DirIdle
+	}
+}
+
+
+// ---------------------------------------------------------------------
 // call when elevator has reached CurrentOrder.Floor
 // ---------------------------------------------------------------------
 func CompleteCurrentOrder(gs *GlobalState) {
@@ -122,6 +144,6 @@ func CompleteCurrentOrder(gs *GlobalState) {
 		gs.IncrementHallRequestVersion(elevator.CurrentOrder)
 		fmt.Print("+ på Version, ordre FULLFØRT")
 	}
-
-	UpdateCurrentOrder(gs)
+	fmt.Println("går inn i updatecurrentOrder etter completed og orderplaced er: ", elevator.CurrentOrder.OrderPlaced)
+	UpdateCurrentOrder()
 }

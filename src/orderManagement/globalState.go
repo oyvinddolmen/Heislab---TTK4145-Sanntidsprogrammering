@@ -247,19 +247,38 @@ func (gs *GlobalState) Print() {
 	gs.mu.Lock()
 	defer gs.mu.Unlock()
 
-	fmt.Println("========== GLOBAL STATE ==========")
+	fmt.Println("\n========== GLOBAL STATE ==========")
+	fmt.Printf("LocalID: %s\n", gs.globalState.LocalID)
 
-	fmt.Println("HallRequests:")
+	// ---------------- Hall Requests ----------------
+	fmt.Println("\nHall Requests:")
 	for floor := 0; floor < len(gs.globalState.HallRequests); floor++ {
 		up := gs.globalState.HallRequests[floor][0]
 		down := gs.globalState.HallRequests[floor][1]
-		fmt.Printf("Floor %d: Up=%v Down=%v\n", floor, up, down)
+		upV := gs.globalState.HallRequestsVersion[floor][0]
+		downV := gs.globalState.HallRequestsVersion[floor][1]
+
+		fmt.Printf("Floor %d | Up: %v (v%d) | Down: %v (v%d)\n",
+			floor, up, upV, down, downV)
 	}
 
+	// ---------------- Elevator States ----------------
 	fmt.Println("\nElevator States:")
+
 	for id, state := range gs.globalState.States {
-		fmt.Printf("Elevator %s: Floor=%d Dir=%s Behavior=%s\n",
-			id, state.Floor, state.Direction, state.Behavior)
+
+		fmt.Printf("\nElevator %s\n", id)
+		fmt.Printf("  Behavior:  %s\n", state.Behavior)
+		fmt.Printf("  Floor:     %d\n", state.Floor)
+		fmt.Printf("  Direction: %s\n", state.Direction)
+
+		fmt.Printf("  CabRequests: ")
+		for floor, active := range state.CabRequests {
+			if active {
+				fmt.Printf("[F%d] ", floor)
+			}
+		}
+		fmt.Println()
 	}
 
 	fmt.Println("==================================")
