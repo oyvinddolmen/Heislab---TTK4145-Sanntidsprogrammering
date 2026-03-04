@@ -64,7 +64,7 @@ func main() {
 	portCfg := network.PortConfig{
 		PeerDiscoveryPort: *peersPort,
 		MessageBcastPort:  *bcastPort,
-		LocalID:           *elevIDFlag,
+		LocalID:           elevID,
 	}
 	networkConn := network.InitNetwork(portCfg) // Returns network channels and local IP
 	broadCastInterval := 20 * time.Millisecond
