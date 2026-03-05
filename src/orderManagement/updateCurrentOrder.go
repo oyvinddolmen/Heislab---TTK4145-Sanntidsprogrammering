@@ -53,6 +53,7 @@ func UpdateCurrentOrder() {
 	// Ingen ordre funnet → sett heis til idle
 	if !found {
 		management.Elev.State = management.ElevIdle
+		fmt.Println("Ordre ikke found: ")
 	}
 }
 
@@ -62,10 +63,11 @@ func assignUp(e *management.Elevator, startFloor int) bool {
 	for floor := startFloor; floor < management.NumFloors; floor++ {
 		for button := 0; button < management.NumButtons; button++ {
 			order := &e.Orders[floor][button]
+			fmt.Println("Ordresjekk:  True? ", order.OrderPlaced , "Floor: ", order.Floor)
 			if order.OrderPlaced {
 				Ordre := *order
 				fmt.Println("Ordre satt: ", Ordre.Floor)
-				setCurrentOrder(e,order)
+				e.CurrentOrder = *order
 				return true
 			}
 		}
@@ -87,8 +89,7 @@ func assignDown(e *management.Elevator, startFloor int) bool {
 			if order.OrderPlaced {
 				Ordre := *order
 				fmt.Println("Ordre satt: ", Ordre.Floor)
-				e.CurrentOrder = Ordre
-				setCurrentOrder(e,order)
+				e.CurrentOrder = *order
 				return true
 			}
 		}
@@ -97,20 +98,6 @@ func assignDown(e *management.Elevator, startFloor int) bool {
 
 	return false
 }
-
-func setCurrentOrder(e *management.Elevator, order *management.Order) {
-	e.CurrentOrder = *order
-
-	if order.Floor > e.Floor {
-		e.MoveDir = management.DirUp
-	} else if order.Floor < e.Floor {
-		e.MoveDir = management.DirDown
-	} else {
-		// Samme etasje → åpne dør
-		e.MoveDir = management.DirIdle
-	}
-}
-
 
 // ---------------------------------------------------------------------
 // call when elevator has reached CurrentOrder.Floor

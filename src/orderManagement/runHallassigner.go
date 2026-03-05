@@ -46,6 +46,8 @@ func applyAssignments(assignments map[string][][2]bool) {
 			if assigned[floor][btn] {
 				management.Elev.Orders[floor][btn].OrderPlaced = true
 				management.Elev.Orders[floor][btn].ElevID = management.Elev.ID
+			} else{
+				management.Elev.Orders[floor][btn].OrderPlaced = false
 			}
 		}
 	}

@@ -79,7 +79,6 @@ func main() {
 	go network.ListenAndMergeGlobalState(
 		gs,
 		networkConn.GlobalStateRx,
-		networkConn.WorldViewUpdate,
 	)
 
 	go network.SendGlobalStatePeriodically(
