@@ -159,7 +159,7 @@ func runFSM(
 					stopElevator()
 					orderManagement.CompleteCurrentOrder(gs)
 					reachedFloorLightsOff(floor)
-					management.Elev.Floor = floor
+					setElevFloor(floor)
 					setElevState(gs, management.ElevObstruction)
 				}
 
