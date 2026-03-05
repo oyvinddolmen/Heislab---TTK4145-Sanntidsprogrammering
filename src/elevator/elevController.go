@@ -38,7 +38,7 @@ func InitElevator(elevID string, adress string, numFloors int) *orderManagement.
 // Driving logic
 // ---------------------------------------------------------------------------------------------------------------------
 
-func findMovingDirection(destination int, lastFloor int) elevio.MotorDirection {
+func findMotorDirection(destination int, lastFloor int) elevio.MotorDirection {
 
 	// safety measure
 	if destination < 0 {
@@ -80,12 +80,6 @@ func stopElevator() {
 	management.Elev.MoveDir = management.DirIdle
 }
 
-// Sets motordirection in direction of newOrder and changes Elev.MoveDir.
-func driveToDestination(destination int, lastFloor int) {
-	findMovingDirection(destination, lastFloor)
-	//elevio.SetMotorDirection(moveDir)
-	setMotorFromDir()
-}
 
 // Turns on doorOpenLight
 func openDoor() {

@@ -20,6 +20,7 @@ func InitLights(numFloors int) {
 	}
 }
 
+// sets the hall light based on global state
 func setHallLightOnAllPanels(gs *orderManagement.GlobalState) {
 	state := gs.GetCopy()
 
@@ -34,6 +35,7 @@ func setHallLightOnAllPanels(gs *orderManagement.GlobalState) {
 	}
 }
 
+// turns off lights when reaching floor (NOT DONE, need to take in account where next stop will be)
 func reachedFloorLightsOff(floor int) {
 	elevio.SetButtonLamp(elevio.CabButton, floor, false)
 	elevio.SetButtonLamp(elevio.HallUpButton, floor, false)
