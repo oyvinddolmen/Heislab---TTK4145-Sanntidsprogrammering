@@ -80,8 +80,8 @@ func stopElevator() {
 
 // Sets motordirection in direction of newOrder and changes Elev.MoveDir.
 func driveToDestination(destination int, lastFloor int) {
-	moveDir := findMovingDirection(destination, lastFloor)
-	elevio.SetMotorDirection(moveDir)
+	findMovingDirection(destination, lastFloor)
+	//elevio.SetMotorDirection(moveDir)
 	setMotorFromDir()
 }
 

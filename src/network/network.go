@@ -9,12 +9,9 @@ import (
 )
 
 // ListenAndMergeGlobalState lytter på innkommende worldViews og oppdaterer globalState
-func ListenAndMergeGlobalState(gs *orderManagement.GlobalState, rx <-chan orderManagement.GlobalStateType, worldViewChannel chan<- orderManagement.GlobalStateType) {
-	for worldView := range rx {
-		if gs.NewWorldView(worldView) {
-			worldViewChannel <- worldView
-		}
-		gs.Merge(worldView)
+func ListenAndMergeGlobalState(gs *orderManagement.GlobalState, rx <-chan orderManagement.GlobalStateType) {
+	for remoteGlobalState := range rx {
+		gs.Merge(remoteGlobalState)
 	}
 }
 
