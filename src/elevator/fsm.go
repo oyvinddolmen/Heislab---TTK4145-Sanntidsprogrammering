@@ -106,15 +106,15 @@ func runFSM(
 					setElevState(gs, management.ElevObstruction)
 					continue
 
+				} 
+				if order.ButtonType == management.CabButton {
+					orderManagement.AddOrderToOrders(order)
+					gs.UpdateLocalGlobalState()
 				} else {
-					if order.ButtonType == management.CabButton {
-						orderManagement.AddOrderToOrders(order)
-						gs.UpdateLocalGlobalState()
-					} else {
-						gs.AddHallRequest(order)
-						gs.IncrementHallRequestVersion(order)
-					}
+					gs.AddHallRequest(order)
+					gs.IncrementHallRequestVersion(order)
 				}
+				
 
 				network.SendGlobalState(gs, networkChannels.GlobalStateTx)
 				orderManagement.RunHallAssigner(gs)
@@ -319,7 +319,8 @@ func onIdleEntry(gs *orderManagement.GlobalState) {
 	elevio.SetDoorOpenLamp(false)
 	elevio.SetStopLamp(false)
 	setMoveDir(management.DirIdle)
-
+	elevio.SetMotorDirection(elevio.MotorDirStop)
+	
 	orderManagement.RunHallAssigner(gs)
 	driveToDestination(
 		management.Elev.CurrentOrder.Floor,
