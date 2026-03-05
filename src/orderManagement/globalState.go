@@ -60,7 +60,7 @@ func convertState(state management.State) string {
 	case management.ElevInit:
 		return "moving"
 	case management.ElevStop:
-		return "STOP"
+		return "doorOpen"
 	case management.ElevOffline:
 		return "offline"
 	default:

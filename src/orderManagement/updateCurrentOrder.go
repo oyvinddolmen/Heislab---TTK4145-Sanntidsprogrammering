@@ -72,7 +72,6 @@ func assignUp(e *management.Elevator, startFloor int) bool {
 			}
 		}
 	}
-	fmt.Println("returnerte ingenting OPP")
 	return false
 }
 
@@ -94,8 +93,6 @@ func assignDown(e *management.Elevator, startFloor int) bool {
 			}
 		}
 	}
-	fmt.Println("returnerte ingenting NED")
-
 	return false
 }
 
@@ -129,8 +126,6 @@ func CompleteCurrentOrder(gs *GlobalState) {
 		gs.mu.Unlock()
 
 		gs.IncrementHallRequestVersion(elevator.CurrentOrder)
-		fmt.Print("+ på Version, ordre FULLFØRT")
 	}
-	fmt.Println("går inn i updatecurrentOrder etter completed og orderplaced er: ", elevator.CurrentOrder.OrderPlaced)
 	UpdateCurrentOrder()
 }
