@@ -9,8 +9,12 @@ import (
 )
 
 // ListenAndMergeGlobalState lytter på innkommende worldViews og oppdaterer globalState
-func ListenAndMergeGlobalState(gs *orderManagement.GlobalState, rx <-chan orderManagement.GlobalStateType) {
+func ListenAndMergeGlobalState(gs *orderManagement.GlobalState, rx <-chan orderManagement.GlobalStateType, worldViewUpdate chan bool) {
 	for remoteGlobalState := range rx {
+		if gs.NewWorldViev(remoteGlobalState) {
+			worldViewUpdate <- true
+		}
+		
 		gs.Merge(remoteGlobalState)
 	}
 }
@@ -21,9 +25,9 @@ func SendGlobalStatePeriodically(gs *orderManagement.GlobalState, tx chan<- orde
 	defer ticker.Stop()
 
 	for range ticker.C {
-		gs.UpdateLocalGlobalState()           // oppdater egen state
-		msg := gs.GetCopy()                   // ta sikker kopi under mutex
-		tx <- msg                             // send
+		gs.UpdateLocalGlobalState() // oppdater egen state
+		msg := gs.GetCopy()         // ta sikker kopi under mutex
+		tx <- msg                   // send
 	}
 }
 
@@ -50,7 +54,7 @@ type NetworkConn struct {
 	GlobalStateRx <-chan orderManagement.GlobalStateType
 
 	// World view update
-	WorldViewUpdate chan orderManagement.GlobalStateType
+	WorldViewUpdate chan bool
 }
 
 // InitNetwork initializes network goroutines for peer discovery and global state broadcasts
@@ -65,7 +69,7 @@ func InitNetwork(config PortConfig) NetworkConn {
 	// --- global state channels ---
 	globalStateTx := make(chan orderManagement.GlobalStateType, 16)
 	globalStateRx := make(chan orderManagement.GlobalStateType, 16)
-	worldViewUpdate := make(chan orderManagement.GlobalStateType, 16)
+	worldViewUpdate := make(chan bool, 1)
 
 	go bcast.Transmitter(config.MessageBcastPort, globalStateTx)
 	go bcast.Receiver(config.MessageBcastPort, globalStateRx)

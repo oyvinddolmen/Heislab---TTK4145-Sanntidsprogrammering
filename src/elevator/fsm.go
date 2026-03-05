@@ -73,6 +73,7 @@ func runFSM(
 	for {
 		switch management.Elev.State {
 
+		// ----------------- Case: IDLE -------------------------
 		case management.ElevIdle:
 
 			select {
@@ -107,7 +108,7 @@ func runFSM(
 					fmt.Println("order obstruction")
 					continue
 
-				} 
+				}
 				if order.ButtonType == management.CabButton {
 					orderManagement.AddOrderToOrders(order)
 					gs.UpdateLocalGlobalState()
@@ -115,7 +116,6 @@ func runFSM(
 					gs.AddHallRequest(order)
 					gs.IncrementHallRequestVersion(order)
 				}
-				
 
 				network.SendGlobalState(gs, networkChannels.GlobalStateTx)
 				orderManagement.RunHallAssigner(gs)
@@ -133,6 +133,7 @@ func runFSM(
 				}
 			}
 
+		// ----------------- Case: MOVING -------------------------
 		case management.ElevMoving:
 
 			select {
@@ -190,6 +191,7 @@ func runFSM(
 
 			}
 
+		// ----------------- Case: STOP -------------------------
 		case management.ElevStop:
 
 			select {
@@ -224,6 +226,7 @@ func runFSM(
 				}
 			}
 
+		// ----------------- Case: OBSTRUCTION -------------------------
 		case management.ElevObstruction:
 
 			select {
@@ -265,7 +268,6 @@ func runFSM(
 
 				fmt.Println("Valid order floor", order.Floor, "btn:", btnPress.Button)
 				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
-
 			}
 		}
 	}
@@ -328,7 +330,7 @@ func onIdleEntry(gs *orderManagement.GlobalState) {
 	elevio.SetStopLamp(false)
 	setMoveDir(management.DirIdle)
 	elevio.SetMotorDirection(elevio.MotorDirStop)
-	
+
 	orderManagement.RunHallAssigner(gs)
 	driveToDestination(
 		management.Elev.CurrentOrder.Floor,

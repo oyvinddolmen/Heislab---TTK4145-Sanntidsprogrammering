@@ -26,9 +26,7 @@ func main() {
 		start simulator og kjør uten ports.
 	*/
 
-	// ------------------------------------------------
-	// Flags
-	// ------------------------------------------------
+	// ---------------- Flags for ID and Ports --------------------
 
 	simHost := flag.String("simHost", "localhost", "Simulator host")
 	simPort := flag.Int("simPort", 15657, "Simulator port")
@@ -45,10 +43,14 @@ func main() {
 
 	elevID := *elevIDFlag
 
-	// ------------------------------------------------
-	// Channels
-	// ------------------------------------------------
+	// ------------- Port Configuration --------------------
+	portCfg := network.PortConfig{
+		PeerDiscoveryPort: *peersPort,
+		MessageBcastPort:  *bcastPort,
+		LocalID:           elevID,
+	}
 
+	// --------------------- Channels ----------------------
 	elevChannels := management.ElevChannels{
 		MotorDirection: make(chan int),
 		LastFloor:      make(chan int),
@@ -57,41 +59,26 @@ func main() {
 		BtnPresses:     make(chan elevio.ButtonEvent),
 	}
 
-	// ------------------------------------------------
-	// Network
-	// ------------------------------------------------
-
-	portCfg := network.PortConfig{
-		PeerDiscoveryPort: *peersPort,
-		MessageBcastPort:  *bcastPort,
-		LocalID:           elevID,
-	}
-
 	networkConn := network.InitNetwork(portCfg)
-	broadcastInterval := 20 * time.Millisecond
 
+	// ------------------- Network -------------------------
+	broadcastInterval := 20 * time.Millisecond
 	gs := elevator.InitElevator(elevID, elevAddr, management.NumFloors)
 	faultTolerance.RecoverOnStartup(gs, networkConn.GlobalStateRx)
 
-	// ------------------------------------------------
-	// Network goroutines
-	// ------------------------------------------------
-
+	// ------------------- Network goroutines ----------------
 	go network.ListenAndMergeGlobalState(
 		gs,
 		networkConn.GlobalStateRx,
+		networkConn.WorldViewUpdate,
 	)
-
 	go network.SendGlobalStatePeriodically(
 		gs,
 		networkConn.GlobalStateTx,
 		broadcastInterval,
 	)
 
-	// ------------------------------------------------
-	// Start elevator FSM
-	// ------------------------------------------------
-
+	// ----------------- Start elevator FSM -------------------
 	go elevator.RunElevator(gs, elevChannels, networkConn)
 
 	select {}

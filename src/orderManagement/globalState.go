@@ -149,7 +149,6 @@ func chooseLatestHallRequestVersions(local *GlobalStateType, remote GlobalStateT
 	}
 }
 
-
 // SetElevatorState setter en spesifikk elevator state i globalState
 func (gs *GlobalState) SetElevatorState(elevID string, state hallRequestAssigner.ElevatorStateJSON) {
 	gs.mu.Lock()
@@ -166,9 +165,8 @@ func (gs *GlobalState) GetElevatorState(elevID string) (hallRequestAssigner.Elev
 }
 
 // -------------------- World View Comparison --------------------
-//TROR IKKE VI TRENGER DENNE. DEN SJEKKER BARE OM DET ER NOEN NYE OPPDATERINGER
-/*
-func (gs *GlobalState) NewWorldVie(remote GlobalStateType) bool {
+
+func (gs *GlobalState) NewWorldViev(remote GlobalStateType) bool {
 	gs.mu.Lock()
 	defer gs.mu.Unlock()
 
@@ -220,7 +218,6 @@ func (gs *GlobalState) NewWorldVie(remote GlobalStateType) bool {
 
 	return false
 }
-*/
 
 // -------------------- Safe Getter --------------------
 
