@@ -166,7 +166,8 @@ func (gs *GlobalState) GetElevatorState(elevID string) (hallRequestAssigner.Elev
 }
 
 // -------------------- World View Comparison --------------------
-
+//TROR IKKE VI TRENGER DENNE. DEN SJEKKER BARE OM DET ER NOEN NYE OPPDATERINGER
+/*
 func (gs *GlobalState) NewWorldVie(remote GlobalStateType) bool {
 	gs.mu.Lock()
 	defer gs.mu.Unlock()
@@ -219,6 +220,7 @@ func (gs *GlobalState) NewWorldVie(remote GlobalStateType) bool {
 
 	return false
 }
+*/
 
 // -------------------- Safe Getter --------------------
 
@@ -275,7 +277,7 @@ func (gs *GlobalState) Print() {
 		fmt.Printf("  CabRequests: ")
 		for floor, active := range state.CabRequests {
 			if active {
-				fmt.Printf("[F%d] ", floor)
+				fmt.Printf("[%d] ", floor)
 			}
 		}
 		fmt.Println()

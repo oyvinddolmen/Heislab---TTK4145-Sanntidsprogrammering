@@ -35,7 +35,7 @@ func main() {
 	simAddr := flag.String("simAddr", "", "Full simulator address host:port (overrides simHost/simPort)")
 	peersPort := flag.Int("peersPort", 15667, "UDP port for peer discovery")
 	bcastPort := flag.Int("bcastPort", 15668, "UDP port for global state broadcast")
-	elevIDFlag := flag.String("id", "", "Elevator ID (optional)")
+	elevIDFlag := flag.String("id", "1", "Elevator ID (optional)")
 	flag.Parse()
 
 	elevAddr := *simAddr
@@ -69,6 +69,7 @@ func main() {
 
 	networkConn := network.InitNetwork(portCfg)
 	broadcastInterval := 20 * time.Millisecond
+
 	gs := elevator.InitElevator(elevID, elevAddr, management.NumFloors)
 	faultTolerance.RecoverOnStartup(gs, networkConn.GlobalStateRx)
 

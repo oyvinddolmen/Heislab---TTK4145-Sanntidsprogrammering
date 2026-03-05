@@ -176,7 +176,10 @@ func runFSM(
 				}
 
 				network.SendGlobalState(gs, networkChannels.GlobalStateTx)
+				fmt.Println("Kjører runnhallassigner when in state=MOVING, neste er å sette lys")
 				orderManagement.RunHallAssigner(gs)
+				fmt.Println("KJØRT runnhallassigner when in state=MOVING, neste er å sette lys")
+
 				elevio.SetButtonLamp(btnPress.Button, btnPress.Floor, true)
 				fmt.Println("Valid order floor", order.Floor, "btn:", btnPress.Button)
 

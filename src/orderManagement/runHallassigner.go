@@ -21,13 +21,11 @@ func RunHallAssigner(gs *GlobalState) {
 	}
 	gs.mu.Unlock()
 
-	gs.Print() // debug
-
+	gs.Print() // debug - printer GlobalState
 	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
 	if err != nil {
 		fmt.Println("assigner failed: %w", err)
 	}
-
 	applyAssignments(assignments)
 }
 
@@ -36,6 +34,7 @@ func applyAssignments(assignments map[string][][2]bool) {
 	elevID := management.Elev.ID
 	assigned, exists := assignments[elevID]
 	if !exists {
+		fmt.Println("assignments[elevID] finnes ikke!!!")
 		return
 	}
 
