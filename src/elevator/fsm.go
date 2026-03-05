@@ -104,6 +104,7 @@ func runFSM(
 				order := orderManagement.CreateOrder(btnPress)
 				if order.Floor == management.Elev.Floor {
 					setElevState(gs, management.ElevObstruction)
+					fmt.Println("order obstruction")
 					continue
 
 				} else {
@@ -298,6 +299,10 @@ func setMoveDir(moveDir management.Direction) {
 
 func setElevLastFloor(lastFloor int) {
 	management.Elev.LastFloor = lastFloor
+}
+
+func setElevFloor(floor int) {
+	management.Elev.Floor = floor
 }
 
 func getFloor() int {
