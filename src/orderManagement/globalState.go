@@ -2,6 +2,7 @@ package orderManagement
 
 import (
 	"fmt"
+	"heislab/elevio"
 	"heislab/hallRequestAssigner"
 	"heislab/management"
 	"sync"
@@ -93,10 +94,10 @@ func (gs *GlobalState) AddHallRequest(order management.Order) {
 	gs.globalState.HallRequests[order.Floor][order.ButtonType] = true
 }
 
-func (gs *GlobalState) IncrementHallRequestVersion(order management.Order) {
+func (gs *GlobalState) IncrementHallRequestVersion(floor int, btn elevio.ButtonType) {
 	gs.mu.Lock()
 	defer gs.mu.Unlock()
-	gs.globalState.HallRequestsVersion[order.Floor][order.ButtonType]++
+	gs.globalState.HallRequestsVersion[floor][btn]++
 }
 
 func (gs *GlobalState) SetElevatorToOffline(deadID string) {
