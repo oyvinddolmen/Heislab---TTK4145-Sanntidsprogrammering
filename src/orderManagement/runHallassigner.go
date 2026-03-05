@@ -50,7 +50,7 @@ func applyAssignments(assignments map[string][][2]bool) {
 			}
 		}
 	}
-
 	UpdateCurrentOrder()
+	UpdateMoveDir()
 	fmt.Println("current order:", management.Elev.CurrentOrder.Floor)
 }

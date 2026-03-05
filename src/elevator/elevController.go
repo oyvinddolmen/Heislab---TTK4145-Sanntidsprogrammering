@@ -1,91 +1,65 @@
 package elevator
 
-// ---------------------------------------------------------------------------------------------------------------------
-// In charge of physical elevator functions and driving-logic
-// ---------------------------------------------------------------------------------------------------------------------
-
 import (
 	"heislab/elevio"
 	"heislab/management"
 	"heislab/orderManagement"
+	"time"
 )
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Initalize elevator functions
-// ---------------------------------------------------------------------------------------------------------------------
-
-func goToGroundFloor(gs *orderManagement.GlobalState) {
-	elevio.SetMotorDirection(elevio.MotorDirDown)
-	for elevio.GetFloor() != 0 {
-	}
-	elevio.SetMotorDirection(elevio.MotorDirStop)
-	elevio.SetFloorIndicator(0)
-	setElevState(gs, management.ElevIdle)
-}
+// -------------------------------------------------------------------------------------------
+// Elevator initialization
+// -------------------------------------------------------------------------------------------
 
 func InitElevator(elevID string, adress string, numFloors int) *orderManagement.GlobalState {
-	elevio.Init(adress, numFloors) // To run several simulators, each terminal/simulator needs unique adress
-	InitLights(numFloors)
+	elevio.Init(adress, numFloors) // Each simulator/terminal needs a unique address
 	InitFSM(elevID, numFloors)
+	InitLights(numFloors)
 	gs := orderManagement.NewGlobalState(elevID)
 	goToGroundFloor(gs)
 	return gs
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-// Driving logic
-// ---------------------------------------------------------------------------------------------------------------------
-
-func findMovingDirection(destination int, lastFloor int) elevio.MotorDirection {
-
-	// safety measure
-	if destination < 0 {
-		return elevio.MotorDirStop
+// Move elevator safely to ground floor at startup
+func goToGroundFloor(gs *orderManagement.GlobalState) {
+	elevio.SetMotorDirection(elevio.MotorDirDown)
+	for elevio.GetFloor() != 0 {
+		time.Sleep(10 * time.Millisecond)
 	}
+	elevio.SetMotorDirection(elevio.MotorDirStop)
+	elevio.SetFloorIndicator(0)
+	management.Elev.Floor = 0
+	management.Elev.LastFloor = 0
+	management.Elev.MoveDir = management.DirIdle
+	setElevState(gs, management.ElevIdle)
+}
 
-	switch {
-	case destination > lastFloor:
-		management.Elev.MoveDir = management.DirUp
-		return elevio.MotorDirUp
-	case destination < lastFloor:
-		management.Elev.MoveDir = management.DirDown
-		return elevio.MotorDirDown
+// Sets motor direction based on current MoveDir
+func setMotorFromDir() {
+	switch management.Elev.MoveDir {
+	case management.DirUp:
+		elevio.SetMotorDirection(elevio.MotorDirUp)
+	case management.DirDown:
+		elevio.SetMotorDirection(elevio.MotorDirDown)
 	default:
-		if elevio.GetFloor() == -1 {
-			management.Elev.MoveDir = management.DirDown
-			return elevio.MotorDirDown // if between two floors, always go down (maybe better solution later, lastMovingDir variable?)
-		}
-		management.Elev.MoveDir = management.DirIdle
-		return elevio.MotorDirStop
+		elevio.SetMotorDirection(elevio.MotorDirStop)
 	}
 }
 
-// Checks if elevator has reached floor
-func reachedDestination(floor int) bool {
-	if management.Elev.State == management.ElevMoving && floor == management.Elev.CurrentOrder.Floor {
-		return true
-	} else {
-		return false
-	}
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-// Elevator hardware related functions
-// ---------------------------------------------------------------------------------------------------------------------
-
+// Stops the elevator immediately
 func stopElevator() {
 	elevio.SetMotorDirection(elevio.MotorDirStop)
 	management.Elev.MoveDir = management.DirIdle
 }
 
-// Sets motordirection in direction of newOrder and changes Elev.MoveDir.
-func driveToDestination(destination int, lastFloor int) {
-	findMovingDirection(destination, lastFloor)
-	//elevio.SetMotorDirection(moveDir)
-	setMotorFromDir()
-}
+// -------------------------------------------------------------------------------------------
+// Utility
+// -------------------------------------------------------------------------------------------
 
-// Turns on doorOpenLight
-func openDoor() {
-	elevio.SetDoorOpenLamp(true)
+// Checks if elevator has reached the current order
+func reachedDestination(floor int) bool {
+	if management.Elev.State == management.ElevMoving && floor == management.Elev.CurrentOrder.Floor {
+		return true
+	}
+	return false
 }
