@@ -173,6 +173,22 @@ func handleButtonPress(gs *orderManagement.GlobalState, btn elevio.ButtonEvent, 
 	elevio.SetButtonLamp(btn.Button, btn.Floor, true)
 }
 
+// sets the FSM state based on moving direction in Elev struct
+func setStateFromMoveDir(gs *orderManagement.GlobalState) {
+	switch management.Elev.MoveDir {
+	case management.DirDown:
+		setElevState(gs, management.ElevMoving)
+
+	case management.DirUp:
+		setElevState(gs, management.ElevMoving)
+
+	case management.DirIdle:
+		setElevState(gs, management.ElevIdle)
+	}
+
+}
+
+// sets moveDir in elevator struct
 func setMoveDir(moveDir management.Direction) {
 	management.Elev.MoveDir = moveDir
 }
@@ -185,6 +201,7 @@ func setElevFloor(floor int) {
 	management.Elev.Floor = floor
 }
 
+// returns elevators floor
 func getFloor() int {
 	return management.Elev.Floor
 }

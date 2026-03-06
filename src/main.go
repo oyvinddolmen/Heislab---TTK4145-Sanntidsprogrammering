@@ -22,8 +22,18 @@ func main() {
 		go run . -simPort 15657 -peersPort 20001 -bcastPort 20002 -id 1
 		go run . -simPort 15667 -peersPort 20001 -bcastPort 20002 -id 2
 
-		Hvis du bare vil kjøre én heis:
-		start simulator og kjør uten ports.
+		På lab: begge programmene skal ha samme simPort 15657
+	*/
+
+	/*
+		TODO:
+		- Ikke skru av alle lys i etasjen man ankommer,
+		  kun i den retningen heisen skal fortsette i (ide: må finne neste order og se på retningen dit)
+
+		- Oppdage når heiser dør
+
+		- Sette hall-order likt på alle heispanelene
+
 	*/
 
 	// ---------------- Flags for ID and Ports --------------------

@@ -8,14 +8,14 @@ import (
 	"heislab/orderManagement"
 )
 
-// ListenAndMergeGlobalState lytter på innkommende worldViews og oppdaterer globalState
+// ListenAndMergeGlobalState listens for incomming worldViews, updates globalState and sends on worldView-channel
 func ListenAndMergeGlobalState(gs *orderManagement.GlobalState, rx <-chan orderManagement.GlobalStateType, worldViewUpdate chan bool) {
 	for remoteGlobalState := range rx {
-		if gs.NewWorldViev(remoteGlobalState) {
-			worldViewUpdate <- true
-		}
-		
 		gs.Merge(remoteGlobalState)
+
+		if gs.NewWorldViev(remoteGlobalState) {
+			//worldViewUpdate <- true
+		}
 	}
 }
 
