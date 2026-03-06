@@ -28,6 +28,7 @@ func InitFSM(elevID string, NumFloors int) {
 	management.Elev.LastFloor = 0
 	management.Elev.MoveDir = management.DirIdle
 	management.Elev.CurrentOrder = noOrder
+	management.Elev.LastOrder = noOrder
 
 	for floor := 0; floor < NumFloors; floor++ {
 		for button := 0; button < management.NumButtons; button++ {
@@ -74,9 +75,9 @@ func runFSM(
 		case management.ElevIdle:
 			select {
 			case <-networkChannels.WorldViewUpdate:
-				orderManagement.RunHallAssigner(gs)
-				setHallLightOnAllPanels(gs)
-				safeDrive()
+				orderManagement.RunHallAssignerAndApplyAssignments(gs)
+				setHallLightOnAllPanels(gs) //Burde sette lys basert på state
+				UpdateCurrentOrderAndsafeDrive(gs)
 			case floor := <-elevChannels.LastFloor:
 				updateFloor(floor)
 			case <-elevChannels.Obstruction:
@@ -89,37 +90,39 @@ func runFSM(
 				}
 			case btn := <-elevChannels.BtnPresses:
 				handleButtonPress(gs, btn, networkChannels)
-				safeDrive()
+				UpdateCurrentOrderAndsafeDrive(gs)
 			}
 
 		// ----------------- Case: MOVING -------------------------
 		case management.ElevMoving:
 			select {
 			case <-networkChannels.WorldViewUpdate:
-				orderManagement.RunHallAssigner(gs)
+				orderManagement.RunHallAssignerAndApplyAssignments(gs)
 				setHallLightOnAllPanels(gs)
-				safeDrive()
+				UpdateCurrentOrderAndsafeDrive(gs)
 			case floor := <-elevChannels.LastFloor:
 				updateFloor(floor)
 				if orderManagement.ShouldStop(&management.Elev) {
 					stopElevator()
+					orderManagement.ChooseDirectionAfterStop(&management.Elev) //Behøver kanskje ikke denne
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
-					gs.Print()
-					orderManagement.RunHallAssigner(gs)
+					orderManagement.RunHallAssignerAndApplyAssignments(gs)
+					orderManagement.UpdateCurrentOrder(gs)
+					orderManagement.UpdateMoveDir()
 					setElevState(gs, management.ElevObstruction)
 				}
 			case <-elevChannels.StopBtn:
 				setElevState(gs, management.ElevStop)
 			case btn := <-elevChannels.BtnPresses:
 				handleButtonPress(gs, btn, networkChannels)
-				safeDrive()
+				UpdateCurrentOrderAndsafeDrive(gs)
 			}
 
 		// ----------------- Case: STOP -------------------------
 		case management.ElevStop:
 			select {
 			case <-networkChannels.WorldViewUpdate:
-				orderManagement.RunHallAssigner(gs)
+				orderManagement.RunHallAssignerAndApplyAssignments(gs)
 				setHallLightOnAllPanels(gs)
 			case btn := <-elevChannels.BtnPresses:
 				handleButtonPress(gs, btn, networkChannels)
@@ -135,7 +138,7 @@ func runFSM(
 		case management.ElevObstruction:
 			select {
 			case <-networkChannels.WorldViewUpdate:
-				orderManagement.RunHallAssigner(gs)
+				orderManagement.RunHallAssignerAndApplyAssignments(gs)
 				setHallLightOnAllPanels(gs)
 			case <-doorTimer.C:
 				if !elevio.GetObstruction() {
@@ -146,6 +149,8 @@ func runFSM(
 				}
 			case btn := <-elevChannels.BtnPresses:
 				handleButtonPress(gs, btn, networkChannels)
+				orderManagement.RunHallAssignerAndApplyAssignments(gs)
+				setHallLightOnAllPanels(gs)
 			}
 		}
 	}
@@ -165,7 +170,7 @@ func handleButtonPress(gs *orderManagement.GlobalState, btn elevio.ButtonEvent, 
 	}
 
 	if order.ButtonType == management.CabButton {
-		orderManagement.AddOrderToOrders(order)
+		orderManagement.AddCabOrderToElevator(order)
 		gs.UpdateLocalGlobalState()
 	} else {
 		gs.AddHallRequest(order)
@@ -173,8 +178,8 @@ func handleButtonPress(gs *orderManagement.GlobalState, btn elevio.ButtonEvent, 
 	}
 
 	network.SendGlobalState(gs, networkChannels.GlobalStateTx)
-	orderManagement.RunHallAssigner(gs)
-	elevio.SetButtonLamp(btn.Button, btn.Floor, true)
+	orderManagement.RunHallAssignerAndApplyAssignments(gs)
+	elevio.SetButtonLamp(btn.Button, btn.Floor, true) //Burde lage en funksjon som setter lys basert på state
 }
 
 // sets the FSM state based on moving direction in Elev struct
@@ -224,9 +229,9 @@ func updateFloor(floor int) {
 	}
 }
 
-// updates current order and sets motor-direction
-func safeDrive() {
-	orderManagement.UpdateCurrentOrder()
+func UpdateCurrentOrderAndsafeDrive(gs *orderManagement.GlobalState) {
+
+	orderManagement.UpdateCurrentOrder(gs)
 	orderManagement.UpdateMoveDir()
 
 	if management.Elev.MoveDir == management.DirIdle {
@@ -265,8 +270,8 @@ func setElevState(gs *orderManagement.GlobalState, state management.State) {
 func onIdleEntry() {
 	elevio.SetDoorOpenLamp(false)
 	elevio.SetStopLamp(false)
-	setMoveDir(management.DirIdle)
-	safeDrive()
+	management.Elev.MoveDir = management.DirIdle
+	UpdateCurrentOrderAndsafeDrive(gs)
 }
 
 // turns off stop and door open lamp, and sets elevio motor direction

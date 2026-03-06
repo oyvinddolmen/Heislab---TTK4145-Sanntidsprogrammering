@@ -56,6 +56,7 @@ type Elevator struct {
 	LastFloor    int
 	MoveDir      Direction
 	CurrentOrder Order
+	LastOrder    Order
 	Orders       [NumFloors][NumButtons]Order
 }
 

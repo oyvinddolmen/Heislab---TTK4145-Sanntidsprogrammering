@@ -56,10 +56,10 @@ func stopElevator() {
 // Utility
 // -------------------------------------------------------------------------------------------
 
-// Returns true if elevator has reached destination in current order
-func reachedDestination(floor int) bool {
-	if management.Elev.State == management.ElevMoving && floor == management.Elev.CurrentOrder.Floor {
-		return true
-	}
-	return false
-}
+// Checks if elevator has reached the current order
+//func reachedDestination(floor int) bool {
+//	if management.Elev.State == management.ElevMoving && floor == management.Elev.CurrentOrder.Floor {
+//		return true
+//	}
+//	return false
+//}

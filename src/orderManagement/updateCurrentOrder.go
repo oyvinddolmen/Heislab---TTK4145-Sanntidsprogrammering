@@ -6,6 +6,21 @@ import (
 	"heislab/management"
 )
 
+func ChooseDirectionAfterStop(e *management.Elevator) {
+
+	f := e.Floor
+
+	if hallOrderUpAtFloor(e, f) {
+		e.MoveDir = management.DirUp
+		return
+	}
+
+	if hallOrderDownAtFloor(e, f) {
+		e.MoveDir = management.DirDown
+		return
+	}
+}
+
 func ordersAbove(e *management.Elevator, floorUnderInspection int) bool {
 
 	if floorUnderInspection == management.NumFloors-1 {
@@ -107,12 +122,12 @@ func ClearOrdersAndTurnOfLights(gs *GlobalState) {
 	e := &management.Elev
 	floor := e.Floor
 	if e.CurrentOrder.Floor == floor {
+		e.LastOrder = e.CurrentOrder
 		e.CurrentOrder.OrderPlaced = false
 	}
 
 	// CAB order fjernes alltid
 	if e.Orders[floor][elevio.CabButton].OrderPlaced {
-
 		e.Orders[floor][elevio.CabButton].OrderPlaced = false
 		gs.UpdateLocalGlobalState()
 		elevio.SetButtonLamp(elevio.CabButton, floor, false)
@@ -124,54 +139,51 @@ func ClearOrdersAndTurnOfLights(gs *GlobalState) {
 
 		// fjern hallUp
 		if e.Orders[floor][elevio.HallUpButton].OrderPlaced {
-			gs.mu.Lock()
-			e.Orders[floor][elevio.HallUpButton].OrderPlaced = false
-			gs.globalState.HallRequests[floor][elevio.HallUpButton] = false
-			gs.mu.Unlock()
-			gs.IncrementHallRequestVersion(floor,elevio.HallUpButton)
-			elevio.SetButtonLamp(elevio.HallUpButton, floor, false)
+			removeHallUp(gs,e,floor)
 		}
 
 	case management.DirDown:
 		
 		// fjern hallDown
 		if e.Orders[floor][elevio.HallDownButton].OrderPlaced {
-			gs.mu.Lock()
-			e.Orders[floor][elevio.HallDownButton].OrderPlaced = false
-			gs.globalState.HallRequests[floor][elevio.HallDownButton] = false
-			gs.mu.Unlock()
-			gs.IncrementHallRequestVersion(floor,elevio.HallDownButton)
-			elevio.SetButtonLamp(elevio.HallDownButton, floor, false)
+			removeHallDown(gs,e,floor)
 		}
 
 	default:
-
-		// idle → ta begge? NEI --velger en av dem.. Kan forbedres
-		
+		fmt.Println("ga du hall ordre opp og ned i etasjen den står i? hmmmmm")
 		if e.Orders[floor][elevio.HallDownButton].OrderPlaced {
-			gs.mu.Lock()
-			e.Orders[floor][elevio.HallDownButton].OrderPlaced = false
-			gs.globalState.HallRequests[floor][elevio.HallDownButton] = false
-			gs.mu.Unlock()
-			gs.IncrementHallRequestVersion(floor,elevio.HallDownButton)
-			elevio.SetButtonLamp(elevio.HallDownButton, floor, false)
+			removeHallDown(gs,e,floor)
 		} else if e.Orders[floor][elevio.HallUpButton].OrderPlaced {
-			gs.mu.Lock()
-			e.Orders[floor][elevio.HallUpButton].OrderPlaced = false
-			gs.globalState.HallRequests[floor][elevio.HallUpButton] = false
-			gs.mu.Unlock()
-			gs.IncrementHallRequestVersion(floor,elevio.HallUpButton)
-			elevio.SetButtonLamp(elevio.HallUpButton, floor, false)
+			removeHallUp(gs,e,floor)
 		}
 	}
 }
 
-func UpdateCurrentOrder() {
+func removeHallDown(gs *GlobalState, e *management.Elevator, floor int){
+	gs.mu.Lock()
+	e.Orders[floor][elevio.HallDownButton].OrderPlaced = false
+	gs.globalState.HallRequests[floor][elevio.HallDownButton] = false
+	gs.mu.Unlock()
+	gs.IncrementHallRequestVersion(floor,elevio.HallDownButton)
+	elevio.SetButtonLamp(elevio.HallDownButton, floor, false)
+}
+
+func removeHallUp(gs *GlobalState, e *management.Elevator, floor int){
+	gs.mu.Lock()
+	e.Orders[floor][elevio.HallUpButton].OrderPlaced = false
+	gs.globalState.HallRequests[floor][elevio.HallUpButton] = false
+	gs.mu.Unlock()
+	gs.IncrementHallRequestVersion(floor,elevio.HallUpButton)
+	elevio.SetButtonLamp(elevio.HallUpButton, floor, false)
+}
+
+func UpdateCurrentOrder(gs *GlobalState) {
 
 	e := &management.Elev
 	fmt.Println("Entered Update current order with: ")
 	fmt.Println("Elev floor:", e.Floor)
 	fmt.Println("MoveDir:", e.MoveDir)
+	fmt.Println("LastOrder.ButtonType (0: HallUp , 1: HallDown , 2: Caborder) : ", e.LastOrder.ButtonType)
 	for f := 0; f < management.NumFloors; f++ {
 		fmt.Println(
 			"floor", f,
@@ -181,45 +193,41 @@ func UpdateCurrentOrder() {
 		)
 	}
 	floor := e.Floor
-	if floor < 0 {
-		floor = e.LastFloor
-	}
+
 
 	switch e.MoveDir {
 
 	case management.DirUp:
 
-		if assignUp(e, floor) {
+		if assignUp(gs, e, floor) {
 			return
 		}
 
 		if ordersBelow(e,e.Floor) {
-			assignDown(e, floor)
+			assignDown(gs, e, floor)
 			e.MoveDir = management.DirDown
 			return
 		}
 
 	case management.DirDown:
 
-		if assignDown(e, floor) {
+		if assignDown(gs, e, floor) {
 			return
 		}
 
 		if ordersAbove(e,e.Floor) {
-			assignUp(e, floor)
+			assignUp(gs, e, floor)
 			e.MoveDir = management.DirUp
 			return
 		}
 
 	default: // Idle
 
-		if assignUp(e, floor) {
+		if assignUp(gs, e, floor) {
 			e.MoveDir = management.DirUp
 			return
 		}
-		fmt.Println("Inside default in updateCurrentOrder")
-		if assignDown(e, floor) {
-			fmt.Println("Assigned a order to currentOrder")
+		if assignDown(gs, e, floor) {
 			e.MoveDir = management.DirDown
 			return
 		}
@@ -228,24 +236,30 @@ func UpdateCurrentOrder() {
 }
 
 //Find orders upwards
-func assignUp(e *management.Elevator, startFloor int) bool {
+func assignUp(gs *GlobalState, e *management.Elevator, startFloor int) bool {
 
 	for f := startFloor + 1; f < management.NumFloors; f++ {
 
 		// CAB prioritet
 		if cabOrderAtFloor(e, f) {
+			if e.LastOrder.ButtonType == elevio.HallDownButton && hallOrderUpAtFloor(e, e.Floor){
+				removeHallUp(gs,e, e.Floor)
+			}
+			e.LastOrder = e.CurrentOrder
 			e.CurrentOrder = e.Orders[f][elevio.CabButton]
 			return true
 		}
 
 		// hallUp hvis vi går opp
-		if hallOrderUpAtFloor(e, f) {
+		if hallOrderUpAtFloor(e, f) && e.LastOrder.ButtonType != elevio.HallDownButton{
+			e.LastOrder = e.CurrentOrder
 			e.CurrentOrder = e.Orders[f][elevio.HallUpButton]
 			return true
 		}
 
 		// hvis ingen over → kan ta hallDown
-		if !ordersAbove(e,f) && hallOrderDownAtFloor(e, f) {
+		if !ordersAbove(e,f) && hallOrderDownAtFloor(e, f) && e.LastOrder.ButtonType != elevio.HallDownButton{
+			e.LastOrder = e.CurrentOrder
 			e.CurrentOrder = e.Orders[f][elevio.HallDownButton]
 			return true
 		}
@@ -255,24 +269,30 @@ func assignUp(e *management.Elevator, startFloor int) bool {
 }
 
 //Find orders downwards
-func assignDown(e *management.Elevator, startFloor int) bool {
+func assignDown(gs *GlobalState, e *management.Elevator, startFloor int) bool {
 
 	for f := startFloor - 1; f >= 0; f-- {
 
 		// CAB prioritet
 		if cabOrderAtFloor(e, f) {
+			if e.LastOrder.ButtonType == elevio.HallUpButton && hallOrderDownAtFloor(e, e.Floor){
+				removeHallDown(gs,e, e.Floor)
+			}
+			e.LastOrder = e.CurrentOrder
 			e.CurrentOrder = e.Orders[f][elevio.CabButton]
 			return true
 		}
 
 		// hallDown hvis vi går ned
-		if hallOrderDownAtFloor(e, f) {
+		if hallOrderDownAtFloor(e, f) && e.LastOrder.ButtonType != elevio.HallUpButton {
+			e.LastOrder = e.CurrentOrder
 			e.CurrentOrder = e.Orders[f][elevio.HallDownButton]
 			return true
 		}
 
 		// hvis ingen under → kan ta hallUp
-		if !ordersBelow(e,f) && hallOrderUpAtFloor(e, f) {
+		if !ordersBelow(e,f) && hallOrderUpAtFloor(e, f) && e.LastOrder.ButtonType != elevio.HallUpButton{
+			e.LastOrder = e.CurrentOrder
 			e.CurrentOrder = e.Orders[f][elevio.HallUpButton]
 			return true
 		}

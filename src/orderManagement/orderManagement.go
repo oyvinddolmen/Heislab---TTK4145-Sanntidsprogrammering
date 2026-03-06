@@ -53,7 +53,7 @@ func PrintOrders() {
 	}
 }
 
-func AddOrderToOrders(order management.Order) {
+func AddCabOrderToElevator(order management.Order) {
 	management.Elev.Orders[order.Floor][int(order.ButtonType)] = order
 }
 
