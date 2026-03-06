@@ -50,7 +50,7 @@ func checkForDeadElevators(gs *orderManagement.GlobalState) {
 			delete(lastSeen, id)
 
 			// Re-kjør hall assigner med oppdatert state
-			orderManagement.RunHallAssigner(gs)
+			orderManagement.RunHallAssignerAndApplyAssignments(gs)
 		}
 	}
 }

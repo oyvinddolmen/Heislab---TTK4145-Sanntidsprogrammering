@@ -8,7 +8,7 @@ import (
 
 // RunHallAssigner kopierer hall requests og online elevator states,
 // kaller hallRequestAssigner, og oppdaterer lokalt heis-objekt
-func RunHallAssigner(gs *GlobalState) {
+func RunHallAssignerAndApplyAssignments(gs *GlobalState) {
 	// Lås globalState og kopier hallRequests + online elevator states
 	gs.mu.Lock()
 	hallRequests := append([][2]bool(nil), gs.globalState.HallRequests...)
@@ -50,7 +50,4 @@ func applyAssignments(assignments map[string][][2]bool) {
 			}
 		}
 	}
-	UpdateCurrentOrder()
-	UpdateMoveDir()
-	fmt.Println("current order:", management.Elev.CurrentOrder.Floor)
 }
