@@ -243,7 +243,7 @@ func (gs *GlobalState) GetCopy() GlobalStateType {
 
 // -------------------- Debug --------------------
 
-func (gs *GlobalState) Print() {
+func (gs *GlobalState) PrintGlobalState() {
 	gs.mu.Lock()
 	defer gs.mu.Unlock()
 

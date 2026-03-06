@@ -73,6 +73,7 @@ func anyOrderAtFloor(e *management.Elevator, floor int) bool {
 		hallOrderDownAtFloor(e, floor)
 }
 
+// checks if elev should stop at floor
 func ShouldStop(e *management.Elevator) bool {
 
 	floor := e.Floor

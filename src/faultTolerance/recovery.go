@@ -3,41 +3,46 @@ package faultTolerance
 import (
 	"fmt"
 	"heislab/elevio"
+	"heislab/hallRequestAssigner"
 	"heislab/management"
 	"heislab/orderManagement"
 	"time"
 )
 
 func RecoverOnStartup(gs *orderManagement.GlobalState, rx <-chan orderManagement.GlobalStateType) {
+	elevID := management.Elev.ID
 	timeout := time.After(1 * time.Second)
+	var recovered *hallRequestAssigner.ElevatorStateJSON
 
-	// Vent på eksisterende GlobalState
+	// Listen for existing global states for a short window.
+	// We look specifically for our own previous state in others' world views.
 	for {
 		select {
 		case globalState := <-rx:
-			gs.Merge(globalState) // merge innkommende state
-			goto RECOVER
+			gs.Merge(globalState)
+
+			if st, exists := globalState.States[elevID]; exists {
+				tmp := st
+				recovered = &tmp
+			}
 		case <-timeout:
-			fmt.Println("No GlobalState received on startup, starting fresh")
 			goto RECOVER
 		}
 	}
 
 RECOVER:
-
-	elevID := management.Elev.ID
-
-	// Gjenopprett cab-orders hvis de fantes fra før
-	if oldState, exists := gs.GetElevatorState(elevID); exists {
-		for floor := 0; floor < management.NumFloors; floor++ {
-			if oldState.CabRequests[floor] {
+	if recovered == nil {
+		fmt.Println("No previous cab state found on startup, starting fresh")
+	} else {
+		for floor := 0; floor < management.NumFloors && floor < len(recovered.CabRequests); floor++ {
+			if recovered.CabRequests[floor] {
 				management.Elev.Orders[floor][elevio.CabButton].OrderPlaced = true
-				//management.Elev.Orders[floor][elevio.CabButton].Finished = false
 				management.Elev.Orders[floor][elevio.CabButton].ElevID = elevID
+				elevio.SetButtonLamp(elevio.CabButton, floor, true)
 			}
 		}
 	}
 
-	// Registrer oss selv i GlobalState via metode
+	// Register local elevator state in global state after recovery.
 	gs.SetElevatorState(elevID, orderManagement.ConvertElevatorToJSON(management.Elev))
 }

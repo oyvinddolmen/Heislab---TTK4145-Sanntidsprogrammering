@@ -27,12 +27,12 @@ func main() {
 
 	/*
 		TODO:
-		- Ikke skru av alle lys i etasjen man ankommer,
-		  kun i den retningen heisen skal fortsette i (ide: må finne neste order og se på retningen dit)
 
-		- Oppdage når heiser dør
+		- Heisen stopper opp et øyeblikk og kjører igjen når noen trykker på bestilling i etasjen den nettop var i
 
-		- Sette hall-order likt på alle heispanelene
+		- Når en heis dør må den ta over hall-orderen til den andre heisen
+
+		- Når man kjører med flere heiser skal man åpne dør til heis 1 og skru av lys dersom hall button på heis 2 blir presset i etasjen til heis 1
 
 	*/
 
@@ -75,6 +75,7 @@ func main() {
 	broadcastInterval := 20 * time.Millisecond
 	gs := elevator.InitElevator(elevID, elevAddr, management.NumFloors)
 	faultTolerance.RecoverOnStartup(gs, networkConn.GlobalStateRx)
+	elevator.UpdateCurrentOrderAndsafeDrive(gs)
 
 	// ------------------- Network goroutines ----------------
 	go network.ListenAndMergeGlobalState(
@@ -82,6 +83,7 @@ func main() {
 		networkConn.GlobalStateRx,
 		networkConn.WorldViewUpdate,
 	)
+	go faultTolerance.StartFailureDetector(gs)
 	go network.SendGlobalStatePeriodically(
 		gs,
 		networkConn.GlobalStateTx,

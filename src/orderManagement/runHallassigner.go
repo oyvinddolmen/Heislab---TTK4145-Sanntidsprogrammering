@@ -21,7 +21,7 @@ func RunHallAssignerAndApplyAssignments(gs *GlobalState) {
 	}
 	gs.mu.Unlock()
 
-	gs.Print() // debug - printer GlobalState
+	gs.PrintGlobalState() // debug - printer GlobalState
 	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
 	if err != nil {
 		fmt.Println("assigner failed: %w", err)
@@ -45,7 +45,7 @@ func applyAssignments(assignments map[string][][2]bool) {
 			if assigned[floor][btn] {
 				management.Elev.Orders[floor][btn].OrderPlaced = true
 				management.Elev.Orders[floor][btn].ElevID = management.Elev.ID
-			} else{
+			} else {
 				management.Elev.Orders[floor][btn].OrderPlaced = false
 			}
 		}

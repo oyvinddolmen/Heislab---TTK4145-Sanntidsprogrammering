@@ -35,9 +35,6 @@ func setHallLightOnAllPanels(gs *orderManagement.GlobalState) {
 	}
 }
 
-// turns off lights when reaching floor (NOT DONE, need to take in account where next stop will be)
-func reachedFloorLightsOff(floor int) {
-	elevio.SetButtonLamp(elevio.CabButton, floor, false)
-	elevio.SetButtonLamp(elevio.HallUpButton, floor, false)
-	elevio.SetButtonLamp(elevio.HallDownButton, floor, false)
+func setFloorIndicator(floor int) {
+	elevio.SetFloorIndicator(floor)
 }

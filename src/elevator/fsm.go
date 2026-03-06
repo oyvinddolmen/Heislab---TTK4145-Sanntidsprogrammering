@@ -76,8 +76,9 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
-				setHallLightOnAllPanels(gs) //Burde sette lys basert på state
+				setHallLightOnAllPanels(gs)
 				UpdateCurrentOrderAndsafeDrive(gs)
+				gs.PrintGlobalState()
 			case floor := <-elevChannels.LastFloor:
 				updateFloor(floor)
 			case <-elevChannels.Obstruction:
@@ -100,17 +101,25 @@ func runFSM(
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
 				setHallLightOnAllPanels(gs)
 				UpdateCurrentOrderAndsafeDrive(gs)
+				gs.PrintGlobalState()
 			case floor := <-elevChannels.LastFloor:
-				updateFloor(floor)
+				setFloorIndicator(floor)
+				setElevLastFloor(floor)
+				setElevFloor(floor)
 				if orderManagement.ShouldStop(&management.Elev) {
 					stopElevator()
+					setElevFloor(floor)
 					orderManagement.ChooseDirectionAfterStop(&management.Elev) //Behøver kanskje ikke denne
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
 					orderManagement.RunHallAssignerAndApplyAssignments(gs)
 					orderManagement.UpdateCurrentOrder(gs)
 					orderManagement.UpdateMoveDir()
 					setElevState(gs, management.ElevObstruction)
+				} else {
+					setElevFloor(-1)
 				}
+			case <-elevChannels.Obstruction:
+				setElevState(gs, management.ElevObstruction)
 			case <-elevChannels.StopBtn:
 				setElevState(gs, management.ElevStop)
 			case btn := <-elevChannels.BtnPresses:
@@ -140,12 +149,13 @@ func runFSM(
 			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
 				setHallLightOnAllPanels(gs)
+				gs.PrintGlobalState()
 			case <-doorTimer.C:
 				if !elevio.GetObstruction() {
 					elevio.SetDoorOpenLamp(false)
-					fmt.Println("Nåværende floor: ", management.Elev.Floor, "og state ", management.Elev.State)
-					fmt.Println("Går til idle nå")
 					setElevState(gs, management.ElevIdle)
+				} else {
+					setElevState(gs, management.ElevObstruction)
 				}
 			case btn := <-elevChannels.BtnPresses:
 				handleButtonPress(gs, btn, networkChannels)

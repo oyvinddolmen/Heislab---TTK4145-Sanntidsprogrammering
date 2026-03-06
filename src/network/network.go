@@ -1,8 +1,11 @@
 package network
 
 import (
+	"fmt"
 	"time"
 
+	"heislab/faultTolerance"
+	"heislab/management"
 	"heislab/network/bcast"
 	"heislab/network/peers"
 	"heislab/orderManagement"
@@ -11,11 +14,18 @@ import (
 // ListenAndMergeGlobalState listens for incomming worldViews, updates globalState and sends on worldView-channel
 func ListenAndMergeGlobalState(gs *orderManagement.GlobalState, rx <-chan orderManagement.GlobalStateType, worldViewUpdate chan bool) {
 	for remoteGlobalState := range rx {
-		gs.Merge(remoteGlobalState)
 
-		if gs.NewWorldViev(remoteGlobalState) {
-			//worldViewUpdate <- true
+		// to prevent elev from listening to itself
+		if remoteGlobalState.LocalID == management.Elev.ID {
+			continue
 		}
+
+		faultTolerance.RegisterHeartbeat(remoteGlobalState.LocalID)
+		if gs.NewWorldViev(remoteGlobalState) {
+			fmt.Println("New world view")
+			worldViewUpdate <- true
+		}
+		gs.Merge(remoteGlobalState)
 	}
 }
 
@@ -31,7 +41,7 @@ func SendGlobalStatePeriodically(gs *orderManagement.GlobalState, tx chan<- orde
 	}
 }
 
-// SendGlobalState sender global state én gang
+// SendGlobalState sender global state en gang
 func SendGlobalState(gs *orderManagement.GlobalState, tx chan<- orderManagement.GlobalStateType) {
 	gs.UpdateLocalGlobalState()
 	msg := gs.GetCopy()
