@@ -13,6 +13,7 @@ import (
 // Timer for door
 // -------------------------------------------------------------------------------------------
 var doorTimer *time.Timer
+
 const doorOpenDuration = 2 * time.Second
 
 // -------------------------------------------------------------------------------------------
@@ -31,9 +32,9 @@ func InitFSM(elevID string, NumFloors int) {
 	for floor := 0; floor < NumFloors; floor++ {
 		for button := 0; button < management.NumButtons; button++ {
 			management.Elev.Orders[floor][button] = management.Order{
-				Floor:      floor,
-				ButtonType: elevio.ButtonType(button),
-				ElevID:     "",
+				Floor:       floor,
+				ButtonType:  elevio.ButtonType(button),
+				ElevID:      "",
 				OrderPlaced: false,
 			}
 		}
@@ -164,14 +165,13 @@ func handleButtonPress(gs *orderManagement.GlobalState, btn elevio.ButtonEvent, 
 		gs.UpdateLocalGlobalState()
 	} else {
 		gs.AddHallRequest(order)
-		gs.IncrementHallRequestVersion(order.Floor,order.ButtonType)
+		gs.IncrementHallRequestVersion(order.Floor, order.ButtonType)
 	}
 
 	network.SendGlobalState(gs, networkChannels.GlobalStateTx)
 	orderManagement.RunHallAssigner(gs)
 	elevio.SetButtonLamp(btn.Button, btn.Floor, true)
 }
-
 
 func setMoveDir(moveDir management.Direction) {
 	management.Elev.MoveDir = moveDir
