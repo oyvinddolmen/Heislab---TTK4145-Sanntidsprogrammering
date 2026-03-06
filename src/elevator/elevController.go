@@ -46,17 +46,17 @@ func setMotorFromDir() {
 	}
 }
 
-// Stops the elevator immediately
+// Sets elevio motor direction to stop and sets move direction in Elev struct
 func stopElevator() {
 	elevio.SetMotorDirection(elevio.MotorDirStop)
-	management.Elev.MoveDir = management.DirIdle
+	setMoveDir(management.DirIdle)
 }
 
 // -------------------------------------------------------------------------------------------
 // Utility
 // -------------------------------------------------------------------------------------------
 
-// Checks if elevator has reached the current order
+// Returns true if elevator has reached destination in current order
 func reachedDestination(floor int) bool {
 	if management.Elev.State == management.ElevMoving && floor == management.Elev.CurrentOrder.Floor {
 		return true

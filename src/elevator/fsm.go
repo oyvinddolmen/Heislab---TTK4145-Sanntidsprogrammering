@@ -9,9 +9,7 @@ import (
 	"time"
 )
 
-// -------------------------------------------------------------------------------------------
 // Timer for door
-// -------------------------------------------------------------------------------------------
 var doorTimer *time.Timer
 
 const doorOpenDuration = 2 * time.Second
@@ -19,6 +17,8 @@ const doorOpenDuration = 2 * time.Second
 // -------------------------------------------------------------------------------------------
 // Initialize FSM
 // -------------------------------------------------------------------------------------------
+
+// initializes Elevator struct and creates order matrix
 func InitFSM(elevID string, NumFloors int) {
 	noOrder := management.Order{Floor: -1, ButtonType: -1, ElevID: ""}
 
@@ -44,6 +44,7 @@ func InitFSM(elevID string, NumFloors int) {
 // -------------------------------------------------------------------------------------------
 // Run FSM
 // -------------------------------------------------------------------------------------------
+
 func RunElevator(
 	gs *orderManagement.GlobalState,
 	elevChannels management.ElevChannels,
@@ -60,6 +61,7 @@ func RunElevator(
 // -------------------------------------------------------------------------------------------
 // FSM loop
 // -------------------------------------------------------------------------------------------
+
 func runFSM(
 	gs *orderManagement.GlobalState,
 	elevChannels management.ElevChannels,
@@ -152,6 +154,8 @@ func runFSM(
 // -------------------------------------------------------------------------------------------
 // Helpers
 // -------------------------------------------------------------------------------------------
+
+// creates order, updates global state and runs hallassigner
 func handleButtonPress(gs *orderManagement.GlobalState, btn elevio.ButtonEvent, networkChannels network.NetworkConn) {
 	order := orderManagement.CreateOrder(btn)
 
@@ -206,10 +210,12 @@ func getFloor() int {
 	return management.Elev.Floor
 }
 
+// sets elevio motordirection to stop
 func setMotorStop() {
 	elevio.SetMotorDirection(elevio.MotorDirStop)
 }
 
+// sets Elev's floor and lastFloor, and sets floor indicator
 func updateFloor(floor int) {
 	if floor >= 0 {
 		management.Elev.Floor = floor
@@ -218,8 +224,8 @@ func updateFloor(floor int) {
 	}
 }
 
+// updates current order and sets motor-direction
 func safeDrive() {
-
 	orderManagement.UpdateCurrentOrder()
 	orderManagement.UpdateMoveDir()
 
@@ -235,13 +241,15 @@ func safeDrive() {
 // -------------------------------------------------------------------------------------------
 // State transitions
 // -------------------------------------------------------------------------------------------
+
+// sets elevators state and call on-state-entry functions
 func setElevState(gs *orderManagement.GlobalState, state management.State) {
 	prev := management.Elev.State
 	management.Elev.State = state
 
 	switch state {
 	case management.ElevIdle:
-		onIdleEntry(gs)
+		onIdleEntry()
 	case management.ElevMoving:
 		onMovingEntry()
 	case management.ElevStop:
@@ -253,24 +261,28 @@ func setElevState(gs *orderManagement.GlobalState, state management.State) {
 	fmt.Println("STATE CHANGE:", prev, "->", state)
 }
 
-func onIdleEntry(gs *orderManagement.GlobalState) {
+// turns off door open and stop lamp, and sets motor dir based on next order
+func onIdleEntry() {
 	elevio.SetDoorOpenLamp(false)
 	elevio.SetStopLamp(false)
-	management.Elev.MoveDir = management.DirIdle
+	setMoveDir(management.DirIdle)
 	safeDrive()
 }
 
+// turns off stop and door open lamp, and sets elevio motor direction
 func onMovingEntry() {
 	elevio.SetDoorOpenLamp(false)
 	elevio.SetStopLamp(false)
 	setMotorFromDir()
 }
 
+// turns on stop lamp and stops elevator
 func onStopEntry() {
 	elevio.SetStopLamp(true)
 	stopElevator()
 }
 
+// turns on door open lamp and starts new timer
 func onObstructionEntry() {
 	stopElevator()
 	elevio.SetDoorOpenLamp(true)
