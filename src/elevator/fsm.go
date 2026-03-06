@@ -254,7 +254,7 @@ func setElevState(gs *orderManagement.GlobalState, state management.State) {
 
 	switch state {
 	case management.ElevIdle:
-		onIdleEntry()
+		onIdleEntry(gs)
 	case management.ElevMoving:
 		onMovingEntry()
 	case management.ElevStop:
@@ -267,7 +267,7 @@ func setElevState(gs *orderManagement.GlobalState, state management.State) {
 }
 
 // turns off door open and stop lamp, and sets motor dir based on next order
-func onIdleEntry() {
+func onIdleEntry(gs *orderManagement.GlobalState) {
 	elevio.SetDoorOpenLamp(false)
 	elevio.SetStopLamp(false)
 	management.Elev.MoveDir = management.DirIdle
