@@ -35,7 +35,7 @@ func setHallLightOnAllPanels(gs *orderManagement.GlobalState) {
 	}
 }
 
-func SetAllHallLights(e management.Elevator) {
+func SetAllLights(e management.Elevator) {
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for btn := 0; btn < management.NumButtons; btn++ {
 
