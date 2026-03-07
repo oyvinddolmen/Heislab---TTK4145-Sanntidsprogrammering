@@ -28,12 +28,14 @@ func main() {
 	/*
 		TODO:
 
-		- Heisen stopper opp et øyeblikk og kjører igjen når noen trykker på bestilling i etasjen den nettop var i
+		- Heisen stopper opp et øyeblikk og kjører igjen når noen trykker på bestilling i etasjen den nettop var i (FIXED)
 
 		- Når en heis dør må den ta over hall-orderen til den andre heisen
 
 		- Når man kjører med flere heiser skal man åpne dør til heis 1 og skru av lys dersom hall button på heis 2 blir presset i etasjen til heis 1
+			Delvis fikset, men heislysene blir bare satt på en heis og ikke alltid riktig.
 
+		- Heisen må stoppe og åpne dørene når den henter folk på vei opp/ned på veien til destinasjonen sin
 	*/
 
 	// ---------------- Flags for ID and Ports --------------------

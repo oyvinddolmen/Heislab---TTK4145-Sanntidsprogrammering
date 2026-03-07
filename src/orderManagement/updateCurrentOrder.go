@@ -118,6 +118,7 @@ func ShouldStop(e *management.Elevator) bool {
 	return false
 }
 
+// 
 func ClearOrdersAndTurnOfLights(gs *GlobalState) {
 
 	e := &management.Elev

@@ -75,6 +75,11 @@ func runFSM(
 		case management.ElevIdle:
 			select {
 			case <-networkChannels.WorldViewUpdate:
+				if needToOpenDoors(gs) {
+					setElevState(gs, management.ElevObstruction)
+					orderManagement.ClearOrdersAndTurnOfLights(gs)
+					continue
+				}
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
 				setHallLightOnAllPanels(gs)
 				UpdateCurrentOrderAndsafeDrive(gs)
@@ -100,7 +105,6 @@ func runFSM(
 			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
 				setHallLightOnAllPanels(gs)
-				UpdateCurrentOrderAndsafeDrive(gs)
 				gs.PrintGlobalState()
 			case floor := <-elevChannels.LastFloor:
 				setFloorIndicator(floor)
@@ -124,7 +128,6 @@ func runFSM(
 				setElevState(gs, management.ElevStop)
 			case btn := <-elevChannels.BtnPresses:
 				handleButtonPress(gs, btn, networkChannels)
-				UpdateCurrentOrderAndsafeDrive(gs)
 			}
 
 		// ----------------- Case: STOP -------------------------
@@ -253,6 +256,20 @@ func UpdateCurrentOrderAndsafeDrive(gs *orderManagement.GlobalState) {
 	setElevState(nil, management.ElevMoving)
 }
 
+// checks if there are any orders hall-orders at the same floor as elevator
+func needToOpenDoors(gs *orderManagement.GlobalState) bool {
+	currentFloor := getFloor()
+	hallRequests := gs.GetCopy().HallRequests
+
+	for b := 0; b < 2; b++ {
+		if hallRequests[currentFloor][b] {
+			return true
+		}
+	}
+
+	return false
+}
+
 // -------------------------------------------------------------------------------------------
 // State transitions
 // -------------------------------------------------------------------------------------------
@@ -288,6 +305,7 @@ func onIdleEntry(gs *orderManagement.GlobalState) {
 func onMovingEntry() {
 	elevio.SetDoorOpenLamp(false)
 	elevio.SetStopLamp(false)
+	setElevFloor(-1)
 	setMotorFromDir()
 }
 
