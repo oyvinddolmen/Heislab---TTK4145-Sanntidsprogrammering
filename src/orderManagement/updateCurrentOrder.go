@@ -168,6 +168,7 @@ func UpdateCurrentOrder(gs *GlobalState) {
 
 	e := &management.Elev
 
+	/*
 	fmt.Println("Entered Update current order with: ")
 	fmt.Println("Elev floor:", e.Floor)
 	fmt.Println("MoveDir:", e.MoveDir)
@@ -180,6 +181,7 @@ func UpdateCurrentOrder(gs *GlobalState) {
 			"down", e.Orders[f][elevio.HallDownButton].OrderPlaced,
 		)
 	}
+	*/
 
 	floor := e.Floor
 	if e.Floor == -1 {
@@ -224,7 +226,7 @@ func UpdateCurrentOrder(gs *GlobalState) {
 			return
 		}
 	}
-	fmt.Println("UpdateCurrentOrder did not find any orders")
+	//fmt.Println("UpdateCurrentOrder did not find any orders")
 }
 
 // Find orders upwards

@@ -88,7 +88,6 @@ func (gs *GlobalState) UpdateGlobalState() {
 	gs.globalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
 }
 
-
 func (gs *GlobalState) AddHallRequest(order management.Order) {
 	gs.mu.Lock()
 	defer gs.mu.Unlock()
@@ -217,7 +216,6 @@ func (gs *GlobalState) NewWorldViev(remote GlobalStateType) bool {
 			return true
 		}
 	}
-
 	return false
 }
 

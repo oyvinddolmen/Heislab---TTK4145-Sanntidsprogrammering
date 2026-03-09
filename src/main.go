@@ -28,12 +28,8 @@ func main() {
 
 	/*
 		TODO
-		- BUG: heisene behandler ikke alltid hall-requests som kommer
 
-		- Når man kjører med flere heiser skal man åpne dør til heis 1 og skru av lys dersom hall button på heis 2 blir presset i etasjen til heis 1
-			Delvis fikset, men heislysene blir bare satt på en heis og ikke alltid riktig.
-
-		- Heisen skrur ikke alltid av hall-order lys i riktig retning
+		- Det hender heisen havner i en evig loop og kjører kontinuerlig opp og ned mellom 0. og 3. etasje
 
 		- Dersom man stopper i en hall-button down, men de som går på heisen trykker cab call oppover, skal heisen "si ifra" at
 		  den kjører en annen retning (ifølge sepeca til oppgaven)

@@ -22,7 +22,7 @@ func RunHallAssignerAndApplyAssignments(gs *GlobalState) {
 	gs.mu.Unlock()
 
 	//gs.PrintGlobalState() // debug - printer GlobalState
-	
+
 	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
 	if err != nil {
 		fmt.Println("assigner failed: %w", err)
@@ -39,7 +39,7 @@ func applyAssignments(assignments map[string][][2]bool) {
 		return
 	}
 
-	fmt.Println("assigned: ", assigned)
+	//fmt.Println("assigned: ", assigned)
 
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for btn := 0; btn < management.CabButton; btn++ { // only hall buttons

@@ -76,15 +76,12 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdate:
 				if needToOpenDoors(gs) {
-					setElevState(gs, management.ElevObstruction)
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
-					orderManagement.RunHallAssignerAndApplyAssignments(gs)
-					SetAllLights(management.Elev, gs)
-					orderManagement.UpdateCurrentOrder(gs)
+					setElevState(gs, management.ElevObstruction)
 				} else {
 					orderManagement.RunHallAssignerAndApplyAssignments(gs)
 					SetAllLights(management.Elev, gs)
-					orderManagement.UpdateCurrentOrder(gs)
+					UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
 				}
 			case <-elevChannels.Obstruction:
 				setElevState(gs, management.ElevObstruction)
@@ -97,9 +94,9 @@ func runFSM(
 			case btn := <-elevChannels.BtnPresses:
 				handleButtonPress(gs, btn, networkChannels)
 				if getFloor() != -1 {
-					fmt.Println("Fikk btn press når i ro, neste er clearOrders")
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
 					orderManagement.RunHallAssignerAndApplyAssignments(gs)
+					SetAllLights(management.Elev, gs)
 				}
 				UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
 			}
@@ -117,10 +114,8 @@ func runFSM(
 				if orderManagement.ShouldStop(&management.Elev, floor) {
 					setMotorStop()
 					setElevFloor(floor)
-					fmt.Println("SholdStop Activated and floor set to", getFloor())
 
 					orderManagement.ChooseDirectionAfterStop(&management.Elev, floor)
-					fmt.Println("SholdStop Activated and Dir set to", management.Elev.MoveDir)
 
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
 
@@ -175,7 +170,6 @@ func runFSM(
 			case btn := <-elevChannels.BtnPresses:
 				handleButtonPress(gs, btn, networkChannels)
 				if getFloor() != -1 {
-					fmt.Println("Fikk btn press når i ro, neste er clearOrders")
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
 					orderManagement.RunHallAssignerAndApplyAssignments(gs)
 				}
@@ -306,7 +300,9 @@ func setElevState(gs *orderManagement.GlobalState, state management.State) {
 func onIdleEntry(e *management.Elevator, gs *orderManagement.GlobalState) {
 	elevio.SetDoorOpenLamp(false)
 	elevio.SetStopLamp(false)
+	orderManagement.RunHallAssignerAndApplyAssignments(gs)
 	UpdateCurrentOrderAndsafeDrive(e, gs)
+	SetAllLights(management.Elev, gs)
 }
 
 // turns off stop and door open lamp, and sets elevio motor direction
