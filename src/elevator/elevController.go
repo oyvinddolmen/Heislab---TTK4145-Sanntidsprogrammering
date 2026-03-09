@@ -3,7 +3,6 @@ package elevator
 import (
 	"heislab/elevio"
 	"heislab/management"
-	"heislab/orderManagement"
 	"time"
 )
 
@@ -11,17 +10,15 @@ import (
 // Elevator initialization
 // -------------------------------------------------------------------------------------------
 
-func InitElevator(elevID string, adress string, numFloors int) *orderManagement.GlobalState {
+func InitElevator(elevID string, adress string, numFloors int) {
 	elevio.Init(adress, numFloors) // Each simulator/terminal needs a unique address
 	InitFSM(elevID, numFloors)
 	InitLights(numFloors)
-	gs := orderManagement.NewGlobalState(elevID)
-	goToGroundFloor(gs)
-	return gs
+	goToGroundFloor()
 }
 
 // Move elevator safely to ground floor at startup
-func goToGroundFloor(gs *orderManagement.GlobalState) {
+func goToGroundFloor() {
 	elevio.SetMotorDirection(elevio.MotorDirDown)
 	for elevio.GetFloor() != 0 {
 		time.Sleep(10 * time.Millisecond)
@@ -31,7 +28,7 @@ func goToGroundFloor(gs *orderManagement.GlobalState) {
 	management.Elev.Floor = 0
 	management.Elev.LastFloor = 0
 	management.Elev.MoveDir = management.DirIdle
-	setElevState(gs, management.ElevIdle)
+	management.Elev.State = management.ElevIdle
 }
 
 // Sets motor direction based on current MoveDir

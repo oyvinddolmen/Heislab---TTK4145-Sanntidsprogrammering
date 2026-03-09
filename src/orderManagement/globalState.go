@@ -22,7 +22,7 @@ type GlobalState struct {
 }
 
 // Constructor
-func NewGlobalState(elevID string) *GlobalState {
+func InitGlobalState(elevID string) *GlobalState {
 	gs := &GlobalState{}
 
 	gs.globalState.HallRequests = make([][2]bool, management.NumFloors)
@@ -82,11 +82,12 @@ func convertDirection(direction management.Direction) string {
 
 // -------------------- Public Methods --------------------
 
-func (gs *GlobalState) UpdateLocalGlobalState() {
+func (gs *GlobalState) UpdateGlobalState() {
 	gs.mu.Lock()
 	defer gs.mu.Unlock()
 	gs.globalState.States[management.Elev.ID] = ConvertElevatorToJSON(management.Elev)
 }
+
 
 func (gs *GlobalState) AddHallRequest(order management.Order) {
 	gs.mu.Lock()
@@ -127,7 +128,6 @@ func (gs *GlobalState) Merge(remote GlobalStateType) {
 			gs.globalState.States[senderID] = st
 		}
 	}
-
 	chooseLatestHallRequestVersions(&gs.globalState, remote)
 }
 
@@ -180,6 +180,7 @@ func (gs *GlobalState) NewWorldViev(remote GlobalStateType) bool {
 			if remoteV > localV {
 				return true
 			}
+			// If equal Version, but different order -> we want to know this
 			if remoteV == localV && remote.HallRequests[floor][button] && !gs.globalState.HallRequests[floor][button] {
 				return true
 			}

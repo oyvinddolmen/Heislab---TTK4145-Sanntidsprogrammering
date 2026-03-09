@@ -21,7 +21,8 @@ func RunHallAssignerAndApplyAssignments(gs *GlobalState) {
 	}
 	gs.mu.Unlock()
 
-	gs.PrintGlobalState() // debug - printer GlobalState
+	//gs.PrintGlobalState() // debug - printer GlobalState
+	
 	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
 	if err != nil {
 		fmt.Println("assigner failed: %w", err)
