@@ -30,17 +30,17 @@ func RegisterHeartbeat(elevID string) {
 }
 
 // Periodically check if elevators have died
-func StartFailureDetector(gs *orderManagement.GlobalState) {
+func StartFailureDetector(gs *orderManagement.GlobalState, worldViewUpdate chan bool) {
 	ticker := time.NewTicker(200 * time.Millisecond)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		checkForDeadElevators(gs)
+		checkForDeadElevators(gs, worldViewUpdate)
 	}
 }
 
 // Detect and handle dead elevators
-func checkForDeadElevators(gs *orderManagement.GlobalState) {
+func checkForDeadElevators(gs *orderManagement.GlobalState, worldViewUpdate chan bool) {
 	now := time.Now()
 	localID := management.Elev.ID
 
@@ -54,14 +54,9 @@ func checkForDeadElevators(gs *orderManagement.GlobalState) {
 
 		if now.Sub(t) > HeartbeatTimeout {
 			fmt.Println("---------- ELEV", id, "went offline -------------")
-			// Sett heisen offline i globalState
 			gs.SetElevatorToOffline(id)
-
-			// Fjern fra lastSeen
 			delete(lastSeen, id)
-
-			// Re-kjor hall assigner med oppdatert state
-			orderManagement.RunHallAssignerAndApplyAssignments(gs)
+			worldViewUpdate <- true
 		}
 	}
 }

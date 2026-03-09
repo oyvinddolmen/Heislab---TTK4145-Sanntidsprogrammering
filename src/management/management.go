@@ -21,7 +21,7 @@ const (
 type State int
 
 const (
-	ElevInit    	= 1
+	ElevInit        = 1
 	ElevIdle        = 2
 	ElevMoving      = 3
 	ElevStop        = 4
@@ -61,11 +61,10 @@ type Elevator struct {
 }
 
 type ElevChannels struct {
-	MotorDirection chan int
-	LastFloor      chan int
-	Obstruction    chan bool
-	StopBtn        chan bool
-	BtnPresses     chan elevio.ButtonEvent // Getting buttonpresses on the physical control box
+	LastFloor   chan int
+	Obstruction chan bool
+	StopBtn     chan bool
+	BtnPresses  chan elevio.ButtonEvent // Getting buttonpresses on the physical control box
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

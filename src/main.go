@@ -27,15 +27,17 @@ func main() {
 
 	/*
 		TODO:
-
-		- Når en heis dør må den ta over hall-orderen til den andre heisen
-
 		- Når man kjører med flere heiser skal man åpne dør til heis 1 og skru av lys dersom hall button på heis 2 blir presset i etasjen til heis 1
 			Delvis fikset, men heislysene blir bare satt på en heis og ikke alltid riktig.
 
-		- Heisen må stoppe og åpne dørene når den henter folk på vei opp/ned på veien til destinasjonen sin
-
 		- Heisen skrur ikke alltid av hall-order lys i riktig retning
+
+		- Dersom man stopper i en hall-button down, men de som går på heisen trykker cab call oppover, skal heisen "si ifra" at
+		  den kjører en annen retning (ifølge sepeca til oppgaven)
+
+		- Når en heis starter opp skal den ikke kjøre til etasje 0 og skru av alle lys, men motta hvor den er fra andre heiser.
+		  Dersom den ikke mottar noe skal den skru av lys og kjøre til etasje 0
+
 	*/
 
 	// ---------------- Flags for ID and Ports --------------------
@@ -64,11 +66,10 @@ func main() {
 
 	// --------------------- Channels ----------------------
 	elevChannels := management.ElevChannels{
-		MotorDirection: make(chan int),
-		LastFloor:      make(chan int),
-		Obstruction:    make(chan bool),
-		StopBtn:        make(chan bool),
-		BtnPresses:     make(chan elevio.ButtonEvent),
+		LastFloor:   make(chan int),
+		Obstruction: make(chan bool),
+		StopBtn:     make(chan bool),
+		BtnPresses:  make(chan elevio.ButtonEvent),
 	}
 
 	networkConn := network.InitNetwork(portCfg)
@@ -85,7 +86,7 @@ func main() {
 		networkConn.GlobalStateRx,
 		networkConn.WorldViewUpdate,
 	)
-	go faultTolerance.StartFailureDetector(gs)
+	go faultTolerance.StartFailureDetector(gs, networkConn.WorldViewUpdate)
 	go network.SendGlobalStatePeriodically(
 		gs,
 		networkConn.GlobalStateTx,

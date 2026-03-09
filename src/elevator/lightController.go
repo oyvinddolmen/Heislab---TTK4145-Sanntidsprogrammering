@@ -20,8 +20,8 @@ func InitLights(numFloors int) {
 	}
 }
 
-// sets the hall light based on global state
-func setHallLightOnAllPanels(gs *orderManagement.GlobalState) {
+// sets the hall light based on global state. For synchronizing hall lights on all elevs
+func setHallLight(gs *orderManagement.GlobalState) {
 	state := gs.GetCopy()
 
 	for floor := 0; floor < management.NumFloors; floor++ {
@@ -35,17 +35,32 @@ func setHallLightOnAllPanels(gs *orderManagement.GlobalState) {
 	}
 }
 
-func SetAllLights(e management.Elevator) {
+// sets cab and hall lights
+func SetAllLights(e management.Elevator, gs *orderManagement.GlobalState) {
+	globalState := gs.GetCopy()
+
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for btn := 0; btn < management.NumButtons; btn++ {
 
 			order := e.Orders[floor][btn]
 
-			elevio.SetButtonLamp(
-				elevio.ButtonType(btn),
-				floor,
-				order.OrderPlaced,
-			)
+			// for cab-orders
+			if btn == 2 {
+				elevio.SetButtonLamp(
+					elevio.ButtonType(btn),
+					floor,
+					order.OrderPlaced,
+				)
+
+			} else {
+				// for hall-orders
+				elevio.SetButtonLamp(
+					elevio.ButtonType(btn),
+					floor,
+					globalState.HallRequests[floor][btn],
+				)
+			}
+
 		}
 	}
 }

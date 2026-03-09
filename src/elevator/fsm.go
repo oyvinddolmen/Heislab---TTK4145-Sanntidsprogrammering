@@ -81,7 +81,7 @@ func runFSM(
 					continue
 				}
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
-				SetAllLights(management.Elev)
+				SetAllLights(management.Elev, gs)
 				UpdateCurrentOrderAndsafeDrive(gs)
 			case floor := <-elevChannels.LastFloor:
 				updateFloor(floor)
@@ -103,7 +103,7 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
-				SetAllLights(management.Elev)
+				SetAllLights(management.Elev, gs)
 				UpdateCurrentOrderAndsafeDrive(gs)
 			case floor := <-elevChannels.LastFloor:
 				setFloorIndicator(floor)
@@ -135,7 +135,7 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
-				SetAllLights(management.Elev)
+				SetAllLights(management.Elev, gs)
 				UpdateCurrentOrderAndsafeDrive(gs)
 			case btn := <-elevChannels.BtnPresses:
 				handleButtonPress(gs, btn, networkChannels)
@@ -153,7 +153,7 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
-				SetAllLights(management.Elev)
+				SetAllLights(management.Elev, gs)
 				UpdateCurrentOrderAndsafeDrive(gs)
 			case <-doorTimer.C:
 				if !elevio.GetObstruction() {
@@ -193,7 +193,7 @@ func handleButtonPress(gs *orderManagement.GlobalState, btn elevio.ButtonEvent, 
 
 	network.SendGlobalState(gs, networkChannels.GlobalStateTx)
 	orderManagement.RunHallAssignerAndApplyAssignments(gs)
-	SetAllLights(management.Elev)
+	SetAllLights(management.Elev, gs)
 }
 
 // sets the FSM state based on moving direction in Elev struct
