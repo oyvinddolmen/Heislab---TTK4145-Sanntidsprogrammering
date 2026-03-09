@@ -8,8 +8,8 @@ import (
 	"heislab/faultTolerance"
 	"heislab/management"
 	"heislab/network"
-	"time"
 	"heislab/orderManagement"
+	"time"
 )
 
 func main() {
@@ -28,6 +28,8 @@ func main() {
 
 	/*
 		TODO
+		- BUG: heisene behandler ikke alltid hall-requests som kommer
+
 		- Når man kjører med flere heiser skal man åpne dør til heis 1 og skru av lys dersom hall button på heis 2 blir presset i etasjen til heis 1
 			Delvis fikset, men heislysene blir bare satt på en heis og ikke alltid riktig.
 
@@ -67,10 +69,10 @@ func main() {
 
 	// --------------------- Channels ----------------------
 	elevChannels := management.ElevChannels{
-		NewFloor:      make(chan int),
-		Obstruction:    make(chan bool),
-		StopBtn:        make(chan bool),
-		BtnPresses:     make(chan elevio.ButtonEvent),
+		NewFloor:    make(chan int),
+		Obstruction: make(chan bool),
+		StopBtn:     make(chan bool),
+		BtnPresses:  make(chan elevio.ButtonEvent),
 	}
 
 	networkConn := network.InitNetwork(portCfg)

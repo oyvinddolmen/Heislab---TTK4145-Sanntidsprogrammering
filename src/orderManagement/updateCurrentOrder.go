@@ -8,7 +8,7 @@ import (
 
 func ordersAbove(e *management.Elevator, floorUnderInspection int) bool {
 
-	if floorUnderInspection == management.NumFloors - 1 {
+	if floorUnderInspection == management.NumFloors-1 {
 		return false
 	}
 
@@ -73,10 +73,10 @@ func ShouldStop(e *management.Elevator, floor int) bool {
 			return true
 		}
 
-		if !ordersAbove(e,floor) && hallOrderDownAtFloor(e, floor) {
+		if !ordersAbove(e, floor) && hallOrderDownAtFloor(e, floor) {
 			return true
 		}
-		if floor == management.NumButtons{
+		if floor == management.NumFloors-1 {
 			return true
 		}
 
@@ -93,7 +93,7 @@ func ShouldStop(e *management.Elevator, floor int) bool {
 		if !ordersBelow(e, floor) && hallOrderUpAtFloor(e, floor) {
 			return true
 		}
-		if floor == 0{
+		if floor == 0 {
 			return true
 		}
 	}
@@ -140,13 +140,13 @@ func ClearOrdersAndTurnOfLights(gs *GlobalState) {
 	}
 }
 
-func removeCabOrder(gs *GlobalState, e *management.Elevator, floor int){
-		e.Orders[floor][elevio.CabButton].OrderPlaced = false
-		gs.UpdateGlobalState()
-		elevio.SetButtonLamp(elevio.CabButton, floor, false)
+func removeCabOrder(gs *GlobalState, e *management.Elevator, floor int) {
+	e.Orders[floor][elevio.CabButton].OrderPlaced = false
+	gs.UpdateGlobalState()
+	elevio.SetButtonLamp(elevio.CabButton, floor, false)
 }
 
-func removeHallDown(gs *GlobalState, e *management.Elevator, floor int){
+func removeHallDown(gs *GlobalState, e *management.Elevator, floor int) {
 	gs.mu.Lock()
 	e.Orders[floor][elevio.HallDownButton].OrderPlaced = false
 	gs.globalState.HallRequests[floor][elevio.HallDownButton] = false
@@ -165,9 +165,9 @@ func removeHallUp(gs *GlobalState, e *management.Elevator, floor int) {
 }
 
 func UpdateCurrentOrder(gs *GlobalState) {
-	
+
 	e := &management.Elev
-	
+
 	fmt.Println("Entered Update current order with: ")
 	fmt.Println("Elev floor:", e.Floor)
 	fmt.Println("MoveDir:", e.MoveDir)
@@ -180,9 +180,9 @@ func UpdateCurrentOrder(gs *GlobalState) {
 			"down", e.Orders[f][elevio.HallDownButton].OrderPlaced,
 		)
 	}
-	
+
 	floor := e.Floor
-	if e.Floor == -1{
+	if e.Floor == -1 {
 		fmt.Println("UpdateCurrentOrder read e.floor as -1 !")
 		return
 	}
@@ -296,7 +296,7 @@ func assignDown(gs *GlobalState, e *management.Elevator, startFloor int) bool {
 // updates elevator-struct's moveDir
 func UpdateMoveDir(e *management.Elevator) {
 
-	if e.Floor == -1 || e.CurrentOrder.OrderPlaced == false{
+	if e.Floor == -1 || e.CurrentOrder.OrderPlaced == false {
 		// Between floors or no currenOrder(this means we are initializing) → keep current direction
 		return
 	}
@@ -310,9 +310,9 @@ func UpdateMoveDir(e *management.Elevator) {
 	}
 }
 
-func ChooseDirectionAfterStop(e *management.Elevator, floor int) {	
+func ChooseDirectionAfterStop(e *management.Elevator, floor int) {
 	// if the currentorder was a hallUP -> Set direction to Up
-	if hallOrderUpAtFloor(e, floor) && e.CurrentOrder.ButtonType == elevio.HallUpButton{
+	if hallOrderUpAtFloor(e, floor) && e.CurrentOrder.ButtonType == elevio.HallUpButton {
 		e.MoveDir = management.DirUp
 		return
 	}
@@ -321,6 +321,6 @@ func ChooseDirectionAfterStop(e *management.Elevator, floor int) {
 		e.MoveDir = management.DirDown
 		return
 	}
-		
+
 	UpdateMoveDir(e)
 }
