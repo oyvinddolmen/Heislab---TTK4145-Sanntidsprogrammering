@@ -35,6 +35,21 @@ func setHallLightOnAllPanels(gs *orderManagement.GlobalState) {
 	}
 }
 
+func SetAllLights(e management.Elevator) {
+	for floor := 0; floor < management.NumFloors; floor++ {
+		for btn := 0; btn < management.NumButtons; btn++ {
+
+			order := e.Orders[floor][btn]
+
+			elevio.SetButtonLamp(
+				elevio.ButtonType(btn),
+				floor,
+				order.OrderPlaced,
+			)
+		}
+	}
+}
+
 func setFloorIndicator(floor int) {
 	elevio.SetFloorIndicator(floor)
 }

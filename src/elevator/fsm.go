@@ -81,9 +81,8 @@ func runFSM(
 					continue
 				}
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
-				setHallLightOnAllPanels(gs)
+				SetAllLights(management.Elev)
 				UpdateCurrentOrderAndsafeDrive(gs)
-				gs.PrintGlobalState()
 			case floor := <-elevChannels.LastFloor:
 				updateFloor(floor)
 			case <-elevChannels.Obstruction:
@@ -104,8 +103,8 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
-				setHallLightOnAllPanels(gs)
-				gs.PrintGlobalState()
+				SetAllLights(management.Elev)
+				UpdateCurrentOrderAndsafeDrive(gs)
 			case floor := <-elevChannels.LastFloor:
 				setFloorIndicator(floor)
 				setElevLastFloor(floor)
@@ -128,6 +127,7 @@ func runFSM(
 				setElevState(gs, management.ElevStop)
 			case btn := <-elevChannels.BtnPresses:
 				handleButtonPress(gs, btn, networkChannels)
+				orderManagement.UpdateCurrentOrder(gs)
 			}
 
 		// ----------------- Case: STOP -------------------------
@@ -135,9 +135,11 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
-				setHallLightOnAllPanels(gs)
+				SetAllLights(management.Elev)
+				UpdateCurrentOrderAndsafeDrive(gs)
 			case btn := <-elevChannels.BtnPresses:
 				handleButtonPress(gs, btn, networkChannels)
+				orderManagement.UpdateCurrentOrder(gs)
 			case <-elevChannels.StopBtn:
 				if getFloor() != -1 {
 					setElevState(gs, management.ElevObstruction)
@@ -151,8 +153,8 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
-				setHallLightOnAllPanels(gs)
-				gs.PrintGlobalState()
+				SetAllLights(management.Elev)
+				UpdateCurrentOrderAndsafeDrive(gs)
 			case <-doorTimer.C:
 				if !elevio.GetObstruction() {
 					elevio.SetDoorOpenLamp(false)
@@ -162,8 +164,7 @@ func runFSM(
 				}
 			case btn := <-elevChannels.BtnPresses:
 				handleButtonPress(gs, btn, networkChannels)
-				orderManagement.RunHallAssignerAndApplyAssignments(gs)
-				setHallLightOnAllPanels(gs)
+				orderManagement.UpdateCurrentOrder(gs)
 			}
 		}
 	}
@@ -192,7 +193,7 @@ func handleButtonPress(gs *orderManagement.GlobalState, btn elevio.ButtonEvent, 
 
 	network.SendGlobalState(gs, networkChannels.GlobalStateTx)
 	orderManagement.RunHallAssignerAndApplyAssignments(gs)
-	elevio.SetButtonLamp(btn.Button, btn.Floor, true) //Burde lage en funksjon som setter lys basert på state
+	SetAllLights(management.Elev)
 }
 
 // sets the FSM state based on moving direction in Elev struct
@@ -306,7 +307,6 @@ func onMovingEntry() {
 	elevio.SetDoorOpenLamp(false)
 	elevio.SetStopLamp(false)
 	setElevFloor(-1)
-	setMotorFromDir()
 }
 
 // turns on stop lamp and stops elevator
