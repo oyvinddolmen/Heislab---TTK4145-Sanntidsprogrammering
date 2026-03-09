@@ -79,11 +79,11 @@ func runFSM(
 					setElevState(gs, management.ElevObstruction)
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
 					orderManagement.RunHallAssignerAndApplyAssignments(gs)
-					SetAllLights(management.Elev)
+					SetAllLights(management.Elev, gs)
 					orderManagement.UpdateCurrentOrder(gs)
 				} else {
 					orderManagement.RunHallAssignerAndApplyAssignments(gs)
-					SetAllLights(management.Elev)
+					SetAllLights(management.Elev, gs)
 					orderManagement.UpdateCurrentOrder(gs)
 				}
 			case <-elevChannels.Obstruction:
@@ -96,7 +96,7 @@ func runFSM(
 				}
 			case btn := <-elevChannels.BtnPresses:
 				handleButtonPress(gs, btn, networkChannels)
-				if getFloor() != -1{
+				if getFloor() != -1 {
 					fmt.Println("Fikk btn press når i ro, neste er clearOrders")
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
 					orderManagement.RunHallAssignerAndApplyAssignments(gs)
@@ -109,18 +109,18 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
-				SetAllLights(management.Elev)
-				orderManagement.UpdateCurrentOrder(gs)
+				SetAllLights(management.Elev, gs)
+				UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
 			case floor := <-elevChannels.NewFloor:
 				setFloorIndicator(floor)
 				setElevLastFloor(floor)
 				if orderManagement.ShouldStop(&management.Elev, floor) {
 					setMotorStop()
 					setElevFloor(floor)
-					fmt.Println("SholdStop Activated and floor set to" , getFloor())
+					fmt.Println("SholdStop Activated and floor set to", getFloor())
 
 					orderManagement.ChooseDirectionAfterStop(&management.Elev, floor)
-					fmt.Println("SholdStop Activated and Dir set to" , management.Elev.MoveDir)
+					fmt.Println("SholdStop Activated and Dir set to", management.Elev.MoveDir)
 
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
 
@@ -130,7 +130,7 @@ func runFSM(
 						orderManagement.UpdateMoveDir(&management.Elev)
 					}
 					setElevState(gs, management.ElevObstruction)
-				} 
+				}
 			case <-elevChannels.Obstruction:
 				setElevState(gs, management.ElevObstruction)
 			case <-elevChannels.StopBtn:
@@ -145,7 +145,7 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
-				SetAllLights(management.Elev)
+				SetAllLights(management.Elev, gs)
 				UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
 			case btn := <-elevChannels.BtnPresses:
 				handleButtonPress(gs, btn, networkChannels)
@@ -163,7 +163,7 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
-				SetAllLights(management.Elev)
+				SetAllLights(management.Elev, gs)
 				UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
 			case <-doorTimer.C:
 				if !elevio.GetObstruction() {
@@ -174,7 +174,7 @@ func runFSM(
 				}
 			case btn := <-elevChannels.BtnPresses:
 				handleButtonPress(gs, btn, networkChannels)
-				if getFloor() != -1{
+				if getFloor() != -1 {
 					fmt.Println("Fikk btn press når i ro, neste er clearOrders")
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
 					orderManagement.RunHallAssignerAndApplyAssignments(gs)
@@ -215,7 +215,7 @@ func handleButtonPress(gs *orderManagement.GlobalState, btn elevio.ButtonEvent, 
 
 	network.SendGlobalState(gs, networkChannels.GlobalStateTx)
 	orderManagement.RunHallAssignerAndApplyAssignments(gs)
-	SetAllLights(management.Elev)
+	SetAllLights(management.Elev, gs)
 }
 
 // sets moveDir in elevator struct
@@ -306,7 +306,7 @@ func setElevState(gs *orderManagement.GlobalState, state management.State) {
 func onIdleEntry(e *management.Elevator, gs *orderManagement.GlobalState) {
 	elevio.SetDoorOpenLamp(false)
 	elevio.SetStopLamp(false)
-	UpdateCurrentOrderAndsafeDrive(e,gs)
+	UpdateCurrentOrderAndsafeDrive(e, gs)
 }
 
 // turns off stop and door open lamp, and sets elevio motor direction

@@ -1,7 +1,6 @@
 package network
 
 import (
-	"fmt"
 	"time"
 
 	"heislab/faultTolerance"
@@ -11,7 +10,7 @@ import (
 	"heislab/orderManagement"
 )
 
-// ListenAndMergeGlobalState listens for incomming worldViews, updates globalState and sends on worldView-channel
+// Listens for incomming worldViews, updates globalState and sends on worldView-channel
 func ListenAndMergeGlobalState(gs *orderManagement.GlobalState, rx <-chan orderManagement.GlobalStateType, worldViewUpdate chan bool) {
 	for remoteGlobalState := range rx {
 
@@ -22,26 +21,26 @@ func ListenAndMergeGlobalState(gs *orderManagement.GlobalState, rx <-chan orderM
 
 		faultTolerance.RegisterHeartbeat(remoteGlobalState.LocalID)
 		if gs.NewWorldViev(remoteGlobalState) {
-			fmt.Println("New world view")
-			gs.Merge(remoteGlobalState)
+			gs.Merge(remoteGlobalState) // need to merge global view before sending on worldViewupdate for lights to be correct
 			worldViewUpdate <- true
+			continue
 		}
 	}
 }
 
-// SendGlobalStatePeriodically sender global state med jevne mellomrom
+// Periodically sends global state
 func SendGlobalStatePeriodically(gs *orderManagement.GlobalState, tx chan<- orderManagement.GlobalStateType, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for range ticker.C {
 		gs.UpdateGlobalState() // oppdater egen state
-		msg := gs.GetCopy()         // ta sikker kopi under mutex
-		tx <- msg                   // send
+		msg := gs.GetCopy()    // ta sikker kopi under mutex
+		tx <- msg              // send
 	}
 }
 
-// SendGlobalState sender global state en gang
+// Sends global state once
 func SendGlobalState(gs *orderManagement.GlobalState, tx chan<- orderManagement.GlobalStateType) {
 	gs.UpdateGlobalState()
 	msg := gs.GetCopy()
@@ -67,7 +66,7 @@ type NetworkConn struct {
 	WorldViewUpdate chan bool
 }
 
-// InitNetwork initializes network goroutines for peer discovery and global state broadcasts
+// Initializes network goroutines for peer discovery and global state broadcasts
 func InitNetwork(config PortConfig) NetworkConn {
 	// --- peer discovery channels ---
 	heartbeatEnabled := make(chan bool, 1)

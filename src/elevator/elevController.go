@@ -31,7 +31,7 @@ func goToGroundFloor() {
 	management.Elev.State = management.ElevIdle
 }
 
-// Sets motor direction based on current MoveDir
+// Sets motor direction based on elevator-struct's MoveDir
 func setMotorFromDir() {
 	switch management.Elev.MoveDir {
 	case management.DirUp:

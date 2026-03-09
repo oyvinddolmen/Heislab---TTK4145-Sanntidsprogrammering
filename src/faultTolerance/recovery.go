@@ -9,13 +9,12 @@ import (
 	"time"
 )
 
+// listens for existing global view from other elevs
 func RecoverOnStartup(gs *orderManagement.GlobalState, rx <-chan orderManagement.GlobalStateType) {
 	elevID := management.Elev.ID
 	timeout := time.After(1 * time.Second)
 	var recovered *hallRequestAssigner.ElevatorStateJSON
 
-	// Listen for existing global states for a short window.
-	// We look specifically for our own previous state in others' world views.
 	for {
 		select {
 		case globalState := <-rx:
