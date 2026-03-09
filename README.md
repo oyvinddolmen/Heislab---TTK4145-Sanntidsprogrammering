@@ -22,8 +22,8 @@ VIKtIG: start med å hente nye endringer i main
 gå til ny branch:
 - git checkout Tobias
 
-hente main:
-- git rebase main
+merge med main:
+- git merge main
 
 hvis konflikt: 
 - løs konfliktene i filene
