@@ -23,9 +23,9 @@ func ListenAndMergeGlobalState(gs *orderManagement.GlobalState, rx <-chan orderM
 		faultTolerance.RegisterHeartbeat(remoteGlobalState.LocalID)
 		if gs.NewWorldViev(remoteGlobalState) {
 			fmt.Println("New world view")
+			gs.Merge(remoteGlobalState)
 			worldViewUpdate <- true
 		}
-		gs.Merge(remoteGlobalState)
 	}
 }
 
@@ -35,7 +35,7 @@ func SendGlobalStatePeriodically(gs *orderManagement.GlobalState, tx chan<- orde
 	defer ticker.Stop()
 
 	for range ticker.C {
-		gs.UpdateLocalGlobalState() // oppdater egen state
+		gs.UpdateGlobalState() // oppdater egen state
 		msg := gs.GetCopy()         // ta sikker kopi under mutex
 		tx <- msg                   // send
 	}
@@ -43,7 +43,7 @@ func SendGlobalStatePeriodically(gs *orderManagement.GlobalState, tx chan<- orde
 
 // SendGlobalState sender global state en gang
 func SendGlobalState(gs *orderManagement.GlobalState, tx chan<- orderManagement.GlobalStateType) {
-	gs.UpdateLocalGlobalState()
+	gs.UpdateGlobalState()
 	msg := gs.GetCopy()
 	tx <- msg
 }

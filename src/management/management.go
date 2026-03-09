@@ -13,9 +13,11 @@ import (
 // ---------------------------------------------------------------------------------------------------------------------
 
 const (
-	NumFloors  = 4
-	NumButtons = 3
-	CabButton  = 2
+	hallUpButton   = 0
+	hallDownButton = 1
+	CabButton      = 2
+	NumButtons     = 3
+	NumFloors      = 4
 )
 
 type State int
@@ -62,7 +64,7 @@ type Elevator struct {
 
 type ElevChannels struct {
 	MotorDirection chan int
-	LastFloor      chan int
+	NewFloor      chan int
 	Obstruction    chan bool
 	StopBtn        chan bool
 	BtnPresses     chan elevio.ButtonEvent // Getting buttonpresses on the physical control box

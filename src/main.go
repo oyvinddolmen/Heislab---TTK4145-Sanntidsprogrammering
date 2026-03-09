@@ -9,6 +9,7 @@ import (
 	"heislab/management"
 	"heislab/network"
 	"time"
+	"heislab/orderManagement"
 )
 
 func main() {
@@ -30,7 +31,7 @@ func main() {
 
 		- Heisen stopper opp et øyeblikk og kjører igjen når noen trykker på bestilling i etasjen den nettop var i (FIXED)
 
-		- Når en heis dør må den ta over hall-orderen til den andre heisen
+		- Når en heis dør må den ta over hall-orderen til den andre heisen. Tobias: vil ikke dette skje automatisk via hallassigner?
 
 		- Når man kjører med flere heiser skal man åpne dør til heis 1 og skru av lys dersom hall button på heis 2 blir presset i etasjen til heis 1
 			Delvis fikset, men heislysene blir bare satt på en heis og ikke alltid riktig.
@@ -65,7 +66,7 @@ func main() {
 	// --------------------- Channels ----------------------
 	elevChannels := management.ElevChannels{
 		MotorDirection: make(chan int),
-		LastFloor:      make(chan int),
+		NewFloor:      make(chan int),
 		Obstruction:    make(chan bool),
 		StopBtn:        make(chan bool),
 		BtnPresses:     make(chan elevio.ButtonEvent),
@@ -75,9 +76,10 @@ func main() {
 
 	// ------------------- Network -------------------------
 	broadcastInterval := 20 * time.Millisecond
-	gs := elevator.InitElevator(elevID, elevAddr, management.NumFloors)
+	elevator.InitElevator(elevID, elevAddr, management.NumFloors)
+	gs := orderManagement.InitGlobalState(elevID)
 	faultTolerance.RecoverOnStartup(gs, networkConn.GlobalStateRx)
-	elevator.UpdateCurrentOrderAndsafeDrive(gs)
+	elevator.UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
 
 	// ------------------- Network goroutines ----------------
 	go network.ListenAndMergeGlobalState(

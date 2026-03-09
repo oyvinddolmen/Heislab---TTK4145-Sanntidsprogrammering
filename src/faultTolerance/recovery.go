@@ -33,6 +33,7 @@ func RecoverOnStartup(gs *orderManagement.GlobalState, rx <-chan orderManagement
 RECOVER:
 	if recovered == nil {
 		fmt.Println("No previous cab state found on startup, starting fresh")
+		return
 	} else {
 		for floor := 0; floor < management.NumFloors && floor < len(recovered.CabRequests); floor++ {
 			if recovered.CabRequests[floor] {
