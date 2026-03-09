@@ -76,8 +76,13 @@ func main() {
 	// ------------------- Network -------------------------
 	broadcastInterval := 20 * time.Millisecond
 	elevator.InitElevator(elevID, elevAddr, management.NumFloors)
+
+	// ----------- Recovering elev info on startup ----------
 	gs := orderManagement.InitGlobalState(elevID)
-	faultTolerance.RecoverOnStartup(gs, networkConn.GlobalStateRx)
+	recovered := faultTolerance.RecoverOnStartup(gs, networkConn.GlobalStateRx)
+	if !recovered {
+		elevator.GoToGroundFloor()
+	}
 	elevator.UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
 
 	// ------------------- Network goroutines ----------------

@@ -11,14 +11,13 @@ import (
 // -------------------------------------------------------------------------------------------
 
 func InitElevator(elevID string, adress string, numFloors int) {
-	elevio.Init(adress, numFloors) // Each simulator/terminal needs a unique address
+	elevio.Init(adress, numFloors) 
 	InitFSM(elevID, numFloors)
 	InitLights(numFloors)
-	goToGroundFloor()
 }
 
 // Move elevator safely to ground floor at startup
-func goToGroundFloor() {
+func GoToGroundFloor() {
 	elevio.SetMotorDirection(elevio.MotorDirDown)
 	for elevio.GetFloor() != 0 {
 		time.Sleep(10 * time.Millisecond)

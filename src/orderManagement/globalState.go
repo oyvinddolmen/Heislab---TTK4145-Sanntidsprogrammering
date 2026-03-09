@@ -150,7 +150,7 @@ func chooseLatestHallRequestVersions(local *GlobalStateType, remote GlobalStateT
 }
 
 // SetElevatorState setter en spesifikk elevator state i globalState
-func (gs *GlobalState) SetElevatorState(elevID string, state hallRequestAssigner.ElevatorStateJSON) {
+func (gs *GlobalState) SetElevatorGlobalState(elevID string, state hallRequestAssigner.ElevatorStateJSON) {
 	gs.mu.Lock()
 	defer gs.mu.Unlock()
 	gs.globalState.States[elevID] = state

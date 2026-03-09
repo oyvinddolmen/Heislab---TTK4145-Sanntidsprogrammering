@@ -22,13 +22,15 @@ const doorOpenDuration = 2 * time.Second
 func InitFSM(elevID string, NumFloors int) {
 	NoOrder := management.Order{Floor: 1, ButtonType: 0, ElevID: "", OrderPlaced: false}
 
-	management.Elev.ID = elevID
-	management.Elev.State = management.ElevInit
-	management.Elev.Floor = 0 // Between floors
-	management.Elev.LastFloor = 0
-	management.Elev.MoveDir = management.DirIdle
-	management.Elev.CurrentOrder = NoOrder
-	management.Elev.LastOrder = NoOrder
+	management.Elev = management.Elevator{
+		ID:           elevID,
+		State:        management.ElevInit,
+		Floor:        0,
+		LastFloor:    0,
+		MoveDir:      management.DirIdle,
+		CurrentOrder: NoOrder,
+		LastOrder:    NoOrder,
+	}
 
 	for floor := 0; floor < NumFloors; floor++ {
 		for button := 0; button < management.NumButtons; button++ {
@@ -56,6 +58,7 @@ func RunElevator(
 	go elevio.PollStopButton(elevChannels.StopBtn)
 	go elevio.PollObstructionSwitch(elevChannels.Obstruction)
 
+	setElevState(gs, management.ElevIdle)
 	go runFSM(gs, elevChannels, networkChannels)
 }
 
@@ -190,13 +193,17 @@ func handleButtonPress(gs *orderManagement.GlobalState, btn elevio.ButtonEvent, 
 
 	// Ignore button press if we are already at the floor and serving it, but open door
 	if order.Floor == management.Elev.Floor {
-
-		if order.ButtonType == elevio.CabButton ||
-			(order.ButtonType == elevio.HallUpButton && management.Elev.MoveDir == management.DirUp) ||
-			(order.ButtonType == elevio.HallDownButton && management.Elev.MoveDir == management.DirDown) {
-			setElevState(gs, management.ElevObstruction)
-			return
-		}
+		setElevState(gs, management.ElevObstruction)
+		return
+		// skal vi ikke åpne døren uansett hvis en knapp trykkes i samme etasje som heisen er i? - Øyvind
+		/*
+			if order.ButtonType == elevio.CabButton ||
+				(order.ButtonType == elevio.HallUpButton && management.Elev.MoveDir == management.DirUp) ||
+				(order.ButtonType == elevio.HallDownButton && management.Elev.MoveDir == management.DirDown) {
+				setElevState(gs, management.ElevObstruction)
+				return
+			}
+		*/
 	}
 
 	if order.ButtonType == management.CabButton {
@@ -249,7 +256,7 @@ func UpdateCurrentOrderAndsafeDrive(e *management.Elevator, gs *orderManagement.
 	orderManagement.UpdateCurrentOrder(gs)
 	orderManagement.UpdateMoveDir(e)
 
-	fmt.Println("management.Elev.MoveDir: (bør være 0) ", management.Elev.MoveDir)
+	//fmt.Println("management.Elev.MoveDir: (bør være 0) ", management.Elev.MoveDir)
 
 	if management.Elev.MoveDir == management.DirIdle {
 		setMotorStop()
@@ -300,6 +307,9 @@ func setElevState(gs *orderManagement.GlobalState, state management.State) {
 func onIdleEntry(e *management.Elevator, gs *orderManagement.GlobalState) {
 	elevio.SetDoorOpenLamp(false)
 	elevio.SetStopLamp(false)
+	if elevio.GetFloor() == -1 {
+		setElevFloor(-1)
+	}
 	orderManagement.RunHallAssignerAndApplyAssignments(gs)
 	UpdateCurrentOrderAndsafeDrive(e, gs)
 	SetAllLights(management.Elev, gs)
