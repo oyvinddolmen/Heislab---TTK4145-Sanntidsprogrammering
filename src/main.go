@@ -26,7 +26,7 @@ func main() {
 	*/
 
 	/*
-		TODO:
+		TODO
 		- Når man kjører med flere heiser skal man åpne dør til heis 1 og skru av lys dersom hall button på heis 2 blir presset i etasjen til heis 1
 			Delvis fikset, men heislysene blir bare satt på en heis og ikke alltid riktig.
 
