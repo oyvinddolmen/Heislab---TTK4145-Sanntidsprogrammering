@@ -25,7 +25,7 @@ func InitFSM(elevID string, NumFloors int) {
 	management.Elev = management.Elevator{
 		ID:           elevID,
 		State:        management.ElevInit,
-		Floor:        0,
+		Floor:        0, 
 		LastFloor:    0,
 		MoveDir:      management.DirIdle,
 		CurrentOrder: NoOrder,

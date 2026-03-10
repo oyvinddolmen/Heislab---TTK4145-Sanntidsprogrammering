@@ -29,10 +29,10 @@ func main() {
 	/*
 		TODO
 
-		- Det hender heisen havner i en evig loop og kjører kontinuerlig opp og ned mellom 0. og 3. etasje
+		- Det hender heisen havner i en evig loop og kjører kontinuerlig opp og ned mellom 0. og 3. etasje //Tobias: Fikset nå tror jeg
 
 		- Dersom man stopper i en hall-button down, men de som går på heisen trykker cab call oppover, skal heisen "si ifra" at
-		  den kjører en annen retning (ifølge sepeca til oppgaven)
+		  den kjører en annen retning (ifølge sepeca til oppgaven) Tobias: Fixed
 
 		- Når en heis starter opp skal den ikke kjøre til etasje 0 og skru av alle lys, men motta hvor den er fra andre heiser.
 		  Dersom den ikke mottar noe skal den skru av lys og kjøre til etasje 0
@@ -82,9 +82,8 @@ func main() {
 	recovered := faultTolerance.RecoverOnStartup(gs, networkConn.GlobalStateRx)
 	if !recovered {
 		elevator.GoToGroundFloor()
-		gs.UpdateGlobalState()
 	}
-	elevator.UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
+	elevator.UpdateCurrentOrderAndsafeDrive(&management.Elev, gs) // Denne funker ikke hvis floor = -1, Vi burde kansje polle floorsensoren og hvis floor er lik -1 -> kjøre til nærmeste etasje og så kalle UpdateCurrentOrderAndsafeDrive
 
 	// ------------------- Network goroutines ----------------
 	go network.ListenAndMergeGlobalState(

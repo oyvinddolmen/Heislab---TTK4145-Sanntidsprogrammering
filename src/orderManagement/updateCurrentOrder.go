@@ -114,6 +114,18 @@ func ShouldStop(e *management.Elevator, floor int) bool {
 func ClearOrdersAndTurnOfLights(gs *GlobalState) {
 
 	e := &management.Elev
+	fmt.Println("Entered ClearOrdersAndTurnOfLights order with: ")
+	fmt.Println("Elev floor:", e.Floor)
+	fmt.Println("MoveDir:", e.MoveDir)
+	fmt.Println("LastOrder.ButtonType (0: HallUp , 1: HallDown , 2: Caborder) : ", e.LastOrder.ButtonType)
+	for f := 0; f < management.NumFloors; f++ {
+		fmt.Println(
+			"floor", f,
+			"cab", e.Orders[f][elevio.CabButton].OrderPlaced,
+			"up", e.Orders[f][elevio.HallUpButton].OrderPlaced,
+			"down", e.Orders[f][elevio.HallDownButton].OrderPlaced,
+		)
+	}
 	floor := e.Floor
 	if e.CurrentOrder.Floor == floor {
 		e.CurrentOrder.OrderPlaced = false
@@ -142,14 +154,40 @@ func ClearOrdersAndTurnOfLights(gs *GlobalState) {
 		}
 
 	default:
-		if e.Orders[floor][elevio.HallDownButton].OrderPlaced {
-			removeHallDown(gs, e, floor)
-		} else if e.Orders[floor][elevio.HallUpButton].OrderPlaced {
-			removeHallUp(gs, e, floor)
-		}
+
+	if e.Orders[floor][elevio.HallUpButton].OrderPlaced &&
+		e.LastOrder.ButtonType == elevio.HallDownButton &&
+		cabOrderAbove(e, floor) {
+		fmt.Println("Going up!") //Dont remove this print - Elevator is supposed alert
+		removeHallUp(gs, e, floor)
+
+	} else if e.Orders[floor][elevio.HallDownButton].OrderPlaced &&
+				e.LastOrder.ButtonType == elevio.HallUpButton &&
+				cabOrderBelow(e, floor) {
+					fmt.Println("Going Down!") //Dont remove this print - Elevator is supposed alert
+					removeHallDown(gs, e, floor)
+
+				}
 	}
 }
 
+func cabOrderAbove(e *management.Elevator, floor int) bool {
+	for f := floor + 1; f < management.NumFloors; f++ {
+		if e.Orders[f][elevio.CabButton].OrderPlaced {
+			return true
+		}
+	}
+	return false
+}
+
+func cabOrderBelow(e *management.Elevator, floor int) bool {
+	for f := floor - 1; f >= 0; f-- {
+		if e.Orders[f][elevio.CabButton].OrderPlaced {
+			return true
+		}
+	}
+	return false
+}
 func removeCabOrder(gs *GlobalState, e *management.Elevator, floor int) {
 	e.Orders[floor][elevio.CabButton].OrderPlaced = false
 	gs.UpdateGlobalState()
