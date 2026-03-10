@@ -20,7 +20,7 @@ const doorOpenDuration = 2 * time.Second
 
 // initializes Elevator struct and creates order matrix
 func InitFSM(elevID string, NumFloors int) {
-	NoOrder := management.Order{Floor: 1, ButtonType: 0, ElevID: "", OrderPlaced: false}
+	NoOrder := management.Order{Floor: 1, ButtonType: 2, ElevID: "", OrderPlaced: false}
 
 	management.Elev = management.Elevator{
 		ID:           elevID,
@@ -196,6 +196,7 @@ func handleButtonPress(gs *orderManagement.GlobalState, btn elevio.ButtonEvent, 
 		setElevState(gs, management.ElevObstruction)
 		return
 		// skal vi ikke åpne døren uansett hvis en knapp trykkes i samme etasje som heisen er i? - Øyvind
+		// tanken var -> hva hvis noen presser ned, og så kommer noen etter dørene har lukket seg og presser opp... men det er veldig edge case, sikkert unødvendig 
 		/*
 			if order.ButtonType == elevio.CabButton ||
 				(order.ButtonType == elevio.HallUpButton && management.Elev.MoveDir == management.DirUp) ||

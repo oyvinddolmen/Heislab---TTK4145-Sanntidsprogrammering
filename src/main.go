@@ -75,13 +75,14 @@ func main() {
 
 	// ------------------- Network -------------------------
 	broadcastInterval := 20 * time.Millisecond
-	elevator.InitElevator(elevID, elevAddr, management.NumFloors)
 
-	// ----------- Recovering elev info on startup ----------
+	// ----------- Initializing Elevator State and recovering if possible----------
+	elevator.InitElevator(elevID, elevAddr, management.NumFloors)
 	gs := orderManagement.InitGlobalState(elevID)
 	recovered := faultTolerance.RecoverOnStartup(gs, networkConn.GlobalStateRx)
 	if !recovered {
 		elevator.GoToGroundFloor()
+		gs.UpdateGlobalState()
 	}
 	elevator.UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
 
