@@ -8,14 +8,14 @@ import (
 
 // Turns off all hall and cab lights
 func InitLights(numFloors int) {
-	for i := 0; i < numFloors; i++ {
-		elevio.SetButtonLamp(elevio.CabButton, i, false)
+	for floor := 0; floor < numFloors; floor++ {
+		elevio.SetButtonLamp(elevio.CabButton, floor, false)
 
-		if i < numFloors-1 {
-			elevio.SetButtonLamp(elevio.HallUpButton, i, false)
+		if floor < numFloors-1 {
+			elevio.SetButtonLamp(elevio.HallUpButton, floor, false)
 		}
-		if i > 0 {
-			elevio.SetButtonLamp(elevio.HallDownButton, i, false)
+		if floor > 0 {
+			elevio.SetButtonLamp(elevio.HallDownButton, floor, false)
 		}
 	}
 }
@@ -25,29 +25,29 @@ func setHallLight(gs *orderManagement.GlobalState) {
 	state := gs.GetCopy()
 
 	for floor := 0; floor < management.NumFloors; floor++ {
-		for btn := 0; btn < 2; btn++ {
+		for button := 0; button < 2; button++ {
 			elevio.SetButtonLamp(
-				elevio.ButtonType(btn),
+				elevio.ButtonType(button),
 				floor,
-				state.HallRequests[floor][btn],
+				state.HallRequests[floor][button],
 			)
 		}
 	}
 }
 
 // sets cab and hall lights
-func SetAllLights(e management.Elevator, gs *orderManagement.GlobalState) {
+func SetAllLights(elevator management.Elevator, gs *orderManagement.GlobalState) {
 	globalState := gs.GetCopy()
 
 	for floor := 0; floor < management.NumFloors; floor++ {
-		for btn := 0; btn < management.NumButtons; btn++ {
+		for button := 0; button < management.NumButtons; button++ {
 
-			order := e.Orders[floor][btn]
+			order := elevator.Orders[floor][button]
 
 			// for cab-orders
-			if btn == 2 {
+			if button == 2 {
 				elevio.SetButtonLamp(
-					elevio.ButtonType(btn),
+					elevio.ButtonType(button),
 					floor,
 					order.OrderPlaced,
 				)
@@ -55,9 +55,9 @@ func SetAllLights(e management.Elevator, gs *orderManagement.GlobalState) {
 			} else {
 				// for hall-orders
 				elevio.SetButtonLamp(
-					elevio.ButtonType(btn),
+					elevio.ButtonType(button),
 					floor,
-					globalState.HallRequests[floor][btn],
+					globalState.HallRequests[floor][button],
 				)
 			}
 
