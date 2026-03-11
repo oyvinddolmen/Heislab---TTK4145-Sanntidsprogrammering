@@ -29,7 +29,8 @@ func main() {
 	/*
 		TODO
 
-		- Det hender heisen havner i en evig loop og kjører kontinuerlig opp og ned mellom 0. og 3. etasje //Tobias: Fikset nå tror jeg
+		- Det hender heisen havner i en evig loop og kjører kontinuerlig opp og ned mellom 0. og 3. etasje
+			- currentOrder er feil, den tror fortsatt den har en currentorder som den kjører til, men når den kommer til etasjen den er i stopper den ikke siden den ikke eksisterer.
 
 		- Dersom man stopper i en hall-button down, men de som går på heisen trykker cab call oppover, skal heisen "si ifra" at
 		  den kjører en annen retning (ifølge sepeca til oppgaven) Tobias: Fixed
@@ -53,7 +54,6 @@ func main() {
 	if elevAddr == "" {
 		elevAddr = fmt.Sprintf("%s:%d", *simHost, *simPort)
 	}
-
 	elevID := *elevIDFlag
 
 	// ------------- Port Configuration --------------------
@@ -73,9 +73,6 @@ func main() {
 
 	networkConn := network.InitNetwork(portCfg)
 
-	// ------------------- Network -------------------------
-	broadcastInterval := 20 * time.Millisecond
-
 	// ----------- Initializing Elevator State and recovering if possible----------
 	elevator.InitElevator(elevID, elevAddr, management.NumFloors)
 	gs := orderManagement.InitGlobalState(elevID)
@@ -85,7 +82,8 @@ func main() {
 	}
 	elevator.UpdateCurrentOrderAndsafeDrive(&management.Elev, gs) // Denne funker ikke hvis floor = -1, Vi burde kansje polle floorsensoren og hvis floor er lik -1 -> kjøre til nærmeste etasje og så kalle UpdateCurrentOrderAndsafeDrive
 
-	// ------------------- Network goroutines ----------------
+	// ------------------- Network ---------------------
+	broadcastInterval := 20 * time.Millisecond
 	go network.ListenAndMergeGlobalState(
 		gs,
 		networkConn.GlobalStateRx,
@@ -100,6 +98,5 @@ func main() {
 
 	// ----------------- Start elevator FSM -------------------
 	go elevator.RunElevator(gs, elevChannels, networkConn)
-
 	select {}
 }

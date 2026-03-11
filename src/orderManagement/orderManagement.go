@@ -14,15 +14,6 @@ import (
 // Functions managing orders
 // -------------------------------------------------------------------------------------------
 
-// function that sends order to other elevators and wait for confirmed from the other elevators
-func OrderConfirmed(elevio.ButtonEvent) bool {
-	// ....
-	// ....
-
-	// hvis eneste levende heis -> return true
-	return true
-}
-
 // checks if any other elevators is attending this order
 func OrderNotTaken(order management.Order) bool {
 	if order.ElevID == "" {

@@ -7,7 +7,6 @@ import (
 )
 
 func ordersAbove(e *management.Elevator, floorUnderInspection int) bool {
-
 	if floorUnderInspection == management.NumFloors-1 {
 		return false
 	}
@@ -24,7 +23,6 @@ func ordersAbove(e *management.Elevator, floorUnderInspection int) bool {
 }
 
 func ordersBelow(e *management.Elevator, floorUnderInspection int) bool {
-
 	if floorUnderInspection == 0 {
 		return false
 	}
@@ -60,22 +58,21 @@ func anyOrderAtFloor(e *management.Elevator, floor int) bool {
 
 // checks if elev should stop at floor
 func ShouldStop(e *management.Elevator, floor int) bool {
-
 	switch e.MoveDir {
-
 	case management.DirUp:
-
 		if cabOrderAtFloor(e, floor) {
 			return true
 		}
 
-		//Takes hallorderUp when bypassing as long as the current order is not a hallDown not at 4 floor 
-		if hallOrderUpAtFloor(e, floor){
-			if (e.CurrentOrder.ButtonType == elevio.HallDownButton){
-				if e.CurrentOrder.Floor == management.NumFloors{
+		// Takes hallorderUp when bypassing as long as the current order is not a hallDown not at 4 floor
+		if hallOrderUpAtFloor(e, floor) {
+			if e.CurrentOrder.ButtonType == elevio.HallDownButton {
+				if e.CurrentOrder.Floor == management.NumFloors-1 {
 					return true
 				}
-			} else {return true}
+			} else {
+				return true
+			}
 		}
 
 		if !ordersAbove(e, floor) && hallOrderDownAtFloor(e, floor) {
@@ -86,18 +83,19 @@ func ShouldStop(e *management.Elevator, floor int) bool {
 		}
 
 	case management.DirDown:
-
 		if cabOrderAtFloor(e, floor) {
 			return true
 		}
 
-		//Takes hallorderUp when bypassing as long as the current order is not a hallDown not at 4 floor 
-		if hallOrderDownAtFloor(e, floor){
-			if (e.CurrentOrder.ButtonType == elevio.HallUpButton){
+		//Takes hallorderUp when bypassing as long as the current order is not a hallDown not at 4 floor
+		if hallOrderDownAtFloor(e, floor) {
+			if e.CurrentOrder.ButtonType == elevio.HallUpButton {
 				if e.CurrentOrder.Floor == 0 {
 					return true
 				}
-			} else {return true}
+			} else {
+				return true
+			}
 		}
 
 		if !ordersBelow(e, floor) && hallOrderUpAtFloor(e, floor) {
@@ -112,7 +110,6 @@ func ShouldStop(e *management.Elevator, floor int) bool {
 }
 
 func ClearOrdersAndTurnOfLights(gs *GlobalState) {
-
 	e := &management.Elev
 	fmt.Println("Entered ClearOrdersAndTurnOfLights order with: ")
 	fmt.Println("Elev floor:", e.Floor)
@@ -212,9 +209,10 @@ func removeHallUp(gs *GlobalState, e *management.Elevator, floor int) {
 	elevio.SetButtonLamp(elevio.HallUpButton, floor, false)
 }
 
+// updates current order based on elev's moving direction
 func UpdateCurrentOrder(gs *GlobalState) {
 	e := &management.Elev
-	
+
 	fmt.Println("Entered Update current order with: ")
 	fmt.Println("Elev floor:", e.Floor)
 	fmt.Println("MoveDir:", e.MoveDir)
@@ -227,16 +225,14 @@ func UpdateCurrentOrder(gs *GlobalState) {
 			"down", e.Orders[f][elevio.HallDownButton].OrderPlaced,
 		)
 	}
-	
+
 	floor := e.Floor
 	if e.Floor == -1 {
 		return
 	}
 
 	switch e.MoveDir {
-
 	case management.DirUp:
-
 		if assignUp(gs, e, floor) {
 			return
 		}
@@ -248,7 +244,6 @@ func UpdateCurrentOrder(gs *GlobalState) {
 		}
 
 	case management.DirDown:
-
 		if assignDown(gs, e, floor) {
 			return
 		}
@@ -260,7 +255,6 @@ func UpdateCurrentOrder(gs *GlobalState) {
 		}
 
 	default: // Idle
-
 		if assignUp(gs, e, floor) {
 			e.MoveDir = management.DirUp
 			return
@@ -296,7 +290,7 @@ func assignUp(gs *GlobalState, e *management.Elevator, startFloor int) bool {
 		}
 
 		// hvis ingen over og hallOrdreLogikk oppfylt→ kan ta hallDown
-		if !ordersAbove(e, f) && hallOrderDownAtFloor(e, f) && (e.LastOrder.ButtonType == elevio.CabButton || (e.LastOrder.ButtonType == elevio.HallUpButton && f == management.NumFloors - 1)) {
+		if !ordersAbove(e, f) && hallOrderDownAtFloor(e, f) && (e.LastOrder.ButtonType == elevio.CabButton || (e.LastOrder.ButtonType == elevio.HallUpButton && f == management.NumFloors-1)) {
 			e.LastOrder = e.CurrentOrder
 			e.CurrentOrder = e.Orders[f][elevio.HallDownButton]
 			return true
@@ -328,24 +322,24 @@ func assignDown(gs *GlobalState, e *management.Elevator, startFloor int) bool {
 			return true
 		}
 
-		// hvis ingen under og hallorderLogikk oppfyllt→ kan ta hallUp 
+		// hvis ingen under og hallorderLogikk oppfyllt→ kan ta hallUp
 		if !ordersBelow(e, f) && hallOrderUpAtFloor(e, f) && (e.LastOrder.ButtonType == elevio.CabButton || (e.LastOrder.ButtonType == elevio.HallDownButton && f == 0)) {
 			e.LastOrder = e.CurrentOrder
 			e.CurrentOrder = e.Orders[f][elevio.HallUpButton]
-			return true	
+			return true
 		}
 	}
-
 	return false
 }
 
 // updates elevator-struct's moveDir
 func UpdateMoveDir(e *management.Elevator) {
-
 	if e.Floor == -1 || e.CurrentOrder.OrderPlaced == false {
 		// Between floors or no currenOrder(this means we are initializing) → keep current direction
 		return
 	}
+
+	fmt.Println("Elevs currentorder is floor:", e.CurrentOrder.Floor)
 
 	if e.CurrentOrder.Floor > e.Floor {
 		e.MoveDir = management.DirUp
