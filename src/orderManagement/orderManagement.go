@@ -102,6 +102,10 @@ func anyOrderAtFloor(e *management.Elevator, floor int) bool {
 
 // checks if elev should stop at floor
 func ShouldStop(e *management.Elevator, floor int) bool {
+	if e.CurrentOrder.OrderPlaced == false{
+		return true
+	}
+
 	switch e.MoveDir {
 	case management.DirUp:
 		if cabOrderAtFloor(e, floor) {
@@ -158,6 +162,7 @@ func ClearOrdersAndTurnOfLights(gs *GlobalState) bool {
 	fmt.Println("Entered ClearOrdersAndTurnOfLights order with: ")
 	fmt.Println("Elev floor:", e.Floor)
 	fmt.Println("MoveDir:", e.MoveDir)
+	fmt.Println("Current Order:", e.CurrentOrder.Floor)
 	fmt.Println("LastOrder.ButtonType (0: HallUp , 1: HallDown , 2: Caborder) : ", e.LastOrder.ButtonType)
 	for f := 0; f < management.NumFloors; f++ {
 		fmt.Println(
@@ -168,6 +173,7 @@ func ClearOrdersAndTurnOfLights(gs *GlobalState) bool {
 		)
 	}
 	floor := e.Floor
+
 	if e.CurrentOrder.Floor == floor {
 		e.CurrentOrder.OrderPlaced = false
 		e.LastOrder = e.CurrentOrder
@@ -209,6 +215,7 @@ func ClearOrdersAndTurnOfLights(gs *GlobalState) bool {
 					return true
 				}
 	}
+	
 	return false
 }
 
@@ -254,31 +261,20 @@ func removeHallUp(gs *GlobalState, e *management.Elevator, floor int) {
 }
 
 // Clears hall requests from the shared state for the floor the elevator is currently at
-func ServeHallRequestsAtCurrentFloor(gs *GlobalState) bool {
+func ServeHallRequestsAtCurrentFloor(gs *GlobalState) {
 	e := &management.Elev
 	floor := e.Floor
-	if floor == -1 {
-		return false
-	}
+	if floor != -1 {
+		hallRequests := gs.GetCopy().HallRequests
 
-	if e.CurrentOrder.Floor == floor {
-		e.CurrentOrder.OrderPlaced = false
-		e.LastOrder = e.CurrentOrder
-	}
+		if hallRequests[floor][elevio.HallUpButton] {
+			removeHallUp(gs, e, floor)
+		}
+		if hallRequests[floor][elevio.HallDownButton] {
+			removeHallDown(gs, e, floor)
+		}
 
-	hallRequests := gs.GetCopy().HallRequests
-	served := false
-
-	if hallRequests[floor][elevio.HallUpButton] {
-		removeHallUp(gs, e, floor)
-		served = true
 	}
-	if hallRequests[floor][elevio.HallDownButton] {
-		removeHallDown(gs, e, floor)
-		served = true
-	}
-
-	return served
 }
 
 // updates current order based on elev's moving direction
@@ -337,6 +333,7 @@ func UpdateCurrentOrder(gs *GlobalState) {
 		}
 	}
 	//fmt.Println("UpdateCurrentOrder did not find any orders")
+	e.CurrentOrder.OrderPlaced = false
 }
 
 // Find orders upwards
@@ -410,8 +407,8 @@ func UpdateMoveDir(e *management.Elevator) {
 	elevFloor := e.Floor
 
 	if e.CurrentOrder.OrderPlaced == false {
-		// no currentOrder means we are initializing → keep current direction
-		fmt.Println("currentorder.orderplaced == false, keeping movedir")
+		
+		fmt.Println("currentorder.orderplaced == false, stop")
 		return
 	}
 

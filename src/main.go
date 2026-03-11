@@ -84,10 +84,25 @@ func main() {
 	gs := orderManagement.InitGlobalState(elevID)
 	recoveredElev := network.RecoverOnStartup(gs, networkConn.GlobalStateRx)
 	elevator.GoToNearestFloorUnder()
+	gs.UpdateGlobalState()
 	if recoveredElev {
 		elevator.UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
 	}
+	e := &management.Elev
+	fmt.Println("Entered RunElevator with: ")
+	fmt.Println("Elev floor:", e.Floor)
+	fmt.Println("MoveDir:", e.MoveDir)
+	fmt.Println("LastOrder.ButtonType (0: HallUp , 1: HallDown , 2: Caborder) : ", e.LastOrder.ButtonType)
+	fmt.Println("LastOrder.orderplaced (0: HallUp , 1: HallDown , 2: Caborder) : ", e.LastOrder.ButtonType)
 
+	for f := 0; f < management.NumFloors; f++ {
+		fmt.Println(
+			"floor", f,
+			"cab", e.Orders[f][elevio.CabButton].OrderPlaced,
+			"up", e.Orders[f][elevio.HallUpButton].OrderPlaced,
+			"down", e.Orders[f][elevio.HallDownButton].OrderPlaced,
+		)
+	}
 	// ------------------- Network ---------------------
 	broadcastInterval := 20 * time.Millisecond
 	go network.ListenAndMergeGlobalState(

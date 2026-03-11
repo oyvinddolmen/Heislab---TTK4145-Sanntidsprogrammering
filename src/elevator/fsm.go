@@ -12,6 +12,7 @@ import (
 // Timer for door
 var doorTimer *time.Timer
 var HallUpAndHallDownAndCabAtDifferentDir bool
+var OrderWasAtCurrentFloor bool
 
 const doorOpenDuration = 2 * time.Second
 
@@ -78,10 +79,24 @@ func runFSM(
 		// ----------------- Case: IDLE -------------------------
 		case management.ElevIdle:
 			select {
-			case <-networkChannels.WorldViewUpdate:
+			case <-networkChannels.WorldViewUpdate: 
 				if needToOpenDoors(gs) {
+					fmt.Println("Needed to open doors")
 					orderManagement.ServeHallRequestsAtCurrentFloor(gs)
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
+					fmt.Println("Entering set all lights with: ")
+					fmt.Println("Elev floor:", management.Elev.Floor)
+					fmt.Println("MoveDir:", management.Elev.MoveDir)
+					fmt.Println("Current Order:", management.Elev.CurrentOrder.Floor)
+					fmt.Println("LastOrder.ButtonType (0: HallUp , 1: HallDown , 2: Caborder) : ", management.Elev.LastOrder.ButtonType)
+					for f := 0; f < management.NumFloors; f++ {
+						fmt.Println(
+							"floor", f,
+							"cab", management.Elev.Orders[f][elevio.CabButton].OrderPlaced,
+							"up", management.Elev.Orders[f][elevio.HallUpButton].OrderPlaced,
+							"down", management.Elev.Orders[f][elevio.HallDownButton].OrderPlaced,
+						)
+					}
 					SetAllLights(management.Elev, gs)
 					setElevState(gs, management.ElevObstruction)
 				} else {
@@ -99,15 +114,17 @@ func runFSM(
 				}
 			case btn := <-elevChannels.BtnPresses:
 				HallUpAndHallDownAndCabAtDifferentDir = false
-				handleButtonPress(gs, btn, networkChannels)
-				if getFloor() != -1 {
-					HallUpAndHallDownAndCabAtDifferentDir = orderManagement.ClearOrdersAndTurnOfLights(gs)
-					orderManagement.RunHallAssignerAndApplyAssignments(gs)
-					SetAllLights(management.Elev, gs)
-					}
-				if HallUpAndHallDownAndCabAtDifferentDir {
-					setElevState(gs, management.ElevObstruction)
-				} else {UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)}
+				OrderWasAtCurrentFloor = handleButtonPress(gs, btn, networkChannels)
+				if !OrderWasAtCurrentFloor {
+					if getFloor() != -1 {
+						HallUpAndHallDownAndCabAtDifferentDir = orderManagement.ClearOrdersAndTurnOfLights(gs)
+						orderManagement.RunHallAssignerAndApplyAssignments(gs)
+						SetAllLights(management.Elev, gs)
+						}
+					if HallUpAndHallDownAndCabAtDifferentDir{
+						setElevState(gs, management.ElevObstruction)
+					} else {UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)}
+				}
 			}
 
 		// ----------------- Case: MOVING -------------------------
@@ -116,22 +133,21 @@ func runFSM(
 			case <-networkChannels.WorldViewUpdate:
 				orderManagement.RunHallAssignerAndApplyAssignments(gs)
 				SetAllLights(management.Elev, gs)
-				UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
 			case floor := <-elevChannels.NewFloor:
 				setFloorIndicator(floor)
 				setElevLastFloor(floor)
 				if orderManagement.ShouldStop(&management.Elev, floor) {
+					fmt.Println("You stopped at floor: ", floor)
 					setMotorStop()
 					setElevFloor(floor)
-
 					orderManagement.ChooseDirectionAfterStop(&management.Elev, floor)
-
+					fmt.Print("After chooseDirectionAfterStop: Dir =" , management.Elev.MoveDir)
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
-
 					orderManagement.RunHallAssignerAndApplyAssignments(gs)
 					if management.Elev.CurrentOrder.OrderPlaced == false {
 						orderManagement.UpdateCurrentOrder(gs)
 						orderManagement.UpdateMoveDir(&management.Elev)
+						fmt.Print("After UpdateMoveDir because currentOrder==false:  Dir =" , management.Elev.MoveDir)
 					}
 					setElevState(gs, management.ElevObstruction)
 				}
@@ -170,11 +186,12 @@ func runFSM(
 					orderManagement.ServeHallRequestsAtCurrentFloor(gs)
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
 					SetAllLights(management.Elev, gs)
-					setElevState(gs, management.ElevObstruction)
+					doorTimer = time.NewTimer(doorOpenDuration)
 				} else {
 					orderManagement.RunHallAssignerAndApplyAssignments(gs)
 					SetAllLights(management.Elev, gs)
-					UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
+					orderManagement.UpdateCurrentOrder(gs)
+					orderManagement.UpdateMoveDir(&management.Elev)
 				}
 			case <-doorTimer.C:
 				if !elevio.GetObstruction() {
@@ -185,16 +202,19 @@ func runFSM(
 				}
 			case btn := <-elevChannels.BtnPresses:
 				HallUpAndHallDownAndCabAtDifferentDir = false
-				handleButtonPress(gs, btn, networkChannels)
-				if getFloor() != -1 {
-					HallUpAndHallDownAndCabAtDifferentDir = orderManagement.ClearOrdersAndTurnOfLights(gs)
-					orderManagement.RunHallAssignerAndApplyAssignments(gs)
-					SetAllLights(management.Elev, gs)
+				OrderWasAtCurrentFloor = handleButtonPress(gs, btn, networkChannels)
+				if !OrderWasAtCurrentFloor {
+					
+					if getFloor() != -1 {
+						HallUpAndHallDownAndCabAtDifferentDir = orderManagement.ClearOrdersAndTurnOfLights(gs)
+						orderManagement.RunHallAssignerAndApplyAssignments(gs)
+						SetAllLights(management.Elev, gs)
+						}
+					if HallUpAndHallDownAndCabAtDifferentDir || needToOpenDoors(gs){
+						doorTimer = time.NewTimer(doorOpenDuration)
+					} else {orderManagement.UpdateCurrentOrder(gs)
+							orderManagement.UpdateMoveDir(&management.Elev)}
 					}
-				if HallUpAndHallDownAndCabAtDifferentDir {
-					doorTimer = time.NewTimer(doorOpenDuration)
-				} else {orderManagement.UpdateCurrentOrder(gs)
-						orderManagement.UpdateMoveDir(&management.Elev)}
 			}
 		}
 	}
@@ -205,25 +225,14 @@ func runFSM(
 // -------------------------------------------------------------------------------------------
 
 // creates order, updates global state and runs hallassigner
-func handleButtonPress(gs *orderManagement.GlobalState, btn elevio.ButtonEvent, networkChannels network.NetworkConn) {
+func handleButtonPress(gs *orderManagement.GlobalState, btn elevio.ButtonEvent, networkChannels network.NetworkConn) bool{
 	order := orderManagement.CreateOrder(btn)
 
 	// Ignore button press if we are already at the floor and serving it, but open door
 	if order.Floor == management.Elev.Floor {
 		setElevState(gs, management.ElevObstruction)
-		return
-		// skal vi ikke åpne døren uansett hvis en knapp trykkes i samme etasje som heisen er i? - Øyvind
-		// tanken var -> hva hvis noen presser ned, og så kommer noen etter dørene har lukket seg og presser opp... men det er veldig edge case, sikkert unødvendig
-		/*
-			if order.ButtonType == elevio.CabButton ||
-				(order.ButtonType == elevio.HallUpButton && management.Elev.MoveDir == management.DirUp) ||
-				(order.ButtonType == elevio.HallDownButton && management.Elev.MoveDir == management.DirDown) {
-				setElevState(gs, management.ElevObstruction)
-				return
-			}
-		*/
+		return true
 	}
-
 	if order.ButtonType == management.CabButton {
 		orderManagement.AddCabOrderToElevator(order)
 		gs.UpdateGlobalState()
@@ -235,6 +244,7 @@ func handleButtonPress(gs *orderManagement.GlobalState, btn elevio.ButtonEvent, 
 	network.SendGlobalState(gs, networkChannels.GlobalStateTx)
 	orderManagement.RunHallAssignerAndApplyAssignments(gs)
 	SetAllLights(management.Elev, gs)
+	return false
 }
 
 // sets moveDir in elevator struct
@@ -285,19 +295,20 @@ func UpdateCurrentOrderAndsafeDrive(e *management.Elevator, gs *orderManagement.
 
 // checks if there are any hall-orders at the same floor as elevator
 func needToOpenDoors(gs *orderManagement.GlobalState) bool {
-	currentFloor := management.Elev.Floor
-	hallRequests := gs.GetCopy().HallRequests
 
+	currentFloor := management.Elev.Floor
 	if currentFloor == -1 {
 		return false
-	} else {
-		for btn := 0; btn < 2; btn++ {
-			if hallRequests[currentFloor][btn] {
-				return true
-			}
-		}
-		return false
 	}
+
+	hallRequests := gs.GetCopy().HallRequests
+	
+	for btn := 0; btn < 2; btn++ {
+		if hallRequests[currentFloor][btn] {
+			return true
+		}
+	}
+	return false
 }
 
 // -------------------------------------------------------------------------------------------
@@ -351,7 +362,9 @@ func onStopEntry() {
 // turns on door open lamp and starts new timer
 func onObstructionEntry() {
 	stopElevator()
-	elevio.SetDoorOpenLamp(true)
+	if getFloor() != 0{
+		elevio.SetDoorOpenLamp(true)
+	}
 	if doorTimer != nil {
 		doorTimer.Stop()
 	}

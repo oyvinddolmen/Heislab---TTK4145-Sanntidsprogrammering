@@ -166,7 +166,7 @@ func (gs *GlobalState) GetElevatorState(elevID string) (hallRequestAssigner.Elev
 
 // -------------------- World View Comparison --------------------
 
-func (gs *GlobalState) NewWorldViev(remote GlobalStateType) bool {
+func (gs *GlobalState) NewWorldView(remote GlobalStateType) bool {
 	gs.mu.Lock()
 	defer gs.mu.Unlock()
 

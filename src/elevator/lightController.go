@@ -52,6 +52,7 @@ func SetAllLights(elevator management.Elevator, gs *orderManagement.GlobalState)
 					order.OrderPlaced,
 				)
 
+
 			} else {
 				// for hall-orders
 				elevio.SetButtonLamp(

@@ -118,7 +118,7 @@ func ListenAndMergeGlobalState(gs *orderManagement.GlobalState, rx <-chan orderM
 		}
 
 		RegisterHeartbeat(remoteGlobalState.LocalID)
-		if gs.NewWorldViev(remoteGlobalState) {
+		if gs.NewWorldView(remoteGlobalState) {
 			gs.Merge(remoteGlobalState) // need to merge global view before sending on worldViewupdate for lights to be correct
 			worldViewUpdate <- true
 			continue
