@@ -11,6 +11,7 @@ import (
 
 // Timer for door
 var doorTimer *time.Timer
+var HallUpAndHallDownAndCabAtDifferentDir bool
 
 const doorOpenDuration = 2 * time.Second
 
@@ -95,13 +96,16 @@ func runFSM(
 					setElevState(gs, management.ElevStop)
 				}
 			case btn := <-elevChannels.BtnPresses:
+				HallUpAndHallDownAndCabAtDifferentDir = false
 				handleButtonPress(gs, btn, networkChannels)
 				if getFloor() != -1 {
-					orderManagement.ClearOrdersAndTurnOfLights(gs)
+					HallUpAndHallDownAndCabAtDifferentDir = orderManagement.ClearOrdersAndTurnOfLights(gs)
 					orderManagement.RunHallAssignerAndApplyAssignments(gs)
 					SetAllLights(management.Elev, gs)
-				}
-				UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
+					}
+				if HallUpAndHallDownAndCabAtDifferentDir {
+					setElevState(gs, management.ElevObstruction)
+				} else {UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)}
 			}
 
 		// ----------------- Case: MOVING -------------------------
@@ -171,13 +175,17 @@ func runFSM(
 					setElevState(gs, management.ElevObstruction)
 				}
 			case btn := <-elevChannels.BtnPresses:
+				HallUpAndHallDownAndCabAtDifferentDir = false
 				handleButtonPress(gs, btn, networkChannels)
 				if getFloor() != -1 {
-					orderManagement.ClearOrdersAndTurnOfLights(gs)
+					HallUpAndHallDownAndCabAtDifferentDir = orderManagement.ClearOrdersAndTurnOfLights(gs)
 					orderManagement.RunHallAssignerAndApplyAssignments(gs)
-				}
-				orderManagement.UpdateCurrentOrder(gs)
-				orderManagement.UpdateMoveDir(&management.Elev)
+					SetAllLights(management.Elev, gs)
+					}
+				if HallUpAndHallDownAndCabAtDifferentDir {
+					doorTimer = time.NewTimer(doorOpenDuration)
+				} else {orderManagement.UpdateCurrentOrder(gs)
+						orderManagement.UpdateMoveDir(&management.Elev)}
 			}
 		}
 	}

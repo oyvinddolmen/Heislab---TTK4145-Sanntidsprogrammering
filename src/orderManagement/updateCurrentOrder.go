@@ -109,7 +109,7 @@ func ShouldStop(e *management.Elevator, floor int) bool {
 	return false
 }
 
-func ClearOrdersAndTurnOfLights(gs *GlobalState) {
+func ClearOrdersAndTurnOfLights(gs *GlobalState) bool {
 	e := &management.Elev
 	fmt.Println("Entered ClearOrdersAndTurnOfLights order with: ")
 	fmt.Println("Elev floor:", e.Floor)
@@ -155,17 +155,17 @@ func ClearOrdersAndTurnOfLights(gs *GlobalState) {
 	if e.Orders[floor][elevio.HallUpButton].OrderPlaced &&
 		e.LastOrder.ButtonType == elevio.HallDownButton &&
 		cabOrderAbove(e, floor) {
-		fmt.Println("Going up!") //Dont remove this print - Elevator is supposed alert
 		removeHallUp(gs, e, floor)
+		return true
 
 	} else if e.Orders[floor][elevio.HallDownButton].OrderPlaced &&
 				e.LastOrder.ButtonType == elevio.HallUpButton &&
 				cabOrderBelow(e, floor) {
-					fmt.Println("Going Down!") //Dont remove this print - Elevator is supposed alert
 					removeHallDown(gs, e, floor)
-
+					return true
 				}
 	}
+	return false
 }
 
 func cabOrderAbove(e *management.Elevator, floor int) bool {
