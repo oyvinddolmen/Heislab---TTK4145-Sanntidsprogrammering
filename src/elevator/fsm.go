@@ -25,7 +25,7 @@ func InitFSM(elevID string, NumFloors int) {
 	management.Elev = management.Elevator{
 		ID:           elevID,
 		State:        management.ElevInit,
-		Floor:        0, 
+		Floor:        0,
 		LastFloor:    0,
 		MoveDir:      management.DirIdle,
 		CurrentOrder: NoOrder,
@@ -79,7 +79,9 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdate:
 				if needToOpenDoors(gs) {
+					orderManagement.ServeHallRequestsAtCurrentFloor(gs)
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
+					SetAllLights(management.Elev, gs)
 					setElevState(gs, management.ElevObstruction)
 				} else {
 					orderManagement.RunHallAssignerAndApplyAssignments(gs)
@@ -160,9 +162,16 @@ func runFSM(
 		case management.ElevObstruction:
 			select {
 			case <-networkChannels.WorldViewUpdate:
-				orderManagement.RunHallAssignerAndApplyAssignments(gs)
-				SetAllLights(management.Elev, gs)
-				UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
+				if needToOpenDoors(gs) {
+					orderManagement.ServeHallRequestsAtCurrentFloor(gs)
+					orderManagement.ClearOrdersAndTurnOfLights(gs)
+					SetAllLights(management.Elev, gs)
+					setElevState(gs, management.ElevObstruction)
+				} else {
+					orderManagement.RunHallAssignerAndApplyAssignments(gs)
+					SetAllLights(management.Elev, gs)
+					UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
+				}
 			case <-doorTimer.C:
 				if !elevio.GetObstruction() {
 					elevio.SetDoorOpenLamp(false)

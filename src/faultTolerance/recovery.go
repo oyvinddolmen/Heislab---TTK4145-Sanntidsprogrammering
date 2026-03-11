@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// listens and merge global view received on startup. Returns true if received view 
+// listens and merge global view received on startup. Returns true if received view
 func RecoverOnStartup(gs *orderManagement.GlobalState, rx <-chan orderManagement.GlobalStateType) bool {
 	elevID := management.Elev.ID
 	timeout := time.After(1 * time.Second)

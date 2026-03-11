@@ -18,25 +18,32 @@ func main() {
 		RUNNING MULTIPLE SIMULATORS
 		.\SimElevatorServer.exe --port 15657
 		.\SimElevatorServer.exe --port 15667
+		.\SimElevatorServer.exe --port 15677
 
 		RUNNING MULTIPLE ELEVATORS
 		go run . -simPort 15657 -peersPort 20001 -bcastPort 20002 -id 1
 		go run . -simPort 15667 -peersPort 20001 -bcastPort 20002 -id 2
+		go run . -simPort 15677 -peersPort 20001 -bcastPort 20002 -id 3
+
 
 		På lab: begge programmene skal ha samme simPort 15657
 	*/
 
 	/*
-		TODO
+			TODO
 
-		- Det hender heisen havner i en evig loop og kjører kontinuerlig opp og ned mellom 0. og 3. etasje
-			- currentOrder er feil, den tror fortsatt den har en currentorder som den kjører til, men når den kommer til etasjen den er i stopper den ikke siden den ikke eksisterer.
+			- Det hender heisen havner i en evig loop og kjører kontinuerlig opp og ned mellom 0. og 3. etasje
+				- Dette skjer når den har fått utdelt en order, men en annen heiser tar orderen og fjerner den. Heisen har da fortsatt orderen og kjører dit, men vil aldri stoppe der.
 
-		- Dersom man stopper i en hall-button down, men de som går på heisen trykker cab call oppover, skal heisen "si ifra" at
-		  den kjører en annen retning (ifølge sepeca til oppgaven) Tobias: Fixed
+			- Dersom man trykker inne stopp knappen når man har en order, må en annen heis ta over orderen
 
-		- Når en heis starter opp skal den ikke kjøre til etasje 0 og skru av alle lys, men motta hvor den er fra andre heiser.
-		  Dersom den ikke mottar noe skal den skru av lys og kjøre til etasje 0
+		 	- Må kunne starte å kjøre igjen etter å ha trykket stopp knappen
+
+			- Dersom man stopper i en hall-button down, men de som går på heisen trykker cab call oppover, skal heisen "si ifra" at
+			  den kjører en annen retning (ifølge sepeca til oppgaven) Tobias: Fixed
+
+			- Når en heis starter opp skal den ikke kjøre til etasje 0 og skru av alle lys, men motta hvor den er fra andre heiser.
+			  Dersom den ikke mottar noe skal den skru av lys og kjøre til etasje 0 [FIXED]
 
 	*/
 
@@ -76,11 +83,11 @@ func main() {
 	// ----------- Initializing Elevator State and recovering if possible----------
 	elevator.InitElevator(elevID, elevAddr, management.NumFloors)
 	gs := orderManagement.InitGlobalState(elevID)
-	recovered := faultTolerance.RecoverOnStartup(gs, networkConn.GlobalStateRx)
-	if !recovered {
-		elevator.GoToGroundFloor()
+	recoveredElev := faultTolerance.RecoverOnStartup(gs, networkConn.GlobalStateRx)
+	elevator.GoToNearestFloorUnder()
+	if recoveredElev {
+		elevator.UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
 	}
-	elevator.UpdateCurrentOrderAndsafeDrive(&management.Elev, gs) // Denne funker ikke hvis floor = -1, Vi burde kansje polle floorsensoren og hvis floor er lik -1 -> kjøre til nærmeste etasje og så kalle UpdateCurrentOrderAndsafeDrive
 
 	// ------------------- Network ---------------------
 	broadcastInterval := 20 * time.Millisecond

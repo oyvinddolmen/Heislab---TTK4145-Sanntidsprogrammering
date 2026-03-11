@@ -10,13 +10,14 @@ import (
 // Elevator initialization
 // -------------------------------------------------------------------------------------------
 
+// initializes elevio, FSM and panel lights
 func InitElevator(elevID string, adress string, numFloors int) {
-	elevio.Init(adress, numFloors) 
+	elevio.Init(adress, numFloors)
 	InitFSM(elevID, numFloors)
 	InitLights(numFloors)
 }
 
-// Move elevator safely to ground floor at startup
+// Moves elevator safely to ground floor
 func GoToGroundFloor() {
 	elevio.SetMotorDirection(elevio.MotorDirDown)
 	for elevio.GetFloor() != 0 {
@@ -26,6 +27,24 @@ func GoToGroundFloor() {
 	elevio.SetFloorIndicator(0)
 	management.Elev.Floor = 0
 	management.Elev.LastFloor = 0
+	management.Elev.MoveDir = management.DirIdle
+	management.Elev.State = management.ElevIdle
+}
+
+// moves elevator to closest floor under elevators position
+func GoToNearestFloorUnder() {
+	floor := elevio.GetFloor()
+
+	if floor == -1 {
+		elevio.SetMotorDirection(elevio.MotorDirDown)
+	}
+	for elevio.GetFloor() == -1 {
+		time.Sleep(10 * time.Millisecond)
+	}
+	elevio.SetMotorDirection(elevio.MotorDirStop)
+	elevio.SetFloorIndicator(elevio.GetFloor())
+	management.Elev.Floor = elevio.GetFloor()
+	management.Elev.LastFloor = elevio.GetFloor()
 	management.Elev.MoveDir = management.DirIdle
 	management.Elev.State = management.ElevIdle
 }
