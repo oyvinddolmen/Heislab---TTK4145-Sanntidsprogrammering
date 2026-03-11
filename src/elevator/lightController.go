@@ -1,7 +1,7 @@
 package elevator
 
 import (
-	"heislab/elevio"
+	"heislab/elevator/elevio"
 	"heislab/management"
 	"heislab/orderManagement"
 )

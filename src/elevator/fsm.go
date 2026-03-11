@@ -2,7 +2,7 @@ package elevator
 
 import (
 	"fmt"
-	"heislab/elevio"
+	"heislab/elevator/elevio"
 	"heislab/management"
 	"heislab/network"
 	"heislab/orderManagement"

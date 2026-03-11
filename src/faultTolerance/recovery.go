@@ -2,7 +2,7 @@ package faultTolerance
 
 import (
 	"fmt"
-	"heislab/elevio"
+	"heislab/elevator/elevio"
 	"heislab/hallRequestAssigner"
 	"heislab/management"
 	"heislab/orderManagement"

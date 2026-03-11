@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"heislab/elevator"
-	"heislab/elevio"
+	"heislab/elevator/elevio"
 	"heislab/faultTolerance"
 	"heislab/management"
 	"heislab/network"

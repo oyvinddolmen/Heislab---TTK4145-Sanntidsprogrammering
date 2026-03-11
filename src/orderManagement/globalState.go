@@ -2,7 +2,7 @@ package orderManagement
 
 import (
 	"fmt"
-	"heislab/elevio"
+	"heislab/elevator/elevio"
 	"heislab/hallRequestAssigner"
 	"heislab/management"
 	"sync"

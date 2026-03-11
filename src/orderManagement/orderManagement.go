@@ -6,7 +6,7 @@ package orderManagement
 
 import (
 	"fmt"
-	"heislab/elevio"
+	"heislab/elevator/elevio"
 	"heislab/management"
 )
 
