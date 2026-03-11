@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"heislab/elevator"
 	"heislab/elevio"
-	"heislab/faultTolerance"
 	"heislab/management"
 	"heislab/network"
 	"heislab/orderManagement"
@@ -76,7 +75,7 @@ func main() {
 	// ----------- Initializing Elevator State and recovering if possible----------
 	elevator.InitElevator(elevID, elevAddr, management.NumFloors)
 	gs := orderManagement.InitGlobalState(elevID)
-	recovered := faultTolerance.RecoverOnStartup(gs, networkConn.GlobalStateRx)
+	recovered := network.RecoverOnStartup(gs, networkConn.GlobalStateRx)
 	if !recovered {
 		elevator.GoToGroundFloor()
 	}
@@ -89,7 +88,7 @@ func main() {
 		networkConn.GlobalStateRx,
 		networkConn.WorldViewUpdate,
 	)
-	go faultTolerance.StartFailureDetector(gs, networkConn.WorldViewUpdate)
+	go network.StartFailureDetector(gs, networkConn.WorldViewUpdate)
 	go network.SendGlobalStatePeriodically(
 		gs,
 		networkConn.GlobalStateTx,
