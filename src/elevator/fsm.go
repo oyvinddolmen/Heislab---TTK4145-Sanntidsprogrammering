@@ -196,7 +196,7 @@ func handleButtonPress(gs *orderManagement.GlobalState, btn elevio.ButtonEvent, 
 		setElevState(gs, management.ElevObstruction)
 		return
 		// skal vi ikke åpne døren uansett hvis en knapp trykkes i samme etasje som heisen er i? - Øyvind
-		// tanken var -> hva hvis noen presser ned, og så kommer noen etter dørene har lukket seg og presser opp... men det er veldig edge case, sikkert unødvendig 
+		// tanken var -> hva hvis noen presser ned, og så kommer noen etter dørene har lukket seg og presser opp... men det er veldig edge case, sikkert unødvendig
 		/*
 			if order.ButtonType == elevio.CabButton ||
 				(order.ButtonType == elevio.HallUpButton && management.Elev.MoveDir == management.DirUp) ||
@@ -252,13 +252,11 @@ func updateFloor(floor int) {
 	}
 }
 
+// updates current order and sets motor direction
 func UpdateCurrentOrderAndsafeDrive(e *management.Elevator, gs *orderManagement.GlobalState) {
-
 	orderManagement.UpdateCurrentOrder(gs)
 	orderManagement.UpdateMoveDir(e)
-
-	//fmt.Println("management.Elev.MoveDir: (bør være 0) ", management.Elev.MoveDir)
-
+	fmt.Println("Calculated moving dir:", management.Elev.MoveDir)
 	if management.Elev.MoveDir == management.DirIdle {
 		setMotorStop()
 		return
@@ -270,15 +268,19 @@ func UpdateCurrentOrderAndsafeDrive(e *management.Elevator, gs *orderManagement.
 
 // checks if there are any hall-orders at the same floor as elevator
 func needToOpenDoors(gs *orderManagement.GlobalState) bool {
-	currentFloor := getFloor()
+	currentFloor := management.Elev.Floor
 	hallRequests := gs.GetCopy().HallRequests
 
-	for btn := 0; btn < 2; btn++ {
-		if hallRequests[currentFloor][btn] {
-			return true
+	if currentFloor == -1 {
+		return false
+	} else {
+		for btn := 0; btn < 2; btn++ {
+			if hallRequests[currentFloor][btn] {
+				return true
+			}
 		}
+		return false
 	}
-	return false
 }
 
 // -------------------------------------------------------------------------------------------
