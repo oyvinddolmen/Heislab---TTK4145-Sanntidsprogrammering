@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"heislab/elevator"
 	"heislab/elevator/elevio"
-	"heislab/faultTolerance"
 	"heislab/management"
 	"heislab/network"
 	"heislab/orderManagement"
@@ -83,7 +82,7 @@ func main() {
 	// ----------- Initializing Elevator State and recovering if possible----------
 	elevator.InitElevator(elevID, elevAddr, management.NumFloors)
 	gs := orderManagement.InitGlobalState(elevID)
-	recoveredElev := faultTolerance.RecoverOnStartup(gs, networkConn.GlobalStateRx)
+	recoveredElev := network.RecoverOnStartup(gs, networkConn.GlobalStateRx)
 	elevator.GoToNearestFloorUnder()
 	if recoveredElev {
 		elevator.UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
@@ -96,7 +95,7 @@ func main() {
 		networkConn.GlobalStateRx,
 		networkConn.WorldViewUpdate,
 	)
-	go faultTolerance.StartFailureDetector(gs, networkConn.WorldViewUpdate)
+	go network.StartFailureDetector(gs, networkConn.WorldViewUpdate)
 	go network.SendGlobalStatePeriodically(
 		gs,
 		networkConn.GlobalStateTx,
