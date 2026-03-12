@@ -4,33 +4,33 @@ import (
 	"fmt"
 	"heislab/hallRequestAssigner"
 	"heislab/management"
+	"heislab/state"
 )
 
 // RunHallAssigner kopierer hall requests og online elevator states,
 // kaller hallRequestAssigner, og oppdaterer lokalt heis-objekt
-func RunHallAssignerAndApplyAssignments(gs *GlobalState) {
-	// Lås globalState og kopier hallRequests + online elevator states
-	gs.mu.Lock()
-	hallRequests := append([][2]bool(nil), gs.globalState.HallRequests...)
+func RunHallAssignerAndApplyAssignments(elev *management.Elevator, gs *state.GlobalState) {
+	gsCopy := gs.GetCopy()
+
+	hallRequests := append([][2]bool(nil), gsCopy.HallRequests...)
 
 	filtered := make(map[string]hallRequestAssigner.ElevatorStateJSON)
-	for id, s := range gs.globalState.States {
+	for id, s := range gsCopy.States {
 		if s.Behavior != "offline" {
 			filtered[id] = s
 		}
 	}
-	gs.mu.Unlock()
 
 	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
 	if err != nil {
 		fmt.Println("assigner failed: %w", err)
 	}
-	applyAssignments(assignments)
+	applyAssignments(elev, assignments)
 }
 
 // applyAssignments oppdaterer lokal heis med tildelte hall-orders
-func applyAssignments(assignments map[string][][2]bool) {
-	elevID := management.Elev.ID
+func applyAssignments(elev *management.Elevator, assignments map[string][][2]bool) {
+	elevID := elev.GetElevID()
 	assigned, exists := assignments[elevID]
 	if !exists {
 		fmt.Println("assignments[elevID] finnes ikke!!!")
@@ -42,10 +42,9 @@ func applyAssignments(assignments map[string][][2]bool) {
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for btn := 0; btn < management.CabButton; btn++ { // only hall buttons
 			if assigned[floor][btn] {
-				management.Elev.Orders[floor][btn].OrderPlaced = true
-				management.Elev.Orders[floor][btn].ElevID = management.Elev.ID
+				elev.Orders[floor][btn].OrderPlaced = true
 			} else {
-				management.Elev.Orders[floor][btn].OrderPlaced = false
+				elev.Orders[floor][btn].OrderPlaced = false
 			}
 		}
 	}

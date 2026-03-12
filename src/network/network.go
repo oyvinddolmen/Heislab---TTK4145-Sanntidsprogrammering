@@ -3,7 +3,7 @@ package network
 import (
 	"heislab/network/bcast"
 	"heislab/network/peers"
-	"heislab/orderManagement"
+	"heislab/state"
 )
 
 type PortConfig struct {
@@ -18,8 +18,8 @@ type NetworkConn struct {
 	PeerUpdates      <-chan peers.PeerUpdate
 
 	// GlobalState messaging
-	GlobalStateTx chan<- orderManagement.GlobalStateType
-	GlobalStateRx <-chan orderManagement.GlobalStateType
+	GlobalStateTx chan<- state.GlobalStateData
+	GlobalStateRx <-chan state.GlobalStateData
 
 	// World view update
 	WorldViewUpdate chan bool
@@ -35,8 +35,8 @@ func InitNetwork(config PortConfig) NetworkConn {
 	go peers.Receiver(config.PeerDiscoveryPort, peerUpdates)
 
 	// --- global state channels ---
-	globalStateTx := make(chan orderManagement.GlobalStateType, 16)
-	globalStateRx := make(chan orderManagement.GlobalStateType, 16)
+	globalStateTx := make(chan state.GlobalStateData, 16)
+	globalStateRx := make(chan state.GlobalStateData, 16)
 	worldViewUpdate := make(chan bool, 1)
 
 	go bcast.Transmitter(config.MessageBcastPort, globalStateTx)

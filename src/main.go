@@ -7,7 +7,7 @@ import (
 	"heislab/elevator/elevio"
 	"heislab/management"
 	"heislab/network"
-	"heislab/orderManagement"
+	"heislab/state"
 	"time"
 )
 
@@ -70,7 +70,7 @@ func main() {
 	}
 
 	// --------------------- Channels ----------------------
-	elevChannels := management.ElevChannels{
+	elevChannels := elevator.ElevChannels{
 		NewFloor:    make(chan int),
 		Obstruction: make(chan bool),
 		StopBtn:     make(chan bool),
@@ -79,30 +79,20 @@ func main() {
 
 	networkConn := network.InitNetwork(portCfg)
 
-	// ----------- Initializing Elevator State and recovering if possible----------
-	elevator.InitElevator(elevID, elevAddr, management.NumFloors)
-	gs := orderManagement.InitGlobalState(elevID)
-	recoveredElev := network.RecoverOnStartup(gs, networkConn.GlobalStateRx)
-	elevator.GoToNearestFloorUnder()
-	gs.UpdateGlobalState()
-	if recoveredElev {
-		elevator.UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
-	}
-	e := &management.Elev
-	fmt.Println("Entered RunElevator with: ")
-	fmt.Println("Elev floor:", e.Floor)
-	fmt.Println("MoveDir:", e.MoveDir)
-	fmt.Println("LastOrder.ButtonType (0: HallUp , 1: HallDown , 2: Caborder) : ", e.LastOrder.ButtonType)
-	fmt.Println("LastOrder.orderplaced (0: HallUp , 1: HallDown , 2: Caborder) : ", e.LastOrder.ButtonType)
+	elevator.InitHardware(elevAddr, management.NumFloors)
 
-	for f := 0; f < management.NumFloors; f++ {
-		fmt.Println(
-			"floor", f,
-			"cab", e.Orders[f][elevio.CabButton].OrderPlaced,
-			"up", e.Orders[f][elevio.HallUpButton].OrderPlaced,
-			"down", e.Orders[f][elevio.HallDownButton].OrderPlaced,
-		)
+	elev := elevator.InitElevator(elevID, management.NumFloors)
+
+	gs := state.InitGlobalState(&elev, elevID)
+
+	recoveredElev := network.RecoverOnStartup(&elev, gs, networkConn.GlobalStateRx)
+
+	elevator.GoToNearestFloorUnder(&elev)
+	gs.UpdateGlobalState(&elev)
+	if recoveredElev {
+		elevator.UpdateCurrentOrderAndsafeDrive(&elev, gs)
 	}
+
 	// ------------------- Network ---------------------
 	broadcastInterval := 20 * time.Millisecond
 	go network.ListenAndMergeGlobalState(
@@ -112,12 +102,13 @@ func main() {
 	)
 	go network.StartFailureDetector(gs, networkConn.WorldViewUpdate)
 	go network.SendGlobalStatePeriodically(
+		&elev,
 		gs,
 		networkConn.GlobalStateTx,
 		broadcastInterval,
 	)
 
 	// ----------------- Start elevator FSM -------------------
-	go elevator.RunElevator(gs, elevChannels, networkConn)
+	go elevator.RunElevator(&elev, gs, elevChannels, networkConn)
 	select {}
 }

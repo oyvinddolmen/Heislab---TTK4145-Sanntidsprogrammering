@@ -3,7 +3,7 @@ package elevator
 import (
 	"heislab/elevator/elevio"
 	"heislab/management"
-	"heislab/orderManagement"
+	"heislab/state"
 )
 
 // Turns off all hall and cab lights
@@ -21,7 +21,7 @@ func InitLights(numFloors int) {
 }
 
 // sets the hall light based on global state. For synchronizing hall lights on all elevs
-func setHallLight(gs *orderManagement.GlobalState) {
+func setHallLight(gs *state.GlobalState) {
 	state := gs.GetCopy()
 
 	for floor := 0; floor < management.NumFloors; floor++ {
@@ -36,7 +36,7 @@ func setHallLight(gs *orderManagement.GlobalState) {
 }
 
 // sets cab and hall lights
-func SetAllLights(elevator management.Elevator, gs *orderManagement.GlobalState) {
+func SetAllLights(elevator *management.Elevator, gs *state.GlobalState) {
 	globalState := gs.GetCopy()
 
 	for floor := 0; floor < management.NumFloors; floor++ {
