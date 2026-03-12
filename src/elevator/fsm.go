@@ -11,10 +11,12 @@ import (
 
 // Timer for door
 var doorTimer *time.Timer
+var IdleTimer *time.Timer
 var HallUpAndHallDownAndCabAtDifferentDir bool
 var OrderWasAtCurrentFloor bool
 
 const doorOpenDuration = 2 * time.Second
+const IdleTimeOut = 2 * time.Second
 
 // -------------------------------------------------------------------------------------------
 // Initialize FSM
@@ -103,6 +105,12 @@ func runFSM(
 					orderManagement.RunHallAssignerAndApplyAssignments(gs)
 					SetAllLights(management.Elev, gs)
 					UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
+				}
+			case <-IdleTimer.C:
+				setMoveDir(management.DirIdle)
+				UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
+				if management.Elev.CurrentOrder.OrderPlaced == false {
+					doorTimer = time.NewTimer(doorOpenDuration)
 				}
 			case <-elevChannels.Obstruction:
 				setElevState(gs, management.ElevObstruction)
@@ -311,6 +319,10 @@ func needToOpenDoors(gs *orderManagement.GlobalState) bool {
 	return false
 }
 
+func StoodStillForToLong() {
+
+}
+
 // -------------------------------------------------------------------------------------------
 // State transitions
 // -------------------------------------------------------------------------------------------
@@ -344,6 +356,10 @@ func onIdleEntry(e *management.Elevator, gs *orderManagement.GlobalState) {
 	orderManagement.RunHallAssignerAndApplyAssignments(gs)
 	UpdateCurrentOrderAndsafeDrive(e, gs)
 	SetAllLights(management.Elev, gs)
+	if IdleTimer != nil {
+		IdleTimer.Stop()
+	}
+	IdleTimer = time.NewTimer(IdleTimeOut)
 }
 
 // turns off stop and door open lamp, and sets elevio motor direction
