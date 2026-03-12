@@ -83,22 +83,8 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdate: 
 				if needToOpenDoors(gs) {
-					fmt.Println("Needed to open doors")
 					orderManagement.ServeHallRequestsAtCurrentFloor(gs)
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
-					fmt.Println("Entering set all lights with: ")
-					fmt.Println("Elev floor:", management.Elev.Floor)
-					fmt.Println("MoveDir:", management.Elev.MoveDir)
-					fmt.Println("Current Order:", management.Elev.CurrentOrder.Floor)
-					fmt.Println("LastOrder.ButtonType (0: HallUp , 1: HallDown , 2: Caborder) : ", management.Elev.LastOrder.ButtonType)
-					for f := 0; f < management.NumFloors; f++ {
-						fmt.Println(
-							"floor", f,
-							"cab", management.Elev.Orders[f][elevio.CabButton].OrderPlaced,
-							"up", management.Elev.Orders[f][elevio.HallUpButton].OrderPlaced,
-							"down", management.Elev.Orders[f][elevio.HallDownButton].OrderPlaced,
-						)
-					}
 					SetAllLights(management.Elev, gs)
 					setElevState(gs, management.ElevObstruction)
 				} else {
@@ -106,8 +92,9 @@ func runFSM(
 					SetAllLights(management.Elev, gs)
 					UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
 				}
-			case <-IdleTimer.C:
-				setMoveDir(management.DirIdle)
+			case <-IdleTimer.C: //If been Idle too long, we make it so the elevator 
+								// takes all orders no matter if lastorder was a hallUp or a hallDown
+				management.Elev.LastOrder.ButtonType = elevio.CabButton 
 				UpdateCurrentOrderAndsafeDrive(&management.Elev, gs)
 				if management.Elev.CurrentOrder.OrderPlaced == false {
 					doorTimer = time.NewTimer(doorOpenDuration)
@@ -145,17 +132,14 @@ func runFSM(
 				setFloorIndicator(floor)
 				setElevLastFloor(floor)
 				if orderManagement.ShouldStop(&management.Elev, floor) {
-					fmt.Println("You stopped at floor: ", floor)
 					setMotorStop()
 					setElevFloor(floor)
 					orderManagement.ChooseDirectionAfterStop(&management.Elev, floor)
-					fmt.Print("After chooseDirectionAfterStop: Dir =" , management.Elev.MoveDir)
 					orderManagement.ClearOrdersAndTurnOfLights(gs)
 					orderManagement.RunHallAssignerAndApplyAssignments(gs)
 					if management.Elev.CurrentOrder.OrderPlaced == false {
 						orderManagement.UpdateCurrentOrder(gs)
 						orderManagement.UpdateMoveDir(&management.Elev)
-						fmt.Print("After UpdateMoveDir because currentOrder==false:  Dir =" , management.Elev.MoveDir)
 					}
 					setElevState(gs, management.ElevObstruction)
 				}
