@@ -10,13 +10,18 @@ import (
 	"time"
 )
 
-// Timer for door
+// Timers
 var doorTimer *time.Timer
+var canTakeOrdersTimer *time.Timer
 var IdleTimer *time.Timer
+
+// helper variables
 var HallUpAndHallDownAndCabAtDifferentDir bool
 var OrderWasAtCurrentFloor bool
 
+// time durations
 const doorOpenDuration = 2 * time.Second
+const canTakeOrdersCountdown = 5 * time.Second
 const IdleTimeOut = 2 * time.Second
 
 func InitElevator(elevID string, numFloors int) management.Elevator {
