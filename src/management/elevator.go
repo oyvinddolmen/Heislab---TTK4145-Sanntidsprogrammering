@@ -16,6 +16,34 @@ type Elevator struct {
 	Orders       [NumFloors][NumButtons]Order
 }
 
+func InitElevator(elevID string, numFloors int) Elevator {
+    noOrder := Order{
+        Floor: 1,
+        ButtonType: elevio.CabButton,
+        OrderPlaced: false,
+    }
+    elev := Elevator{
+        ID:           elevID,
+        State:        ElevInit,
+        Floor:        0,
+        LastFloor:    0,
+        MoveDir:      DirIdle,
+        CurrentOrder: noOrder,
+        LastOrder:    noOrder,
+    }
+    for floor := 0; floor < numFloors; floor++ {
+        for button := 0; button < NumButtons; button++ {
+            elev.Orders[floor][button] = Order{
+                Floor: floor,
+                ButtonType: elevio.ButtonType(button),
+                OrderPlaced: false,
+            }
+        }
+    }
+    return elev
+}
+
+
 const (
 	hallUpButton   = 0
 	hallDownButton = 1

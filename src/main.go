@@ -81,7 +81,7 @@ func main() {
 
 	elevator.InitHardware(elevAddr, management.NumFloors)
 
-	elev := elevator.InitElevator(elevID, management.NumFloors)
+	elev := management.InitElevator(elevID, management.NumFloors)
 
 	gs := state.InitGlobalState(&elev, elevID)
 

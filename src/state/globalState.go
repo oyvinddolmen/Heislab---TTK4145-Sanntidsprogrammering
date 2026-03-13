@@ -20,7 +20,6 @@ type GlobalState struct {
 	data        GlobalStateData
 }
 
-// Constructor
 func InitGlobalState(elev *management.Elevator, elevID string) *GlobalState {
 	gs := &GlobalState{}
 
@@ -28,7 +27,7 @@ func InitGlobalState(elev *management.Elevator, elevID string) *GlobalState {
 	gs.data.HallRequestsVersion = make([][2]int, management.NumFloors)
 	gs.data.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
 	gs.data.LocalID = elevID
-	gs.data.States[elevID] = ConvertElevatorToJSON(elev) // initial local elevator state
+	gs.data.States[elevID] = ConvertElevatorToJSON(elev) 
 	return gs
 }
 
@@ -145,7 +144,7 @@ func (gs *GlobalState) GetCopy() GlobalStateData {
 func (gs *GlobalState) GetID() string {
     gs.mu.Lock()
     defer gs.mu.Unlock()
-	
+
     return gs.data.LocalID
 }
 
