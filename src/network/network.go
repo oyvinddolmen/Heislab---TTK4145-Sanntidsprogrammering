@@ -1,7 +1,7 @@
 package network
 
 import (
-	"heislab/network/bcast"
+	"heislab/network/broadcast"
 	"heislab/network/peers"
 	"heislab/state"
 )
@@ -39,8 +39,8 @@ func InitNetwork(config PortConfig) NetworkConn {
 	globalStateRx := make(chan state.GlobalStateData, 16)
 	worldViewUpdate := make(chan bool, 1)
 
-	go bcast.Transmitter(config.MessageBcastPort, globalStateTx)
-	go bcast.Receiver(config.MessageBcastPort, globalStateRx)
+	go broadcast.Transmitter(config.MessageBcastPort, globalStateTx)
+	go broadcast.Receiver(config.MessageBcastPort, globalStateRx)
 
 	return NetworkConn{
 		HeartbeatEnabled: heartbeatEnabled,

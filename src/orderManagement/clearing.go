@@ -7,43 +7,44 @@ import (
 	"heislab/state"
 )
 
-func ClearOrdersAndTurnOfLights(elev *management.Elevator, gs *state.GlobalState) bool {
-	floor := elev.Floor
-	if elev.CurrentOrder.Floor == floor {
+func ClearOrdersAndTurnOffLights(elev *management.Elevator, globalState *state.GlobalState) bool {
+	currentFloor := elev.Floor
+	if elev.CurrentOrder.Floor == currentFloor {
 		elev.CurrentOrder.OrderPlaced = false
 		elev.LastOrder = elev.CurrentOrder
 	}
-	// CAB orders are always removed
-	if elev.Orders[floor][elevIO.CabButton].OrderPlaced {
-		RemoveCabOrder(gs, elev, floor)
+
+	// Cab orders are always removed
+	if elev.Orders[currentFloor][elevIO.CabButton].OrderPlaced {
+		RemoveCabOrder(globalState, elev, currentFloor)
 	}
 
 	switch elev.MoveDir {
 
 	case management.DirUp:
 
-		if elev.Orders[floor][elevIO.HallUpButton].OrderPlaced {
-			RemoveHallUp(gs, elev, floor)
+		if elev.Orders[currentFloor][elevIO.HallUpButton].OrderPlaced {
+			RemoveHallUp(globalState, elev, currentFloor)
 		}
 
 	case management.DirDown:
 
-		if elev.Orders[floor][elevIO.HallDownButton].OrderPlaced {
-			RemoveHallDown(gs, elev, floor)
+		if elev.Orders[currentFloor][elevIO.HallDownButton].OrderPlaced {
+			RemoveHallDown(globalState, elev, currentFloor)
 		}
 
 	default:
 
-	if elev.Orders[floor][elevIO.HallUpButton].OrderPlaced &&
+	if elev.Orders[currentFloor][elevIO.HallUpButton].OrderPlaced &&
 		elev.LastOrder.ButtonType == elevIO.HallDownButton &&
-		CabOrderAbove(elev, floor) {
-		RemoveHallUp(gs, elev, floor)
+		CabOrderAbove(elev, currentFloor) {
+		RemoveHallUp(globalState, elev, currentFloor)
 		return true
 
-	} else if elev.Orders[floor][elevIO.HallDownButton].OrderPlaced &&
+	} else if elev.Orders[currentFloor][elevIO.HallDownButton].OrderPlaced &&
 				elev.LastOrder.ButtonType == elevIO.HallUpButton &&
-				CabOrderBelow(elev, floor) {
-					RemoveHallDown(gs, elev, floor)
+				CabOrderBelow(elev, currentFloor) {
+					RemoveHallDown(globalState, elev, currentFloor)
 					return true
 				}
 	}
@@ -51,18 +52,18 @@ func ClearOrdersAndTurnOfLights(elev *management.Elevator, gs *state.GlobalState
 	return false
 }
 
-func CabOrderAbove(elev *management.Elevator, floor int) bool {
-	for f := floor + 1; f < management.NumFloors; f++ {
-		if elev.Orders[f][elevIO.CabButton].OrderPlaced {
+func CabOrderAbove(elev *management.Elevator, currentFloor int) bool {
+	for floor := currentFloor + 1; floor < management.NumFloors; floor++ {
+		if elev.Orders[floor][elevIO.CabButton].OrderPlaced {
 			return true
 		}
 	}
 	return false
 }
 
-func CabOrderBelow(elev *management.Elevator, floor int) bool {
-	for f := floor - 1; f >= 0; f-- {
-		if elev.Orders[f][elevIO.CabButton].OrderPlaced {
+func CabOrderBelow(elev *management.Elevator, currentFloor int) bool {
+	for floor := currentFloor - 1; floor >= 0; floor-- {
+		if elev.Orders[floor][elevIO.CabButton].OrderPlaced {
 			return true
 		}
 	}
@@ -74,9 +75,9 @@ func OrdersAbove(elev *management.Elevator, floorUnderInspection int) bool {
 		return false
 	}
 
-	for f := floorUnderInspection + 1; f < management.NumFloors; f++ {
-		for b := 0; b < management.NumButtons; b++ {
-			if elev.Orders[f][b].OrderPlaced {
+	for floor := floorUnderInspection + 1; floor < management.NumFloors; floor++ {
+		for button := 0; button < management.NumButtons; button++ {
+			if elev.Orders[floor][button].OrderPlaced {
 				return true
 			}
 		}
@@ -90,9 +91,9 @@ func OrdersBelow(elev *management.Elevator, floorUnderInspection int) bool {
 		return false
 	}
 
-	for f := floorUnderInspection - 1; f >= 0; f-- {
-		for b := 0; b < management.NumButtons; b++ {
-			if elev.Orders[f][b].OrderPlaced {
+	for floor := floorUnderInspection - 1; floor >= 0; floor-- {
+		for button := 0; button < management.NumButtons; button++ {
+			if elev.Orders[floor][button].OrderPlaced {
 				return true
 			}
 		}
@@ -101,41 +102,35 @@ func OrdersBelow(elev *management.Elevator, floorUnderInspection int) bool {
 	return false
 }
 
-func RemoveCabOrder(gs *state.GlobalState, elev *management.Elevator, floor int) {
+func RemoveCabOrder(globalState *state.GlobalState, elev *management.Elevator, floor int) {
 	elev.Orders[floor][elevIO.CabButton].OrderPlaced = false
-	gs.UpdateGlobalState(elev)
+	globalState.UpdateGlobalState(elev)
 	elevIO.SetButtonLamp(elevIO.CabButton, floor, false)
 }
 
-func RemoveHallDown(gs *state.GlobalState, elev *management.Elevator, floor int) {
-
+func RemoveHallDown(globalState *state.GlobalState, elev *management.Elevator, floor int) {
 	elev.Orders[floor][elevIO.HallDownButton].OrderPlaced = false
-
-	gs.RemoveHallRequest(floor, elevIO.HallDownButton)
-
+	globalState.RemoveHallRequest(floor, elevIO.HallDownButton)
 	elevIO.SetButtonLamp(elevIO.HallDownButton, floor, false)
 }
 
-func RemoveHallUp(gs *state.GlobalState, elev *management.Elevator, floor int) {
-
+func RemoveHallUp(globalState *state.GlobalState, elev *management.Elevator, floor int) {
 	elev.Orders[floor][elevIO.HallUpButton].OrderPlaced = false
-
-	gs.RemoveHallRequest(floor, elevIO.HallUpButton)
-
+	globalState.RemoveHallRequest(floor, elevIO.HallUpButton)
 	elevIO.SetButtonLamp(elevIO.HallUpButton, floor, false)
 }
 
 // Clears hall requests from the shared state for the floor the elevator is currently at
-func ServeHallRequestsAtCurrentFloor(elev *management.Elevator, gs *state.GlobalState) {
-	floor := elev.Floor
-	if floor != -1 {
-		hallRequests := gs.GetCopy().HallRequests
+func ServeHallRequestsAtCurrentFloor(elev *management.Elevator, globalState *state.GlobalState) {
+	currentFloor := elev.Floor
+	if currentFloor != -1 {
+		hallRequests := globalState.GetCopy().HallRequests
 
-		if hallRequests[floor][elevIO.HallUpButton] {
-			RemoveHallUp(gs, elev, floor)
+		if hallRequests[currentFloor][elevIO.HallUpButton] {
+			RemoveHallUp(globalState, elev, currentFloor)
 		}
-		if hallRequests[floor][elevIO.HallDownButton] {
-			RemoveHallDown(gs, elev, floor)
+		if hallRequests[currentFloor][elevIO.HallDownButton] {
+			RemoveHallDown(globalState, elev, currentFloor)
 		}
 
 	}

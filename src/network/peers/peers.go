@@ -1,7 +1,7 @@
 package peers
 
 import (
-	"heislab/network/conn"
+	"heislab/network/connection"
 	"fmt"
 	"net"
 	"sort"
@@ -19,7 +19,7 @@ const timeout = 500 * time.Millisecond
 
 func Transmitter(port int, elevID string, heartbeatEnabled <-chan bool) {
 
-	connection := conn.DialBroadcastUDP(port)
+	connection := connection.DialBroadcastUDP(port)
 	address, _ := net.ResolveUDPAddr("udp4", fmt.Sprintf("255.255.255.255:%d", port))
 
 	enabled := true
@@ -40,7 +40,7 @@ func Receiver(port int, peerUpdateCh chan<- PeerUpdate) {
 	var p PeerUpdate
 	lastSeen := make(map[string]time.Time)
 
-	conn := conn.DialBroadcastUDP(port)
+	conn := connection.DialBroadcastUDP(port)
 
 	for {
 		updated := false

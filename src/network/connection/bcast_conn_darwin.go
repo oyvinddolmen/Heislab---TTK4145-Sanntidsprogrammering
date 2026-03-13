@@ -1,7 +1,7 @@
 //go:build darwin
 // +build darwin
 
-package conn
+package connection
 
 import (
 	"fmt"
@@ -13,19 +13,23 @@ import (
 func DialBroadcastUDP(port int) net.PacketConn {
 	s, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, syscall.IPPROTO_UDP)
 	if err != nil { fmt.Println("Error: Socket:", err) }
+
 	syscall.SetsockoptInt(s, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
 	if err != nil { fmt.Println("Error: SetSockOpt REUSEADDR:", err) }
+
 	syscall.SetsockoptInt(s, syscall.SOL_SOCKET, syscall.SO_BROADCAST, 1)
 	if err != nil { fmt.Println("Error: SetSockOpt BROADCAST:", err) }
+
 	syscall.SetsockoptInt(s, syscall.SOL_SOCKET, syscall.SO_REUSEPORT, 1)
 	if err != nil { fmt.Println("Error: SetSockOpt REUSEPORT:", err) }
+
 	syscall.Bind(s, &syscall.SockaddrInet4{Port: port})
 	if err != nil { fmt.Println("Error: Bind:", err) }
 
-	f := os.NewFile(uintptr(s), "")
-	conn, err := net.FilePacketConn(f)
+	file := os.NewFile(uintptr(s), "")
+	conn, err := net.FilePacketConn(file)
 	if err != nil { fmt.Println("Error: FilePacketConn:", err) }
-	f.Close()
+	file.Close()
 
 	return conn
 }

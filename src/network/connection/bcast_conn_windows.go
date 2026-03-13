@@ -1,7 +1,7 @@
 //go:build windows
 // +build windows
 
-package conn
+package connection
 
 // Windows socket error codes can be found here
 // https://msdn.microsoft.com/en-us/library/windows/desktop/ms740668(v=vs.85).aspx
@@ -62,8 +62,8 @@ func DialBroadcastUDP(port int) net.PacketConn {
         },
     }
 
-	conn, err := config.ListenPacket(context.Background(), "udp4", fmt.Sprintf(":%d", port)) 
+	connection, err := config.ListenPacket(context.Background(), "udp4", fmt.Sprintf(":%d", port)) 
 	if err != nil { fmt.Println("Error: net.ListenConfig.ListenPacket:", err) }
 
-	return conn
+	return connection
 }

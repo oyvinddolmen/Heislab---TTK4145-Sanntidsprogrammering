@@ -57,7 +57,7 @@ func runFSM(
 			case <-networkChannels.WorldViewUpdate: 
 				if needToOpenDoors(elev, gs) {
 					orderManagement.ServeHallRequestsAtCurrentFloor(elev, gs)
-					orderManagement.ClearOrdersAndTurnOfLights(elev, gs)
+					orderManagement.ClearOrdersAndTurnOffLights(elev, gs)
 					SetAllLights(elev, gs)
 					setElevState(elev, gs, management.ElevObstruction)
 				} else {
@@ -84,7 +84,7 @@ func runFSM(
 				OrderWasAtCurrentFloor := handleButtonPress(elev, gs, btn, networkChannels)
 				if !OrderWasAtCurrentFloor {
 					if elev.GetFloor() != -1 {
-						HallUpAndHallDownAndCabAtDifferentDir = orderManagement.ClearOrdersAndTurnOfLights(elev, gs)
+						HallUpAndHallDownAndCabAtDifferentDir = orderManagement.ClearOrdersAndTurnOffLights(elev, gs)
 						updateAssignments(elev, gs)
 						}
 					if HallUpAndHallDownAndCabAtDifferentDir{
@@ -105,7 +105,7 @@ func runFSM(
 					setMotorStop()
 					elev.SetElevFloor(floor)
 					ChooseDirectionAfterStop(elev, floor)
-					orderManagement.ClearOrdersAndTurnOfLights(elev, gs)
+					orderManagement.ClearOrdersAndTurnOffLights(elev, gs)
 					updateAssignments(elev, gs)
 					if elev.CurrentOrder.OrderPlaced == false {
 						orderManagement.UpdateCurrentOrder(elev, gs)
@@ -128,7 +128,7 @@ func runFSM(
 			case <-networkChannels.WorldViewUpdate:
 				if needToOpenDoors(elev, gs) {
 					orderManagement.ServeHallRequestsAtCurrentFloor(elev, gs)
-					orderManagement.ClearOrdersAndTurnOfLights(elev, gs)
+					orderManagement.ClearOrdersAndTurnOffLights(elev, gs)
 					SetAllLights(elev, gs)
 					resetTimer(&doorTimer, doorOpenDuration)
 				} else {
@@ -148,7 +148,7 @@ func runFSM(
 				if !OrderWasAtCurrentFloor {
 					
 					if elev.GetFloor() != -1 {
-						mixedHallOrders = orderManagement.ClearOrdersAndTurnOfLights(elev, gs)
+						mixedHallOrders = orderManagement.ClearOrdersAndTurnOffLights(elev, gs)
 						updateAssignments(elev, gs)
 						}
 					if mixedHallOrders || needToOpenDoors(elev, gs){
