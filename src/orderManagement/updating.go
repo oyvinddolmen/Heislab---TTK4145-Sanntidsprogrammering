@@ -2,7 +2,7 @@ package orderManagement
 
 import (
 	"fmt"
-	"heislab/elevator/elevio"
+	"heislab/elevator/elevIO"
 	"heislab/management"
 	"heislab/state"
 )
@@ -59,26 +59,26 @@ func assignUp(gs *state.GlobalState, elev *management.Elevator, startFloor int) 
 
 		// CAB prioritet
 		if CabOrderAtFloor(elev, floor) {
-			if elev.LastOrder.ButtonType == elevio.HallDownButton && HallOrderUpAtFloor(elev, elev.Floor) {
+			if elev.LastOrder.ButtonType == elevIO.HallDownButton && HallOrderUpAtFloor(elev, elev.Floor) {
 				RemoveHallUp(gs, elev, elev.Floor)
 			}
 			elev.LastOrder = elev.CurrentOrder
-			elev.CurrentOrder = elev.Orders[floor][elevio.CabButton]
+			elev.CurrentOrder = elev.Orders[floor][elevIO.CabButton]
 			return true
 		}
 
 		// hallUp hvis vi går opp
-		if HallOrderUpAtFloor(elev, floor) && elev.LastOrder.ButtonType != elevio.HallDownButton {
+		if HallOrderUpAtFloor(elev, floor) && elev.LastOrder.ButtonType != elevIO.HallDownButton {
 			elev.LastOrder = elev.CurrentOrder
-			elev.CurrentOrder = elev.Orders[floor][elevio.HallUpButton]
+			elev.CurrentOrder = elev.Orders[floor][elevIO.HallUpButton]
 			return true
 		}
 
 		// hvis ingen over og hallOrdreLogikk oppfylt→ kan ta hallDown
 		if !OrdersAbove(elev, floor) && HallOrderDownAtFloor(elev, floor) && 
-					(elev.LastOrder.ButtonType == elevio.CabButton || (elev.LastOrder.ButtonType == elevio.HallUpButton && floor == management.NumFloors-1)) {
+					(elev.LastOrder.ButtonType == elevIO.CabButton || (elev.LastOrder.ButtonType == elevIO.HallUpButton && floor == management.NumFloors-1)) {
 			elev.LastOrder = elev.CurrentOrder
-			elev.CurrentOrder = elev.Orders[floor][elevio.HallDownButton]
+			elev.CurrentOrder = elev.Orders[floor][elevIO.HallDownButton]
 			return true
 		}
 	}
@@ -90,27 +90,27 @@ func assignDown(gs *state.GlobalState, elev *management.Elevator, startFloor int
 	for floor := startFloor - 1; floor >= 0; floor-- {
 		// CAB prioritet
 		if CabOrderAtFloor(elev, floor) {
-			if elev.LastOrder.ButtonType == elevio.HallUpButton && HallOrderDownAtFloor(elev, elev.Floor) {
+			if elev.LastOrder.ButtonType == elevIO.HallUpButton && HallOrderDownAtFloor(elev, elev.Floor) {
 				RemoveHallDown(gs, elev, floor)
 			}
 			elev.LastOrder = elev.CurrentOrder
-			elev.CurrentOrder = elev.Orders[floor][elevio.CabButton]
+			elev.CurrentOrder = elev.Orders[floor][elevIO.CabButton]
 			return true
 		}
 
 		// hallDown hvis vi går ned
-		if HallOrderDownAtFloor(elev, floor) && elev.LastOrder.ButtonType != elevio.HallUpButton {
+		if HallOrderDownAtFloor(elev, floor) && elev.LastOrder.ButtonType != elevIO.HallUpButton {
 			elev.LastOrder = elev.CurrentOrder
-			elev.CurrentOrder = elev.Orders[floor][elevio.HallDownButton]
+			elev.CurrentOrder = elev.Orders[floor][elevIO.HallDownButton]
 			return true
 		}
 
 		// hvis ingen under og hallOrder-logikk oppfylt → kan ta hallUp
 		if !OrdersBelow(elev, floor) && HallOrderUpAtFloor(elev, floor) &&
-			(elev.LastOrder.ButtonType == elevio.CabButton ||
-				(elev.LastOrder.ButtonType == elevio.HallDownButton && floor == 0)) {
+			(elev.LastOrder.ButtonType == elevIO.CabButton ||
+				(elev.LastOrder.ButtonType == elevIO.HallDownButton && floor == 0)) {
 			elev.LastOrder = elev.CurrentOrder
-			elev.CurrentOrder = elev.Orders[floor][elevio.HallUpButton]
+			elev.CurrentOrder = elev.Orders[floor][elevIO.HallUpButton]
 			return true
 		}
 	}
@@ -118,15 +118,15 @@ func assignDown(gs *state.GlobalState, elev *management.Elevator, startFloor int
 }
 
 func CabOrderAtFloor(elev *management.Elevator, floor int) bool {
-	return elev.Orders[floor][elevio.CabButton].OrderPlaced
+	return elev.Orders[floor][elevIO.CabButton].OrderPlaced
 }
 
 func HallOrderUpAtFloor(elev *management.Elevator, floor int) bool {
-	return elev.Orders[floor][elevio.HallUpButton].OrderPlaced
+	return elev.Orders[floor][elevIO.HallUpButton].OrderPlaced
 }
 
 func HallOrderDownAtFloor(elev *management.Elevator, floor int) bool {
-	return elev.Orders[floor][elevio.HallDownButton].OrderPlaced
+	return elev.Orders[floor][elevIO.HallDownButton].OrderPlaced
 }
 
 func AnyOrderAtFloor(elev *management.Elevator, floor int) bool {

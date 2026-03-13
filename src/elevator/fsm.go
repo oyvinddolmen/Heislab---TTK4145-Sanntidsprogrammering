@@ -1,7 +1,7 @@
 package elevator
 
 import (
-	"heislab/elevator/elevio"
+	"heislab/elevator/elevIO"
 	"heislab/management"
 	"heislab/network"
 	"heislab/orderManagement"
@@ -14,7 +14,7 @@ type ElevChannels struct {
 	NewFloor    chan int
 	Obstruction chan bool
 	StopBtn     chan bool
-	BtnPresses  chan elevio.ButtonEvent 
+	BtnPresses  chan elevIO.ButtonEvent 
 }
 
 var doorTimer *time.Timer
@@ -30,10 +30,10 @@ func RunElevator(
 	elevChannels ElevChannels,
 	networkChannels network.NetworkConn,
 ) {
-	go elevio.PollFloorSensor(elevChannels.NewFloor)
-	go elevio.PollButtons(elevChannels.BtnPresses)
-	go elevio.PollStopButton(elevChannels.StopBtn)
-	go elevio.PollObstructionSwitch(elevChannels.Obstruction)
+	go elevIO.PollFloorSensor(elevChannels.NewFloor)
+	go elevIO.PollButtons(elevChannels.BtnPresses)
+	go elevIO.PollStopButton(elevChannels.StopBtn)
+	go elevIO.PollObstructionSwitch(elevChannels.Obstruction)
 	setElevState(elev, gs, management.ElevIdle)
 	go runFSM(elev, gs, elevChannels, networkChannels)
 }
@@ -66,7 +66,7 @@ func runFSM(
 				}
 			case <-idleTimer.C: //If been Idle too long, we make it so the elevator 
 								// takes all orders no matter if lastorder was a hallUp or a hallDown
-				elev.LastOrder.ButtonType = elevio.CabButton 
+				elev.LastOrder.ButtonType = elevIO.CabButton 
 				UpdateCurrentOrderAndsafeDrive(elev, gs)
 				if elev.CurrentOrder.OrderPlaced == false {
 					resetTimer(&idleTimer, IdleTimeOut)
@@ -137,7 +137,7 @@ func runFSM(
 					UpdateMoveDir(elev)
 				}
 			case <-doorTimer.C:
-				if !elevio.GetObstruction() {
+				if !elevIO.GetObstruction() {
 					setElevState(elev, gs, management.ElevIdle)
 				} else {
 					setElevState(elev, gs, management.ElevObstruction)
@@ -182,9 +182,9 @@ func setElevState(elev *management.Elevator, gs *state.GlobalState, state manage
 
 // turns off door open and stop lamp, and sets motor dir based on next order
 func onIdleEntry(elev *management.Elevator, gs *state.GlobalState) {
-	elevio.SetDoorOpenLamp(false)
-	elevio.SetStopLamp(false)
-	if elevio.GetFloor() == -1 {
+	elevIO.SetDoorOpenLamp(false)
+	elevIO.SetStopLamp(false)
+	if elevIO.GetFloor() == -1 {
 		elev.SetElevFloor(-1)
 	}
 	updateAssignments(elev, gs)
@@ -192,16 +192,16 @@ func onIdleEntry(elev *management.Elevator, gs *state.GlobalState) {
 	resetTimer(&idleTimer, IdleTimeOut)
 }
 
-// turns off stop and door open lamp, and sets elevio motor direction
+// turns off stop and door open lamp, and sets elevIO motor direction
 func onMovingEntry(elev *management.Elevator) {
-	elevio.SetDoorOpenLamp(false)
-	elevio.SetStopLamp(false)
+	elevIO.SetDoorOpenLamp(false)
+	elevIO.SetStopLamp(false)
 	elev.SetElevFloor(-1)
 }
 
 // turns on stop lamp and stops elevator
 func onStopEntry(elev *management.Elevator) {
-	elevio.SetStopLamp(true)
+	elevIO.SetStopLamp(true)
 	stopElevator(elev)
 }
 
@@ -209,7 +209,7 @@ func onStopEntry(elev *management.Elevator) {
 func onObstructionEntry(elev *management.Elevator) {
 	stopElevator(elev)
 	if elev.GetFloor() != -1{
-		elevio.SetDoorOpenLamp(true)
+		elevIO.SetDoorOpenLamp(true)
 	}
 	resetTimer(&doorTimer, doorOpenDuration)
 }

@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"heislab/elevator"
-	"heislab/elevator/elevio"
+	"heislab/elevator/elevIO"
 	"heislab/management"
 	"heislab/network"
 	"heislab/state"
@@ -74,7 +74,7 @@ func main() {
 		NewFloor:    make(chan int),
 		Obstruction: make(chan bool),
 		StopBtn:     make(chan bool),
-		BtnPresses:  make(chan elevio.ButtonEvent),
+		BtnPresses:  make(chan elevIO.ButtonEvent),
 	}
 
 	networkConn := network.InitNetwork(portCfg)

@@ -1,38 +1,38 @@
 package management
 
 import (
-	"heislab/elevator/elevio"
+	"heislab/elevator/elevIO"
 )
 
 type Order struct {
 	OrderPlaced bool
 	Floor       int
-	ButtonType  elevio.ButtonType
+	ButtonType  elevIO.ButtonType
 }
 
-func CreateOrder(btnPress elevio.ButtonEvent) Order {
+func CreateOrder(buttonPress elevIO.ButtonEvent) Order {
 	order := Order{
 		OrderPlaced: true,
-		Floor:       btnPress.Floor,
-		ButtonType:  btnPress.Button,
+		Floor:       buttonPress.Floor,
+		ButtonType:  buttonPress.Button,
 	}
 	return order
 }
 
-func (o Order) IsCab() bool {
-	return o.ButtonType == elevio.CabButton
+func (order Order) IsCab() bool {
+	return order.ButtonType == elevIO.CabButton
 }
 
-func (o Order) IsHallUp() bool {
-	return o.ButtonType == elevio.HallUpButton
+func (order Order) IsHallUp() bool {
+	return order.ButtonType == elevIO.HallUpButton
 }
 
-func (o Order) IsHallDown() bool {
-	return o.ButtonType == elevio.HallDownButton
+func (order Order) IsHallDown() bool {
+	return order.ButtonType == elevIO.HallDownButton
 }
 
-func (o Order) IsActive() bool {
-	return o.OrderPlaced
+func (order Order) IsActive() bool {
+	return order.OrderPlaced
 }
 
 

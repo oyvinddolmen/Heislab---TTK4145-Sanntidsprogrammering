@@ -7,8 +7,8 @@ import (
 )
 
 type PortConfig struct {
-	PeerDiscoveryPort int // Used by peers.Transmitter/Receiver (heartbeats)
-	MessageBcastPort  int // Used by bcast.Transmitter/Receiver (global state)
+	PeerDiscoveryPort int    // Used by peers.Transmitter/Receiver (heartbeats)
+	MessageBcastPort  int    // Used by bcast.Transmitter/Receiver (global state)
 	LocalID           string
 }
 

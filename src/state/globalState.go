@@ -2,7 +2,7 @@ package state
 
 import (
 	"fmt"
-	"heislab/elevator/elevio"
+	"heislab/elevator/elevIO"
 	"heislab/hallRequestAssigner"
 	"heislab/management"
 	"sync"
@@ -16,19 +16,19 @@ type GlobalStateData struct {
 }
 
 type GlobalState struct {
-	mu          sync.Mutex
+	mutex       sync.Mutex
 	data        GlobalStateData
 }
 
 func InitGlobalState(elev *management.Elevator, elevID string) *GlobalState {
-	gs := &GlobalState{}
+	globalState := &GlobalState{}
 
-	gs.data.HallRequests = make([][2]bool, management.NumFloors)
-	gs.data.HallRequestsVersion = make([][2]int, management.NumFloors)
-	gs.data.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
-	gs.data.LocalID = elevID
-	gs.data.States[elevID] = ConvertElevatorToJSON(elev) 
-	return gs
+	globalState.data.HallRequests = make([][2]bool, management.NumFloors)
+	globalState.data.HallRequestsVersion = make([][2]int, management.NumFloors)
+	globalState.data.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
+	globalState.data.LocalID = elevID
+	globalState.data.States[elevID] = ConvertElevatorToJSON(elev) 
+	return globalState
 }
 
 // -------------------- State Conversion --------------------
@@ -77,63 +77,63 @@ func convertDirection(direction management.Direction) string {
 
 // -------------------- Public Methods --------------------
 
-func (gs *GlobalState) UpdateGlobalState(elev *management.Elevator) {
-	gs.mu.Lock()
-	defer gs.mu.Unlock()
-	gs.data.States[elev.ID] = ConvertElevatorToJSON(elev)
+func (globalState *GlobalState) UpdateGlobalState(elev *management.Elevator) {
+	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
+	globalState.data.States[elev.ID] = ConvertElevatorToJSON(elev)
 }
 
-func (gs *GlobalState) AddHallRequest(order management.Order) {
-	gs.mu.Lock()
-	defer gs.mu.Unlock()
-	gs.data.HallRequests[order.Floor][order.ButtonType] = true
+func (globalState *GlobalState) AddHallRequest(order management.Order) {
+	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
+	globalState.data.HallRequests[order.Floor][order.ButtonType] = true
 }
 
-func (gs *GlobalState) IncrementHallRequestVersion(floor int, btn elevio.ButtonType) {
-	gs.mu.Lock()
-	defer gs.mu.Unlock()
-	gs.data.HallRequestsVersion[floor][btn]++
+func (globalState *GlobalState) IncrementHallRequestVersion(floor int, btn elevIO.ButtonType) {
+	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
+	globalState.data.HallRequestsVersion[floor][btn]++
 }
 
-func (gs *GlobalState) SetElevatorToOffline(deadID string) {
-	gs.mu.Lock()
-	defer gs.mu.Unlock()
-	elevState, exists := gs.data.States[deadID]
+func (globalState *GlobalState) SetElevatorToOffline(deadID string) {
+	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
+	elevState, exists := globalState.data.States[deadID]
 	if !exists {
 		return
 	}
 	elevState.Behavior = "offline"
-	gs.data.States[deadID] = elevState
+	globalState.data.States[deadID] = elevState
 }
 
 // SetElevatorState setter en spesifikk elevator state i globalState
-func (gs *GlobalState) SetElevatorGlobalState(elevID string, state hallRequestAssigner.ElevatorStateJSON) {
-	gs.mu.Lock()
-	defer gs.mu.Unlock()
-	gs.data.States[elevID] = state
+func (globalState *GlobalState) SetElevatorGlobalState(elevID string, state hallRequestAssigner.ElevatorStateJSON) {
+	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
+	globalState.data.States[elevID] = state
 }
 
 // GetElevatorState henter state for en spesifikk heis
-func (gs *GlobalState) GetElevatorState(elevID string) (hallRequestAssigner.ElevatorStateJSON, bool) {
-	gs.mu.Lock()
-	defer gs.mu.Unlock()
-	state, ok := gs.data.States[elevID]
+func (globalState *GlobalState) GetElevatorState(elevID string) (hallRequestAssigner.ElevatorStateJSON, bool) {
+	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
+	state, ok := globalState.data.States[elevID]
 	return state, ok
 }
 
 
-func (gs *GlobalState) GetCopy() GlobalStateData {
-	gs.mu.Lock()
-	defer gs.mu.Unlock()
+func (globalState *GlobalState) GetCopy() GlobalStateData {
+	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
 
-	copyState := gs.data
+	copyState := globalState.data
 
 	// deep copy slices
-	copyState.HallRequests = append([][2]bool(nil), gs.data.HallRequests...)
-	copyState.HallRequestsVersion = append([][2]int(nil), gs.data.HallRequestsVersion...)
+	copyState.HallRequests = append([][2]bool(nil), globalState.data.HallRequests...)
+	copyState.HallRequestsVersion = append([][2]int(nil), globalState.data.HallRequestsVersion...)
 
 	newMap := make(map[string]hallRequestAssigner.ElevatorStateJSON)
-	for k, v := range gs.data.States {
+	for k, v := range globalState.data.States {
 		newMap[k] = v
 	}
 	copyState.States = newMap
@@ -141,34 +141,34 @@ func (gs *GlobalState) GetCopy() GlobalStateData {
 	return copyState
 }
 
-func (gs *GlobalState) GetID() string {
-    gs.mu.Lock()
-    defer gs.mu.Unlock()
+func (globalState *GlobalState) GetLocalID() string {
+    globalState.mutex.Lock()
+    defer globalState.mutex.Unlock()
 
-    return gs.data.LocalID
+    return globalState.data.LocalID
 }
 
-func (gs *GlobalState) RemoveHallRequest(floor int, btn elevio.ButtonType) {
-	gs.mu.Lock()
-	gs.data.HallRequests[floor][btn] = false
-	gs.data.HallRequestsVersion[floor][btn]++
-	gs.mu.Unlock()
+func (globalState *GlobalState) RemoveHallRequest(floor int, button elevIO.ButtonType) {
+	globalState.mutex.Lock()
+	globalState.data.HallRequests[floor][button] = false
+	globalState.data.HallRequestsVersion[floor][button]++
+	globalState.mutex.Unlock()
 }
 
-func (gs *GlobalState) PrintGlobalState() {
-	gs.mu.Lock()
-	defer gs.mu.Unlock()
+func (globalState *GlobalState) PrintGlobalState() {
+	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
 
 	fmt.Println("\n========== GLOBAL STATE ==========")
-	fmt.Printf("LocalID: %s\n", gs.data.LocalID)
+	fmt.Printf("LocalID: %s\n", globalState.data.LocalID)
 
 	// ---------------- Hall Requests ----------------
 	fmt.Println("\nHall Requests:")
-	for floor := 0; floor < len(gs.data.HallRequests); floor++ {
-		up := gs.data.HallRequests[floor][0]
-		down := gs.data.HallRequests[floor][1]
-		upV := gs.data.HallRequestsVersion[floor][0]
-		downV := gs.data.HallRequestsVersion[floor][1]
+	for floor := 0; floor < len(globalState.data.HallRequests); floor++ {
+		up := globalState.data.HallRequests[floor][0]
+		down := globalState.data.HallRequests[floor][1]
+		upV := globalState.data.HallRequestsVersion[floor][0]
+		downV := globalState.data.HallRequestsVersion[floor][1]
 
 		fmt.Printf("Floor %d | Up: %v (v%d) | Down: %v (v%d)\n",
 			floor, up, upV, down, downV)
@@ -177,7 +177,7 @@ func (gs *GlobalState) PrintGlobalState() {
 	// ---------------- Elevator States ----------------
 	fmt.Println("\nElevator States:")
 
-	for id, state := range gs.data.States {
+	for id, state := range globalState.data.States {
 
 		fmt.Printf("\nElevator %s\n", id)
 		fmt.Printf("  Behavior:  %s\n", state.Behavior)

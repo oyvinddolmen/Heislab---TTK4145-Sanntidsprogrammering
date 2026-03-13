@@ -2,7 +2,7 @@ package management
 
 import (
 	"fmt"
-	"heislab/elevator/elevio"
+	"heislab/elevator/elevIO"
 )
 
 type Elevator struct {
@@ -19,9 +19,10 @@ type Elevator struct {
 func InitElevator(elevID string, numFloors int) Elevator {
     noOrder := Order{
         Floor: 1,
-        ButtonType: elevio.CabButton,
+        ButtonType: elevIO.CabButton,
         OrderPlaced: false,
     }
+
     elev := Elevator{
         ID:           elevID,
         State:        ElevInit,
@@ -31,11 +32,12 @@ func InitElevator(elevID string, numFloors int) Elevator {
         CurrentOrder: noOrder,
         LastOrder:    noOrder,
     }
+
     for floor := 0; floor < numFloors; floor++ {
         for button := 0; button < NumButtons; button++ {
             elev.Orders[floor][button] = Order{
                 Floor: floor,
-                ButtonType: elevio.ButtonType(button),
+                ButtonType: elevIO.ButtonType(button),
                 OrderPlaced: false,
             }
         }
@@ -98,17 +100,17 @@ func (elev *Elevator) GetCurrentOrderFloor() int {
 }
 
 // Printer alle relevante ordre- og tilstandsinformasjon for heisen
-func (e *Elevator) PrintOrdersDebug() {
-	fmt.Println("Elev floor:", e.Floor)
-	fmt.Println("MoveDir:", e.MoveDir)
-	fmt.Println("LastOrder.ButtonType (0: HallUp , 1: HallDown , 2: Caborder):", e.LastOrder.ButtonType)
+func (elev *Elevator) PrintOrdersDebug() {
+	fmt.Println("Elev floor:", elev.Floor)
+	fmt.Println("MoveDir:", elev.MoveDir)
+	fmt.Println("LastOrder.ButtonType (0: HallUp , 1: HallDown , 2: Caborder):", elev.LastOrder.ButtonType)
 
-	for f := 0; f < NumFloors; f++ {
+	for floor := 0; floor < NumFloors; floor++ {
 		fmt.Println(
-			"floor", f,
-			"cab", e.Orders[f][elevio.CabButton].OrderPlaced,
-			"up", e.Orders[f][elevio.HallUpButton].OrderPlaced,
-			"down", e.Orders[f][elevio.HallDownButton].OrderPlaced,
+			"floor", floor,
+			"cab", elev.Orders[floor][elevIO.CabButton].OrderPlaced,
+			"up", elev.Orders[floor][elevIO.HallUpButton].OrderPlaced,
+			"down", elev.Orders[floor][elevIO.HallDownButton].OrderPlaced,
 		)
 	}
 }
