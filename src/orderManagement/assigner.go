@@ -16,7 +16,7 @@ func RunHallAssignerAndApplyAssignments(elev *management.Elevator, gs *state.Glo
 
 	filtered := make(map[string]hallRequestAssigner.ElevatorStateJSON)
 	for id, s := range gsCopy.States {
-		if s.Behavior != "offline" {
+		if s.Behavior != "offline" && s.CanTakeOrders {
 			filtered[id] = s
 		}
 	}

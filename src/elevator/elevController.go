@@ -1,6 +1,7 @@
 package elevator
 
 import (
+	"fmt"
 	"heislab/elevator/elevio"
 	"heislab/management"
 	"time"
@@ -10,10 +11,9 @@ import (
 // Elevator initialization
 // -------------------------------------------------------------------------------------------
 
-
 func InitHardware(address string, numFloors int) {
-    elevio.Init(address, numFloors)
-    InitLights(numFloors)
+	elevio.Init(address, numFloors)
+	InitLights(numFloors)
 }
 
 // Moves elevator safely to ground floor
@@ -69,6 +69,48 @@ func stopElevator(elev *management.Elevator) {
 // sets elevio motordirection to stop
 func setMotorStop() {
 	elevio.SetMotorDirection(elevio.MotorDirStop)
+}
+
+// -------------------------------------------------------------------------------------------
+// Timer functions
+// -------------------------------------------------------------------------------------------
+
+func startNewDoorTimer() {
+	if doorTimer != nil {
+		doorTimer.Stop()
+	}
+	doorTimer = time.NewTimer(doorOpenDuration)
+}
+
+func startNewCanTakeOrdersTimer() {
+	if canTakeOrdersTimer != nil {
+		canTakeOrdersTimer.Stop()
+	}
+	canTakeOrdersTimer = time.NewTimer(canTakeOrdersCountdown)
+	fmt.Println("Started a new canTakeOrdersTimer ----------")
+}
+
+func turnOffCanTakeOrdersTimer() {
+	if canTakeOrdersTimer != nil {
+		fmt.Println("Turned off canTakeOrdersTimer ----------")
+		canTakeOrdersTimer.Stop()
+	}
+}
+
+func resetCanTakeOrdersTimer() {
+	if canTakeOrdersTimer != nil {
+		canTakeOrdersTimer.Reset(canTakeOrdersCountdown)
+	}
+	fmt.Println("Reset canTakeOrderTimer ---------------")
+}
+
+func startIdleTimer() {
+	if IdleTimer != nil {
+		IdleTimer.Stop()
+	}
+	IdleTimer = time.NewTimer(IdleTimeOut)
+	fmt.Println("Started Idle Timer ---------------")
+
 }
 
 // -------------------------------------------------------------------------------------------

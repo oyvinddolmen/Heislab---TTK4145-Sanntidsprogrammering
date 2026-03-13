@@ -6,14 +6,15 @@ import (
 )
 
 type Elevator struct {
-	State        State
-	ID           string
-	Floor        int // -1 if between floors
-	LastFloor    int
-	MoveDir      Direction
-	CurrentOrder Order
-	LastOrder    Order
-	Orders       [NumFloors][NumButtons]Order
+	State         State
+	ID            string
+	Floor         int // -1 if between floors
+	LastFloor     int
+	MoveDir       Direction
+	CurrentOrder  Order
+	LastOrder     Order
+	CanTakeOrders bool
+	Orders        [NumFloors][NumButtons]Order
 }
 
 const (
@@ -25,6 +26,7 @@ const (
 )
 
 type State int
+
 const (
 	ElevInit        = 1
 	ElevIdle        = 2
@@ -35,6 +37,7 @@ const (
 )
 
 type Direction int
+
 const (
 	DirDown Direction = -1
 	DirIdle Direction = 0
@@ -51,6 +54,11 @@ func (elev *Elevator) SetElevLastFloor(lastFloor int) {
 
 func (elev *Elevator) SetElevFloor(floor int) {
 	elev.Floor = floor
+}
+
+func (elev *Elevator) SetElevCanTakeOrders(canTakeOrders bool) {
+	elev.CanTakeOrders = canTakeOrders
+	fmt.Println("Set elev can take order:", canTakeOrders)
 }
 
 func (elev *Elevator) GetFloor() int {

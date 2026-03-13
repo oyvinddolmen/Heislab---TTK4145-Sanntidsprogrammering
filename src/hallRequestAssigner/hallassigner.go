@@ -8,10 +8,11 @@ import (
 )
 
 type ElevatorStateJSON struct {
-	Behavior    string `json:"behaviour"` // idle, moving, doorOpen, offline
-	Floor       int    `json:"floor"`
-	Direction   string `json:"direction"`
-	CabRequests []bool `json:"cabRequests"`
+	Behavior      string `json:"behaviour"` // idle, moving, doorOpen, offline
+	Floor         int    `json:"floor"`
+	Direction     string `json:"direction"`
+	CabRequests   []bool `json:"cabRequests"`
+	CanTakeOrders bool   `json:"canTakeOrders"`
 }
 
 type AssignerInput struct {

@@ -41,10 +41,11 @@ func ConvertElevatorToJSON(elev *management.Elevator) hallRequestAssigner.Elevat
 	}
 
 	return hallRequestAssigner.ElevatorStateJSON{
-		Behavior:    convertState(elev.State),
-		Floor:       elev.LastFloor,
-		Direction:   convertDirection(elev.MoveDir),
-		CabRequests: cabRequests,
+		Behavior:      convertState(elev.State),
+		Floor:         elev.LastFloor,
+		Direction:     convertDirection(elev.MoveDir),
+		CabRequests:   cabRequests,
+		CanTakeOrders: elev.CanTakeOrders,
 	}
 }
 
@@ -56,10 +57,6 @@ func convertState(state management.State) string {
 		return "moving"
 	case management.ElevInit:
 		return "moving"
-	case management.ElevStop:
-		return "doorOpen"
-	case management.ElevOffline:
-		return "offline"
 	default:
 		return "idle"
 	}
