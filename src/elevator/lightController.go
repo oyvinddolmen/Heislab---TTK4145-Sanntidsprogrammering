@@ -1,7 +1,7 @@
 package elevator
 
 import (
-	"heislab/elevator/elevio"
+	"heislab/elevator/elevIO"
 	"heislab/management"
 	"heislab/state"
 )
@@ -9,13 +9,13 @@ import (
 // Turns off all hall and cab lights
 func InitLights(numFloors int) {
 	for floor := 0; floor < numFloors; floor++ {
-		elevio.SetButtonLamp(elevio.CabButton, floor, false)
+		elevIO.SetButtonLamp(elevIO.CabButton, floor, false)
 
 		if floor < numFloors-1 {
-			elevio.SetButtonLamp(elevio.HallUpButton, floor, false)
+			elevIO.SetButtonLamp(elevIO.HallUpButton, floor, false)
 		}
 		if floor > 0 {
-			elevio.SetButtonLamp(elevio.HallDownButton, floor, false)
+			elevIO.SetButtonLamp(elevIO.HallDownButton, floor, false)
 		}
 	}
 }
@@ -26,8 +26,8 @@ func setHallLight(gs *state.GlobalState) {
 
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for button := 0; button < 2; button++ {
-			elevio.SetButtonLamp(
-				elevio.ButtonType(button),
+			elevIO.SetButtonLamp(
+				elevIO.ButtonType(button),
 				floor,
 				state.HallRequests[floor][button],
 			)
@@ -46,8 +46,8 @@ func SetAllLights(elevator *management.Elevator, gs *state.GlobalState) {
 
 			// for cab-orders
 			if button == 2 {
-				elevio.SetButtonLamp(
-					elevio.ButtonType(button),
+				elevIO.SetButtonLamp(
+					elevIO.ButtonType(button),
 					floor,
 					order.OrderPlaced,
 				)
@@ -55,8 +55,8 @@ func SetAllLights(elevator *management.Elevator, gs *state.GlobalState) {
 
 			} else {
 				// for hall-orders
-				elevio.SetButtonLamp(
-					elevio.ButtonType(button),
+				elevIO.SetButtonLamp(
+					elevIO.ButtonType(button),
 					floor,
 					globalState.HallRequests[floor][button],
 				)
@@ -67,5 +67,5 @@ func SetAllLights(elevator *management.Elevator, gs *state.GlobalState) {
 }
 
 func setFloorIndicator(floor int) {
-	elevio.SetFloorIndicator(floor)
+	elevIO.SetFloorIndicator(floor)
 }

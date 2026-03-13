@@ -9,15 +9,15 @@ import (
 
 // RunHallAssigner kopierer hall requests og online elevator states,
 // kaller hallRequestAssigner, og oppdaterer lokalt heis-objekt
-func RunHallAssignerAndApplyAssignments(elev *management.Elevator, gs *state.GlobalState) {
-	gsCopy := gs.GetCopy()
+func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *state.GlobalState) {
+	globalStateCopy := globalState.GetCopy()
 
-	hallRequests := append([][2]bool(nil), gsCopy.HallRequests...)
+	hallRequests := append([][2]bool(nil), globalStateCopy.HallRequests...)
 
 	filtered := make(map[string]hallRequestAssigner.ElevatorStateJSON)
-	for id, s := range gsCopy.States {
+	for elevID, s := range globalStateCopy.States {
 		if s.Behavior != "offline" && s.CanTakeOrders {
-			filtered[id] = s
+			filtered[elevID] = s
 		}
 	}
 
@@ -40,11 +40,11 @@ func applyAssignments(elev *management.Elevator, assignments map[string][][2]boo
 	//fmt.Println("assigned: ", assigned)
 
 	for floor := 0; floor < management.NumFloors; floor++ {
-		for btn := 0; btn < management.CabButton; btn++ { // only hall buttons
-			if assigned[floor][btn] {
-				elev.Orders[floor][btn].OrderPlaced = true
+		for button := 0; button < management.CabButton; button++ { // only hall buttons
+			if assigned[floor][button] {
+				elev.Orders[floor][button].OrderPlaced = true
 			} else {
-				elev.Orders[floor][btn].OrderPlaced = false
+				elev.Orders[floor][button].OrderPlaced = false
 			}
 		}
 	}

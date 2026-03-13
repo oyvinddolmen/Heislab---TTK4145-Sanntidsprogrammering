@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"heislab/elevator"
-	"heislab/elevator/elevio"
+	"heislab/elevator/elevIO"
 	"heislab/management"
 	"heislab/network"
 	"heislab/state"
@@ -29,20 +29,10 @@ func main() {
 	*/
 
 	/*
-			TODO
+		TODO:
 
-			- Det hender heisen havner i en evig loop og kjører kontinuerlig opp og ned mellom 0. og 3. etasje
-				- Dette skjer når den har fått utdelt en order, men en annen heiser tar orderen og fjerner den. Heisen har da fortsatt orderen og kjører dit, men vil aldri stoppe der.
-
-			- Dersom man trykker inne stopp knappen når man har en order, må en annen heis ta over orderen
-
-		 	- Må kunne starte å kjøre igjen etter å ha trykket stopp knappen
-
-			- Dersom man stopper i en hall-button down, men de som går på heisen trykker cab call oppover, skal heisen "si ifra" at
-			  den kjører en annen retning (ifølge sepeca til oppgaven) Tobias: Fixed
-
-			- Når en heis starter opp skal den ikke kjøre til etasje 0 og skru av alle lys, men motta hvor den er fra andre heiser.
-			  Dersom den ikke mottar noe skal den skru av lys og kjøre til etasje 0 [FIXED]
+		- Kutte power når heisen er mellom etasjer
+		- sjeke ut specsa til oppgaven hva heisen skal gjøre dersom obstruksjon går på mens heisen kjører
 
 	*/
 
@@ -74,14 +64,14 @@ func main() {
 		NewFloor:    make(chan int),
 		Obstruction: make(chan bool),
 		StopBtn:     make(chan bool),
-		BtnPresses:  make(chan elevio.ButtonEvent),
+		BtnPresses:  make(chan elevIO.ButtonEvent),
 	}
 
 	networkConn := network.InitNetwork(portCfg)
 
 	elevator.InitHardware(elevAddr, management.NumFloors)
 
-	elev := elevator.InitElevator(elevID, management.NumFloors)
+	elev := management.InitElevator(elevID, management.NumFloors)
 
 	gs := state.InitGlobalState(&elev, elevID)
 

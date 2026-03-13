@@ -1,14 +1,14 @@
 package network
 
 import (
-	"heislab/network/bcast"
+	"heislab/network/broadcast"
 	"heislab/network/peers"
 	"heislab/state"
 )
 
 type PortConfig struct {
-	PeerDiscoveryPort int // Used by peers.Transmitter/Receiver (heartbeats)
-	MessageBcastPort  int // Used by bcast.Transmitter/Receiver (global state)
+	PeerDiscoveryPort int    // Used by peers.Transmitter/Receiver (heartbeats)
+	MessageBcastPort  int    // Used by bcast.Transmitter/Receiver (global state)
 	LocalID           string
 }
 
@@ -39,8 +39,8 @@ func InitNetwork(config PortConfig) NetworkConn {
 	globalStateRx := make(chan state.GlobalStateData, 16)
 	worldViewUpdate := make(chan bool, 1)
 
-	go bcast.Transmitter(config.MessageBcastPort, globalStateTx)
-	go bcast.Receiver(config.MessageBcastPort, globalStateRx)
+	go broadcast.Transmitter(config.MessageBcastPort, globalStateTx)
+	go broadcast.Receiver(config.MessageBcastPort, globalStateRx)
 
 	return NetworkConn{
 		HeartbeatEnabled: heartbeatEnabled,

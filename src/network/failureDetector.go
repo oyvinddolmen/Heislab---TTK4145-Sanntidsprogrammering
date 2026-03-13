@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 	"heislab/hallRequestAssigner"
-	"heislab/elevator/elevio"
+	"heislab/elevator/elevIO"
 	"heislab/state"
 )
 
@@ -15,7 +15,7 @@ const HeartbeatTimeout = 2 * time.Second
 // Track last time we heard from each elevator
 var (
 	lastSeen = make(map[string]time.Time)
-	mu       sync.Mutex
+	mutex      sync.Mutex
 )
 
 // Called whenever we receive state from another elevator
@@ -24,56 +24,56 @@ func RegisterHeartbeat(localID string, remoteElevID string) {
 		// Ignore empty/self IDs
 		return
 	}
-	mu.Lock()
+	mutex.Lock()
 	lastSeen[remoteElevID] = time.Now()
-	mu.Unlock()
+	mutex.Unlock()
 }
 
 // Periodically check if elevators have died
-func StartFailureDetector(gs *state.GlobalState, worldViewUpdate chan bool) {
+func StartFailureDetector(globalState *state.GlobalState, worldViewUpdate chan bool) {
 	ticker := time.NewTicker(200 * time.Millisecond)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		checkForDeadElevators(gs, worldViewUpdate)
+		checkForDeadElevators(globalState, worldViewUpdate)
 	}
 }
 
 // Detect and handle dead elevators
-func checkForDeadElevators(gs *state.GlobalState, worldViewUpdate chan bool) {
+func checkForDeadElevators(globalState *state.GlobalState, worldViewUpdate chan bool) {
 	now := time.Now()
-	localID := gs.GetID()
+	localID := globalState.GetLocalID()
 
-	mu.Lock()
-	defer mu.Unlock()
+	mutex.Lock()
+	defer mutex.Unlock()
 
-	for id, t := range lastSeen {
-		if id == localID { // we do not delete ourself
+	for elevID, t := range lastSeen {
+		if elevID == localID { // we do not delete ourself
 			continue
 		}
 
 		if now.Sub(t) > HeartbeatTimeout {
-			fmt.Println("---------- ELEV", id, "went offline -------------")
-			gs.SetElevatorToOffline(id)
-			delete(lastSeen, id)
+			fmt.Println("---------- ELEV", elevID, "went offline -------------")
+			globalState.SetElevatorToOffline(elevID)
+			delete(lastSeen, elevID)
 			worldViewUpdate <- true
 		}
 	}
 }
 
 // listens and merge global view received on startup. Returns true if received view 
-func RecoverOnStartup(elev *management.Elevator, gs *state.GlobalState, rx <-chan state.GlobalStateData) bool {
-	elevID := gs.GetID()
+func RecoverOnStartup(elev *management.Elevator, globalState *state.GlobalState, globalStateRx <-chan state.GlobalStateData) bool {
+	elevID := globalState.GetLocalID()
 	timeout := time.After(1 * time.Second)
 	var recovered *hallRequestAssigner.ElevatorStateJSON
 
 	for {
 		select {
-		case globalState := <-rx:
-			gs.Merge(globalState)
+		case newGlobalState := <-globalStateRx:
+			globalState.Merge(newGlobalState)
 
-			if st, exists := globalState.States[elevID]; exists {
-				tmp := st
+			if state, exists := newGlobalState.States[elevID]; exists {
+				tmp := state
 				recovered = &tmp
 			}
 		case <-timeout:
@@ -89,18 +89,18 @@ RECOVER:
 		if recovered.Floor >= 0 && recovered.Floor < management.NumFloors {
 			elev.Floor = recovered.Floor
 			elev.LastFloor = recovered.Floor
-			elevio.SetFloorIndicator(recovered.Floor)
+			elevIO.SetFloorIndicator(recovered.Floor)
 		}
 
 		for floor := 0; floor < management.NumFloors && floor < len(recovered.CabRequests); floor++ {
 			if recovered.CabRequests[floor] {
-				elev.Orders[floor][elevio.CabButton].OrderPlaced = true
-				elevio.SetButtonLamp(elevio.CabButton, floor, true)
+				elev.Orders[floor][elevIO.CabButton].OrderPlaced = true
+				elevIO.SetButtonLamp(elevIO.CabButton, floor, true)
 			}
 		}
 	}
 
 	// Register local elevator state in global state after recovery.
-	gs.SetElevatorGlobalState(elevID, state.ConvertElevatorToJSON(elev))
+	globalState.SetElevatorGlobalState(elevID, state.ConvertElevatorToJSON(elev))
 	return true
 }

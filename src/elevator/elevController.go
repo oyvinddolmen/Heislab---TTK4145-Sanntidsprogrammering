@@ -1,8 +1,7 @@
 package elevator
 
 import (
-	"fmt"
-	"heislab/elevator/elevio"
+	"heislab/elevator/elevIO"
 	"heislab/management"
 	"time"
 )
@@ -12,38 +11,24 @@ import (
 // -------------------------------------------------------------------------------------------
 
 func InitHardware(address string, numFloors int) {
-	elevio.Init(address, numFloors)
-	InitLights(numFloors)
-}
-
-// Moves elevator safely to ground floor
-func GoToGroundFloor(elev *management.Elevator) {
-	elevio.SetMotorDirection(elevio.MotorDirDown)
-	for elevio.GetFloor() != 0 {
-		time.Sleep(10 * time.Millisecond)
-	}
-	elevio.SetMotorDirection(elevio.MotorDirStop)
-	elevio.SetFloorIndicator(0)
-	elev.Floor = 0
-	elev.LastFloor = 0
-	elev.MoveDir = management.DirIdle
-	elev.State = management.ElevIdle
+    elevIO.InitElevatorIO(address, numFloors)
+    InitLights(numFloors)
 }
 
 // moves elevator to closest floor under elevators position
 func GoToNearestFloorUnder(elev *management.Elevator) {
-	floor := elevio.GetFloor()
+	floor := elevIO.GetFloor()
 
 	if floor == -1 {
-		elevio.SetMotorDirection(elevio.MotorDirDown)
+		elevIO.SetMotorDirection(elevIO.MotorDirDown)
 	}
-	for elevio.GetFloor() == -1 {
+	for elevIO.GetFloor() == -1 {
 		time.Sleep(10 * time.Millisecond)
 	}
-	elevio.SetMotorDirection(elevio.MotorDirStop)
-	elevio.SetFloorIndicator(elevio.GetFloor())
-	elev.Floor = elevio.GetFloor()
-	elev.LastFloor = elevio.GetFloor()
+	elevIO.SetMotorDirection(elevIO.MotorDirStop)
+	elevIO.SetFloorIndicator(elevIO.GetFloor())
+	elev.Floor = elevIO.GetFloor()
+	elev.LastFloor = elevIO.GetFloor()
 	elev.MoveDir = management.DirIdle
 	elev.State = management.ElevIdle
 }
@@ -52,82 +37,21 @@ func GoToNearestFloorUnder(elev *management.Elevator) {
 func setMotorFromDir(elev *management.Elevator) {
 	switch elev.MoveDir {
 	case management.DirUp:
-		elevio.SetMotorDirection(elevio.MotorDirUp)
+		elevIO.SetMotorDirection(elevIO.MotorDirUp)
 	case management.DirDown:
-		elevio.SetMotorDirection(elevio.MotorDirDown)
+		elevIO.SetMotorDirection(elevIO.MotorDirDown)
 	default:
-		elevio.SetMotorDirection(elevio.MotorDirStop)
+		elevIO.SetMotorDirection(elevIO.MotorDirStop)
 	}
 }
 
-// Sets elevio motor direction to stop and sets move direction in Elev struct
+// Sets elevIO motor direction to stop and sets move direction in Elev struct
 func stopElevator(elev *management.Elevator) {
-	elevio.SetMotorDirection(elevio.MotorDirStop)
+	elevIO.SetMotorDirection(elevIO.MotorDirStop)
 	elev.SetMoveDir(management.DirIdle)
 }
 
-// sets elevio motordirection to stop
+// sets elevIO motordirection to stop
 func setMotorStop() {
-	elevio.SetMotorDirection(elevio.MotorDirStop)
-}
-
-// -------------------------------------------------------------------------------------------
-// Timer functions
-// -------------------------------------------------------------------------------------------
-
-func startNewDoorTimer() {
-	if doorTimer != nil {
-		doorTimer.Stop()
-	}
-	doorTimer = time.NewTimer(doorOpenDuration)
-}
-
-func startNewCanTakeOrdersTimer() {
-	if canTakeOrdersTimer != nil {
-		canTakeOrdersTimer.Stop()
-	}
-	canTakeOrdersTimer = time.NewTimer(canTakeOrdersCountdown)
-	fmt.Println("Started a new canTakeOrdersTimer ----------")
-}
-
-func turnOffCanTakeOrdersTimer() {
-	if canTakeOrdersTimer != nil {
-		fmt.Println("Turned off canTakeOrdersTimer ----------")
-		canTakeOrdersTimer.Stop()
-	}
-}
-
-func resetCanTakeOrdersTimer() {
-	if canTakeOrdersTimer != nil {
-		canTakeOrdersTimer.Reset(canTakeOrdersCountdown)
-	}
-	fmt.Println("Reset canTakeOrderTimer ---------------")
-}
-
-func startIdleTimer() {
-	if IdleTimer != nil {
-		IdleTimer.Stop()
-	}
-	IdleTimer = time.NewTimer(IdleTimeOut)
-	fmt.Println("Started Idle Timer ---------------")
-
-}
-
-// -------------------------------------------------------------------------------------------
-// Utility
-// -------------------------------------------------------------------------------------------
-
-// Checks if elevator has reached the current order
-//func reachedDestination(floor int) bool {
-//	if management.Elev.State == management.ElevMoving && floor == management.Elev.CurrentOrder.Floor {
-//		return true
-//	}
-//	return false
-//}
-
-type ElevChannels struct {
-	NewFloor    chan int
-	Obstruction chan bool
-	StopBtn     chan bool
-	BtnPresses  chan elevio.ButtonEvent // Getting buttonpresses on the physical control box
+	elevIO.SetMotorDirection(elevIO.MotorDirStop)
 }

@@ -4,24 +4,24 @@ import (
 	"heislab/management"
 )
 
-func (gs *GlobalState) NewWorldView(remote GlobalStateData) bool {
-	gs.mu.Lock()
-	defer gs.mu.Unlock()
+func (globalState *GlobalState) NewWorldView(remote GlobalStateData) bool {
+	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
 
 	// hall request changes
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for button := 0; button < 2; button++ {
-			localV := gs.data.HallRequestsVersion[floor][button]
-			remoteV := remote.HallRequestsVersion[floor][button]
+			localVersion := globalState.data.HallRequestsVersion[floor][button]
+			remoteVersion := remote.HallRequestsVersion[floor][button]
 
-			if remoteV > localV {
+			if remoteVersion > localVersion {
 				return true
 			}
 
 			// same version but remote has request we don't
-			if remoteV == localV &&
+			if remoteVersion == localVersion &&
 				remote.HallRequests[floor][button] &&
-				!gs.data.HallRequests[floor][button] {
+				!globalState.data.HallRequests[floor][button] {
 				return true
 			}
 		}
@@ -29,7 +29,7 @@ func (gs *GlobalState) NewWorldView(remote GlobalStateData) bool {
 
 	// elevator state changes
 	senderID := remote.LocalID
-	if senderID == "" || senderID == gs.data.LocalID {
+	if senderID == "" || senderID == globalState.data.LocalID {
 		return false
 	}
 
@@ -38,7 +38,7 @@ func (gs *GlobalState) NewWorldView(remote GlobalStateData) bool {
 		return false
 	}
 
-	localState, exists := gs.data.States[senderID]
+	localState, exists := globalState.data.States[senderID]
 	if !exists {
 		return true
 	}
@@ -62,32 +62,32 @@ func (gs *GlobalState) NewWorldView(remote GlobalStateData) bool {
 	return false
 }
 
-func (gs *GlobalState) Merge(remote GlobalStateData) {
-	gs.mu.Lock()
-	defer gs.mu.Unlock()
+func (globalState *GlobalState) Merge(remote GlobalStateData) {
+	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
 
-	localID := gs.data.LocalID
+	localID := globalState.data.LocalID
 	senderID := remote.LocalID
 
 	if senderID != localID {
 		if st, exists := remote.States[senderID]; exists {
-			gs.data.States[senderID] = st
+			globalState.data.States[senderID] = st
 		}
 	}
-	chooseLatestHallRequestVersions(&gs.data, remote)
+	chooseLatestHallRequestVersion(&globalState.data, remote)
 }
 
-func chooseLatestHallRequestVersions(local *GlobalStateData, remote GlobalStateData) {
+func chooseLatestHallRequestVersion(local *GlobalStateData, remote GlobalStateData) {
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for button := 0; button < 2; button++ {
-			localV := local.HallRequestsVersion[floor][button]
-			remoteV := remote.HallRequestsVersion[floor][button]
+			localVersion := local.HallRequestsVersion[floor][button]
+			remoteVersion := remote.HallRequestsVersion[floor][button]
 
 			switch {
-			case remoteV > localV:
+			case remoteVersion > localVersion:
 				local.HallRequests[floor][button] = remote.HallRequests[floor][button]
-				local.HallRequestsVersion[floor][button] = remoteV
-			case remoteV == localV:
+				local.HallRequestsVersion[floor][button] = remoteVersion
+			case remoteVersion == localVersion:
 				if remote.HallRequests[floor][button] {
 					local.HallRequests[floor][button] = true
 				}

@@ -1,7 +1,7 @@
-package bcast
+package broadcast
 
 import (
-	"heislab/network/conn"
+	"heislab/network/connection"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -24,7 +24,7 @@ func Transmitter(port int, chans ...interface{}) {
 		typeNames[i] = reflect.TypeOf(ch).Elem().String()
 	}
 
-	conn := conn.DialBroadcastUDP(port)
+	conn := connection.DialBroadcastUDP(port)
 	addr, _ := net.ResolveUDPAddr("udp4", fmt.Sprintf("255.255.255.255:%d", port))
 	for {
 		chosen, value, _ := reflect.Select(selectCases)
@@ -54,11 +54,11 @@ func Receiver(port int, chans ...interface{}) {
 	}
 
 	var buf [bufSize]byte
-	conn := conn.DialBroadcastUDP(port)
+	conn := connection.DialBroadcastUDP(port)
 	for {
-		n, _, e := conn.ReadFrom(buf[0:])
-		if e != nil {
-			fmt.Printf("bcast.Receiver(%d, ...):ReadFrom() failed: \"%+v\"\n", port, e)
+		n, _, err := conn.ReadFrom(buf[0:])
+		if err != nil {
+			fmt.Printf("bcast.Receiver(%d, ...):ReadFrom() failed: \"%+v\"\n", port, err)
 		}
 
 		var ttj typeTaggedJSON
