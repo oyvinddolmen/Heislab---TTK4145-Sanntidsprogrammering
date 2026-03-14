@@ -31,13 +31,13 @@ func main() {
 	/*
 		TODO:
 
+		- vi har to hallUpAndHallDownAndCabAtDifDir variabler, en med stor første bokstav og den andre ikke
 		- Kutte power når heisen er mellom etasjer
 		- sjeke ut specsa til oppgaven hva heisen skal gjøre dersom obstruksjon går på mens heisen kjører
-
+		- før innlevering: fjerne alle print-og debugfunksjoner. Fjerne README fra utlevert kode
 	*/
 
 	// ---------------- Flags for ID and Ports --------------------
-
 	simHost := flag.String("simHost", "localhost", "Simulator host")
 	simPort := flag.Int("simPort", 15657, "Simulator port")
 	simAddr := flag.String("simAddr", "", "Full simulator address host:port (overrides simHost/simPort)")
@@ -63,20 +63,17 @@ func main() {
 	elevChannels := elevator.ElevChannels{
 		NewFloor:    make(chan int),
 		Obstruction: make(chan bool),
-		StopBtn:     make(chan bool),
 		BtnPresses:  make(chan elevIO.ButtonEvent),
 	}
 
+	// --------------------- Init elev and globalState ----------------------
 	networkConn := network.InitNetwork(portCfg)
-
 	elevator.InitHardware(elevAddr, management.NumFloors)
-
 	elev := management.InitElevator(elevID, management.NumFloors)
-
 	gs := state.InitGlobalState(&elev, elevID)
 
+	// --------------------- Recover on startup ----------------------
 	recoveredElev := network.RecoverOnStartup(&elev, gs, networkConn.GlobalStateRx)
-
 	elevator.GoToNearestFloorUnder(&elev)
 	gs.UpdateGlobalState(&elev)
 	if recoveredElev {

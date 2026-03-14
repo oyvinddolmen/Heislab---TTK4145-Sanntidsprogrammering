@@ -23,6 +23,10 @@ const doorOpenDuration = 2 * time.Second
 const canTakeOrdersCountdown = 5 * time.Second
 const IdleTimeOut = 2 * time.Second
 
+// -------------------------------------------------------------------------------------------
+// Setting state and on-state-entry functions
+// -------------------------------------------------------------------------------------------
+
 // sets elevators state and call on-state-entry functions
 func setElevState(elev *management.Elevator, gs *state.GlobalState, state management.State) {
 	prev := elev.State
@@ -64,12 +68,14 @@ func onMovingEntry(elev *management.Elevator) {
 // turns on door open lamp and starts new timer
 func onObstructionEntry(elev *management.Elevator) {
 	stopElevator(elev)
-	if elev.GetFloor() != -1 {
-		elevIO.SetDoorOpenLamp(true)
-	}
+	setDoorOpenLampIfNotBetweenFloors()
 	startNewDoorTimer()
 	startNewCanTakeOrdersTimer()
 }
+
+// -------------------------------------------------------------------------------------------
+// FSM stopping and moving logic
+// -------------------------------------------------------------------------------------------
 
 // creates order, updates global state and runs hallassigner
 func handleButtonPress(elev *management.Elevator, gs *state.GlobalState, btn elevIO.ButtonEvent, networkChannels network.NetworkConn) bool {
@@ -163,6 +169,7 @@ func UpdateCurrentOrderAndsafeDrive(elev *management.Elevator, gs *state.GlobalS
 	setElevState(elev, nil, management.ElevMoving)
 }
 
+// runs hallAssigner and sets all order lights
 func updateAssignments(elev *management.Elevator, gs *state.GlobalState) {
 	orderManagement.RunHallAssignerAndApplyAssignments(elev, gs)
 	SetAllLights(elev, gs)
@@ -170,7 +177,6 @@ func updateAssignments(elev *management.Elevator, gs *state.GlobalState) {
 
 // checks if there are any hall-orders at the same floor as elevator
 func needToOpenDoors(elev *management.Elevator, gs *state.GlobalState) bool {
-
 	currentFloor := elev.Floor
 	if currentFloor == -1 {
 		return false

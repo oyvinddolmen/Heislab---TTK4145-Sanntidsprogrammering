@@ -20,7 +20,7 @@ func InitLights(numFloors int) {
 	}
 }
 
-// sets the hall light based on global state. For synchronizing hall lights on all elevs
+// sets the hall light based on global state
 func setHallLight(gs *state.GlobalState) {
 	state := gs.GetCopy()
 
@@ -52,7 +52,6 @@ func SetAllLights(elevator *management.Elevator, gs *state.GlobalState) {
 					order.OrderPlaced,
 				)
 
-
 			} else {
 				// for hall-orders
 				elevIO.SetButtonLamp(
@@ -68,4 +67,10 @@ func SetAllLights(elevator *management.Elevator, gs *state.GlobalState) {
 
 func setFloorIndicator(floor int) {
 	elevIO.SetFloorIndicator(floor)
+}
+
+func setDoorOpenLampIfNotBetweenFloors() {
+	if elevIO.GetFloor() != -1 {
+		elevIO.SetDoorOpenLamp(true)
+	}
 }

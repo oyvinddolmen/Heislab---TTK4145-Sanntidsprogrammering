@@ -1,4 +1,3 @@
-
 package orderManagement
 
 import (
@@ -7,6 +6,7 @@ import (
 	"heislab/state"
 )
 
+// TODO: COMMENT WHAT DOES THIS FUNCTION DO??
 func ClearOrdersAndTurnOffLights(elev *management.Elevator, globalState *state.GlobalState) bool {
 	currentFloor := elev.Floor
 	if elev.CurrentOrder.Floor == currentFloor {
@@ -14,7 +14,6 @@ func ClearOrdersAndTurnOffLights(elev *management.Elevator, globalState *state.G
 		elev.LastOrder = elev.CurrentOrder
 	}
 
-	// Cab orders are always removed
 	if elev.Orders[currentFloor][elevIO.CabButton].OrderPlaced {
 		RemoveCabOrder(globalState, elev, currentFloor)
 	}
@@ -35,20 +34,20 @@ func ClearOrdersAndTurnOffLights(elev *management.Elevator, globalState *state.G
 
 	default:
 
-	if elev.Orders[currentFloor][elevIO.HallUpButton].OrderPlaced &&
-		elev.LastOrder.ButtonType == elevIO.HallDownButton &&
-		CabOrderAbove(elev, currentFloor) {
-		RemoveHallUp(globalState, elev, currentFloor)
-		return true
+		if elev.Orders[currentFloor][elevIO.HallUpButton].OrderPlaced &&
+			elev.LastOrder.ButtonType == elevIO.HallDownButton &&
+			CabOrderAbove(elev, currentFloor) {
+			RemoveHallUp(globalState, elev, currentFloor)
+			return true
 
-	} else if elev.Orders[currentFloor][elevIO.HallDownButton].OrderPlaced &&
-				elev.LastOrder.ButtonType == elevIO.HallUpButton &&
-				CabOrderBelow(elev, currentFloor) {
-					RemoveHallDown(globalState, elev, currentFloor)
-					return true
-				}
+		} else if elev.Orders[currentFloor][elevIO.HallDownButton].OrderPlaced &&
+			elev.LastOrder.ButtonType == elevIO.HallUpButton &&
+			CabOrderBelow(elev, currentFloor) {
+			RemoveHallDown(globalState, elev, currentFloor)
+			return true
+		}
 	}
-	
+
 	return false
 }
 
@@ -98,7 +97,6 @@ func OrdersBelow(elev *management.Elevator, floorUnderInspection int) bool {
 			}
 		}
 	}
-
 	return false
 }
 

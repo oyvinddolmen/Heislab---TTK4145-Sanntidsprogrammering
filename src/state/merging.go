@@ -4,6 +4,7 @@ import (
 	"heislab/management"
 )
 
+// checks if incoming worldView differ from current worldView
 func (globalState *GlobalState) NewWorldView(remote GlobalStateData) bool {
 	globalState.mutex.Lock()
 	defer globalState.mutex.Unlock()
@@ -62,6 +63,7 @@ func (globalState *GlobalState) NewWorldView(remote GlobalStateData) bool {
 	return false
 }
 
+// merges new global view by choosing newest version available
 func (globalState *GlobalState) Merge(remote GlobalStateData) {
 	globalState.mutex.Lock()
 	defer globalState.mutex.Unlock()

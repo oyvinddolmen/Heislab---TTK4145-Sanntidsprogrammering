@@ -31,7 +31,9 @@ func InitGlobalState(elev *management.Elevator, elevID string) *GlobalState {
 	return globalState
 }
 
-// -------------------- State Conversion --------------------
+// -------------------------------------------------------------------------------------------
+// State conversion
+// -------------------------------------------------------------------------------------------
 
 func ConvertElevatorToJSON(elev *management.Elevator) hallRequestAssigner.ElevatorStateJSON {
 	cabRequests := make([]bool, management.NumFloors)
@@ -72,7 +74,9 @@ func convertDirection(direction management.Direction) string {
 	}
 }
 
-// -------------------- Public Methods --------------------
+// -------------------------------------------------------------------------------------------
+// Public methods
+// -------------------------------------------------------------------------------------------
 
 func (globalState *GlobalState) UpdateGlobalState(elev *management.Elevator) {
 	globalState.mutex.Lock()

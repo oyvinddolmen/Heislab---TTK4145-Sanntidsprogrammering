@@ -7,7 +7,6 @@ import (
 	"heislab/state"
 )
 
-// updates current order based on elev's moving direction
 func UpdateCurrentOrder(elev *management.Elevator, gs *state.GlobalState) {
 	elev.PrintOrdersDebug()
 	floor := elev.Floor
@@ -48,16 +47,15 @@ func UpdateCurrentOrder(elev *management.Elevator, gs *state.GlobalState) {
 			return
 		}
 	}
-	//fmt.Println("UpdateCurrentOrder did not find any orders")
 	elev.CurrentOrder.OrderPlaced = false
 }
 
-// Find orders upwards
+// TODO: what does this function do?
 func assignUp(gs *state.GlobalState, elev *management.Elevator, startFloor int) bool {
 
 	for floor := startFloor + 1; floor < management.NumFloors; floor++ {
 
-		// CAB prioritet
+		// CAB priority
 		if CabOrderAtFloor(elev, floor) {
 			if elev.LastOrder.ButtonType == elevIO.HallDownButton && HallOrderUpAtFloor(elev, elev.Floor) {
 				RemoveHallUp(gs, elev, elev.Floor)
@@ -67,25 +65,24 @@ func assignUp(gs *state.GlobalState, elev *management.Elevator, startFloor int) 
 			return true
 		}
 
-		// hallUp hvis vi går opp
+		// hallUp if going up
 		if HallOrderUpAtFloor(elev, floor) && elev.LastOrder.ButtonType != elevIO.HallDownButton {
 			elev.LastOrder = elev.CurrentOrder
 			elev.CurrentOrder = elev.Orders[floor][elevIO.HallUpButton]
 			return true
 		}
 
-		// hvis ingen over og hallOrdreLogikk oppfylt→ kan ta hallDown
-		if !OrdersAbove(elev, floor) && HallOrderDownAtFloor(elev, floor) && 
-					(elev.LastOrder.ButtonType == elevIO.CabButton || (elev.LastOrder.ButtonType == elevIO.HallUpButton && floor == management.NumFloors-1)) {
+		if !OrdersAbove(elev, floor) && HallOrderDownAtFloor(elev, floor) &&
+			(elev.LastOrder.ButtonType == elevIO.CabButton || (elev.LastOrder.ButtonType == elevIO.HallUpButton && floor == management.NumFloors-1)) {
 			elev.LastOrder = elev.CurrentOrder
 			elev.CurrentOrder = elev.Orders[floor][elevIO.HallDownButton]
 			return true
 		}
 	}
-
 	return false
 }
 
+// TODO: what does this function do?
 func assignDown(gs *state.GlobalState, elev *management.Elevator, startFloor int) bool {
 	for floor := startFloor - 1; floor >= 0; floor-- {
 		// CAB prioritet
@@ -133,6 +130,10 @@ func AnyOrderAtFloor(elev *management.Elevator, floor int) bool {
 	return CabOrderAtFloor(elev, floor) ||
 		HallOrderUpAtFloor(elev, floor) ||
 		HallOrderDownAtFloor(elev, floor)
+}
+
+func CurrentOrderPlaced(elev *management.Elevator) bool {
+	return elev.CurrentOrder.OrderPlaced
 }
 
 func PrintOrders(elev *management.Elevator) {

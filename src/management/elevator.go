@@ -18,34 +18,34 @@ type Elevator struct {
 }
 
 func InitElevator(elevID string, numFloors int) Elevator {
-    noOrder := Order{
-        Floor: 1,
-        ButtonType: elevIO.CabButton,
-        OrderPlaced: false,
-    }
+	noOrder := Order{
+		Floor:       1,
+		ButtonType:  elevIO.CabButton,
+		OrderPlaced: false,
+	}
 
-    elev := Elevator{
-        ID:           elevID,
-        State:        ElevInit,
-        Floor:        0,
-        LastFloor:    0,
-        MoveDir:      DirIdle,
-        CurrentOrder: noOrder,
-        LastOrder:    noOrder,
-    }
+	elev := Elevator{
+		ID:           elevID,
+		State:        ElevInit,
+		Floor:        0,
+		LastFloor:    0,
+		MoveDir:      DirIdle,
+		CurrentOrder: noOrder,
+		LastOrder:    noOrder,
+	}
 
-    for floor := 0; floor < numFloors; floor++ {
-        for button := 0; button < NumButtons; button++ {
-            elev.Orders[floor][button] = Order{
-                Floor: floor,
-                ButtonType: elevIO.ButtonType(button),
-                OrderPlaced: false,
-            }
-        }
-    }
-    return elev
+	// create elev's order-matrix
+	for floor := 0; floor < numFloors; floor++ {
+		for button := 0; button < NumButtons; button++ {
+			elev.Orders[floor][button] = Order{
+				Floor:       floor,
+				ButtonType:  elevIO.ButtonType(button),
+				OrderPlaced: false,
+			}
+		}
+	}
+	return elev
 }
-
 
 const (
 	hallUpButton   = 0
@@ -61,9 +61,7 @@ const (
 	ElevInit        = 1
 	ElevIdle        = 2
 	ElevMoving      = 3
-	ElevStop        = 4
-	ElevObstruction = 5
-	ElevOffline     = 6
+	ElevObstruction = 4
 )
 
 type Direction int
@@ -73,6 +71,10 @@ const (
 	DirIdle Direction = 0
 	DirUp   Direction = 1
 )
+
+// -------------------------------------------------------------------------------------------
+// Get and set functions
+// -------------------------------------------------------------------------------------------
 
 func (elev *Elevator) SetMoveDir(moveDir Direction) {
 	elev.MoveDir = moveDir
@@ -108,6 +110,7 @@ func (elev *Elevator) GetCurrentOrderFloor() int {
 }
 
 // Printer alle relevante ordre- og tilstandsinformasjon for heisen
+// TODO: remove before handing in code
 func (elev *Elevator) PrintOrdersDebug() {
 	fmt.Println("Elev floor:", elev.Floor)
 	fmt.Println("MoveDir:", elev.MoveDir)

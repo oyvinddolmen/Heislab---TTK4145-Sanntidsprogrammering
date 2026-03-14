@@ -67,6 +67,5 @@ func AssignHallRequests(
 		return nil, fmt.Errorf("json.Unmarshal failed: %w\nOutput: %s", err, string(outputBytes))
 	}
 
-	//fmt.Println("AHR ferdig kjørt. Output:", output)
 	return output, nil
 }
