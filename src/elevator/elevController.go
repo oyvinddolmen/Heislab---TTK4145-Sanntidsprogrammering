@@ -25,6 +25,7 @@ func GoToNearestFloorUnder(elev *management.Elevator) {
 	for elevIO.GetFloor() == -1 {
 		time.Sleep(10 * time.Millisecond)
 	}
+	
 	elevIO.SetMotorDirection(elevIO.MotorDirStop)
 	elevIO.SetFloorIndicator(elevIO.GetFloor())
 	elev.Floor = elevIO.GetFloor()

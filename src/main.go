@@ -37,7 +37,7 @@ func main() {
 		- før innlevering: fjerne alle print-og debugfunksjoner. Fjerne README fra utlevert kode
 	*/
 
-	// ---------------- Flags for ID and Ports --------------------
+	// ---------------- FlaglobalState for ID and Ports --------------------
 	simHost := flag.String("simHost", "localhost", "Simulator host")
 	simPort := flag.Int("simPort", 15657, "Simulator port")
 	simAddr := flag.String("simAddr", "", "Full simulator address host:port (overrides simHost/simPort)")
@@ -61,41 +61,41 @@ func main() {
 
 	// --------------------- Channels ----------------------
 	elevChannels := elevator.ElevChannels{
-		NewFloor:    make(chan int),
-		Obstruction: make(chan bool),
-		BtnPresses:  make(chan elevIO.ButtonEvent),
+		NewFloor:      make(chan int),
+		Obstruction:   make(chan bool),
+		ButtonPresses: make(chan elevIO.ButtonEvent),
 	}
 
 	// --------------------- Init elev and globalState ----------------------
 	networkConn := network.InitNetwork(portCfg)
 	elevator.InitHardware(elevAddr, management.NumFloors)
 	elev := management.InitElevator(elevID, management.NumFloors)
-	gs := state.InitGlobalState(&elev, elevID)
+	globalState := state.InitGlobalState(&elev, elevID)
 
 	// --------------------- Recover on startup ----------------------
-	recoveredElev := network.RecoverOnStartup(&elev, gs, networkConn.GlobalStateRx)
+	recoveredElev := network.RecoverOnStartup(&elev, globalState, networkConn.GlobalStateRx)
 	elevator.GoToNearestFloorUnder(&elev)
-	gs.UpdateGlobalState(&elev)
+	globalState.UpdateGlobalState(&elev)
 	if recoveredElev {
-		elevator.UpdateCurrentOrderAndsafeDrive(&elev, gs)
+		elevator.UpdateCurrentOrderAndsafeDrive(&elev, globalState)
 	}
 
 	// ------------------- Network ---------------------
 	broadcastInterval := 20 * time.Millisecond
 	go network.ListenAndMergeGlobalState(
-		gs,
+		globalState,
 		networkConn.GlobalStateRx,
 		networkConn.WorldViewUpdate,
 	)
-	go network.StartFailureDetector(gs, networkConn.WorldViewUpdate)
+	go network.StartFailureDetector(globalState, networkConn.WorldViewUpdate)
 	go network.SendGlobalStatePeriodically(
 		&elev,
-		gs,
+		globalState,
 		networkConn.GlobalStateTx,
 		broadcastInterval,
 	)
 
 	// ----------------- Start elevator FSM -------------------
-	go elevator.RunElevator(&elev, gs, elevChannels, networkConn)
+	go elevator.RunElevator(&elev, globalState, elevChannels, networkConn)
 	select {}
 }

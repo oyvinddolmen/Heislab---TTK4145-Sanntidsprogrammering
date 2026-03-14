@@ -11,17 +11,16 @@ import (
 // kaller hallRequestAssigner, og oppdaterer lokalt heis-objekt
 func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *state.GlobalState) {
 	globalStateCopy := globalState.GetCopy()
+	hallRequests := append([][2]bool(nil), globalStateCopy.HallRequests...) // TODO: Unødvendig?
 
-	hallRequests := append([][2]bool(nil), globalStateCopy.HallRequests...)
-
-	filtered := make(map[string]hallRequestAssigner.ElevatorStateJSON)
-	for elevID, s := range globalStateCopy.States {
-		if s.Behavior != "offline" && s.CanTakeOrders {
-			filtered[elevID] = s
+	activeElevators := make(map[string]hallRequestAssigner.ElevatorStateJSON)
+	for elevID, state := range globalStateCopy.States {
+		if state.Behavior != "offline" && state.CanTakeOrders {
+			activeElevators[elevID] = state
 		}
 	}
 
-	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
+	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, activeElevators)
 	if err != nil {
 		fmt.Println("assigner failed: %w", err)
 	}
