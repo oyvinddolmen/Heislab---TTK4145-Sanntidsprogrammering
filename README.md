@@ -13,6 +13,9 @@ for å starte opp simulatoren:
  1.-    dmd -w -g Simulator-v2-master/src/sim_server.d Simulator-v2-master/src/timer_event.d -ofSimElevatorServer
 2.-    ./SimElevatorServer
 
+Linux:
+
+
 
 Hvordan jobbe i branches og merge:
 

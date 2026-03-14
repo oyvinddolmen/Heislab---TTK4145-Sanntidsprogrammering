@@ -30,9 +30,9 @@ func main() {
 
 	/*
 		TODO:
-
-		- vi har to hallUpAndHallDownAndCabAtDifDir variabler, en med stor første bokstav og den andre ikke
-		- Kutte power når heisen er mellom etasjer
+		- hvert sekund må den kjøre run hallassigner og drive to destination uansett når idle (FIXED IDLE TIMER)
+		- vi har to hallUpAndHallDownAndCabAtDifDir variabler, en med stor første bokstav og den andre ikke (FIXED)
+		- Kutte power når heisen er mellom etasjer (tror den er good, men må teste på fysisk heis)
 		- sjeke ut specsa til oppgaven hva heisen skal gjøre dersom obstruksjon går på mens heisen kjører
 		- før innlevering: fjerne alle print-og debugfunksjoner. Fjerne README fra utlevert kode
 	*/
