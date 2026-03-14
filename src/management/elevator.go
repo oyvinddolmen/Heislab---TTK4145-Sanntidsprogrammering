@@ -17,7 +17,13 @@ type Elevator struct {
 	Orders        [NumFloors][NumButtons]Order
 }
 
-func InitElevator(elevID string, numFloors int) Elevator {
+type ElevChannels struct {
+	NewFloor      chan int
+	Obstruction   chan bool
+	ButtonPresses chan elevIO.ButtonEvent
+}
+
+func InitElevator(elevID string, numFloors int) (Elevator, ElevChannels) {
 	noOrder := Order{
 		Floor:       1,
 		ButtonType:  elevIO.CabButton,
@@ -34,6 +40,12 @@ func InitElevator(elevID string, numFloors int) Elevator {
 		LastOrder:    noOrder,
 	}
 
+	elevChannels := ElevChannels{
+		NewFloor:      make(chan int),
+		Obstruction:   make(chan bool),
+		ButtonPresses: make(chan elevIO.ButtonEvent),
+	}
+
 	// create elev's order-matrix
 	for floor := 0; floor < numFloors; floor++ {
 		for button := 0; button < NumButtons; button++ {
@@ -44,7 +56,7 @@ func InitElevator(elevID string, numFloors int) Elevator {
 			}
 		}
 	}
-	return elev
+	return elev, elevChannels
 }
 
 const (

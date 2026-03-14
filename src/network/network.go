@@ -2,7 +2,6 @@ package network
 
 import (
 	"heislab/network/broadcast"
-	"heislab/network/peers"
 	"heislab/state"
 )
 
@@ -12,41 +11,25 @@ type PortConfig struct {
 	LocalID           string
 }
 
-type NetworkConn struct {
-	// Peer discovery
-	HeartbeatEnabled chan<- bool
-	PeerUpdates      <-chan peers.PeerUpdate
-
+type NetworkConnection struct {
 	// GlobalState messaging
-	GlobalStateTx chan<- state.GlobalStateData
-	GlobalStateRx <-chan state.GlobalStateData
-
-	// World view update
-	WorldViewUpdate chan bool
+	OutgoingGlobalStateChannel chan<- state.GlobalStateData
+	IncomingGlobalStateChannel <-chan state.GlobalStateData
+	WorldViewUpdateChannel 	   chan bool
 }
 
-// Initializes network goroutines for peer discovery and global state broadcasts
-func InitNetwork(config PortConfig) NetworkConn {
-	// --- peer discovery channels ---
-	heartbeatEnabled := make(chan bool, 1)
-	peerUpdates := make(chan peers.PeerUpdate, 16)
+// Initializes network channels and goroutines for global state broadcasts
+func InitNetwork(config PortConfig) NetworkConnection {
+	outgoingGlobalStateChannel := make(chan state.GlobalStateData, 16)
+	incomingGlobalStateChannel := make(chan state.GlobalStateData, 16)
+	worldViewUpdateChannel := make(chan bool, 1)
 
-	go peers.Transmitter(config.PeerDiscoveryPort, config.LocalID, heartbeatEnabled)
-	go peers.Receiver(config.PeerDiscoveryPort, peerUpdates)
+	go broadcast.GlobalStateTransmitter(config.MessageBcastPort, outgoingGlobalStateChannel)
+	go broadcast.GlobalStateReceiver(config.MessageBcastPort, incomingGlobalStateChannel)
 
-	// --- global state channels ---
-	globalStateTx := make(chan state.GlobalStateData, 16)
-	globalStateRx := make(chan state.GlobalStateData, 16)
-	worldViewUpdate := make(chan bool, 1)
-
-	go broadcast.Transmitter(config.MessageBcastPort, globalStateTx)
-	go broadcast.Receiver(config.MessageBcastPort, globalStateRx)
-
-	return NetworkConn{
-		HeartbeatEnabled: heartbeatEnabled,
-		PeerUpdates:      peerUpdates,
-		GlobalStateTx:    globalStateTx,
-		GlobalStateRx:    globalStateRx,
-		WorldViewUpdate:  worldViewUpdate,
+	return NetworkConnection{
+		OutgoingGlobalStateChannel: outgoingGlobalStateChannel,
+		IncomingGlobalStateChannel: incomingGlobalStateChannel,
+		WorldViewUpdateChannel:  	worldViewUpdateChannel,
 	}
 }

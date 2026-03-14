@@ -54,8 +54,8 @@ import (
 
 func DialBroadcastUDP(port int) net.PacketConn {
     config := &net.ListenConfig{Control: 
-        func (network, address string, conn syscall.RawConn) error {
-            return conn.Control(func(descriptor uintptr) {
+        func (network, address string, connection syscall.RawConn) error {
+            return connection.Control(func(descriptor uintptr) {
                 syscall.SetsockoptInt(syscall.Handle(descriptor), syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
                 syscall.SetsockoptInt(syscall.Handle(descriptor), syscall.SOL_SOCKET, syscall.SO_BROADCAST, 1)
             })

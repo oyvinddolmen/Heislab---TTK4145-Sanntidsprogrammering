@@ -8,7 +8,7 @@ import (
 )
 
 type ElevatorStateJSON struct {
-	Behavior      string `json:"behaviour"` // idle, moving, doorOpen, offline
+	Behavior      string `json:"behavior"` // idle, moving, doorOpen, offline
 	Floor         int    `json:"floor"`
 	Direction     string `json:"direction"`
 	CabRequests   []bool `json:"cabRequests"`
@@ -36,7 +36,7 @@ func AssignHallRequests(
 	if err != nil {
 		return nil, fmt.Errorf("json.Marshal failed: %w", err)
 	}
-	jsonStr := string(jsonBytes)
+	jsonString := string(jsonBytes)
 	//fmt.Println("JSON sendt til hall_request_assigner:", jsonStr)
 
 	assignerPath := ""
@@ -50,7 +50,7 @@ func AssignHallRequests(
 	}
 
 	// Run binary file
-	cmd := exec.Command(assignerPath, "--input", jsonStr)
+	cmd := exec.Command(assignerPath, "--input", jsonString)
 
 	outputBytes, err := cmd.CombinedOutput()
 	if err != nil {

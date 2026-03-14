@@ -6,6 +6,8 @@ import (
 	"heislab/state"
 )
 
+const broadcastInterval = 20 * time.Millisecond
+
 // Listens for incoming worldViews, updates globalState and sends on worldView-channel
 func ListenAndMergeGlobalState(globalState *state.GlobalState, globalStateRx <-chan state.GlobalStateData, worldViewUpdate chan bool) {
 	localID := globalState.GetLocalID()
@@ -25,8 +27,8 @@ func ListenAndMergeGlobalState(globalState *state.GlobalState, globalStateRx <-c
 	}
 }
 
-func SendGlobalStatePeriodically(elev *management.Elevator, globalState *state.GlobalState, globalStateTx chan<- state.GlobalStateData, interval time.Duration) {
-	ticker := time.NewTicker(interval)
+func SendGlobalStatePeriodically(elev *management.Elevator, globalState *state.GlobalState, globalStateTx chan<- state.GlobalStateData) {
+	ticker := time.NewTicker(broadcastInterval)
 	defer ticker.Stop()
 
 	for range ticker.C {

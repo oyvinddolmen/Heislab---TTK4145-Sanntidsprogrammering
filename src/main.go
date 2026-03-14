@@ -4,11 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"heislab/elevator"
-	"heislab/elevator/elevIO"
 	"heislab/management"
 	"heislab/network"
 	"heislab/state"
-	"time"
 )
 
 func main() {
@@ -42,7 +40,7 @@ func main() {
 	simPort := flag.Int("simPort", 15657, "Simulator port")
 	simAddr := flag.String("simAddr", "", "Full simulator address host:port (overrides simHost/simPort)")
 	peersPort := flag.Int("peersPort", 15667, "UDP port for peer discovery")
-	bcastPort := flag.Int("bcastPort", 15668, "UDP port for global state broadcast")
+	broadcastPort := flag.Int("bcastPort", 15668, "UDP port for global state broadcast")
 	elevIDFlag := flag.String("id", "1", "Elevator ID (optional)")
 	flag.Parse()
 
@@ -55,47 +53,38 @@ func main() {
 	// ------------- Port Configuration --------------------
 	portCfg := network.PortConfig{
 		PeerDiscoveryPort: *peersPort,
-		MessageBcastPort:  *bcastPort,
+		MessageBcastPort:  *broadcastPort,
 		LocalID:           elevID,
 	}
 
-	// --------------------- Channels ----------------------
-	elevChannels := elevator.ElevChannels{
-		NewFloor:      make(chan int),
-		Obstruction:   make(chan bool),
-		ButtonPresses: make(chan elevIO.ButtonEvent),
-	}
-
-	// --------------------- Init elev and globalState ----------------------
-	networkConn := network.InitNetwork(portCfg)
+	// --------------------- Init elev, network and globalState ----------------------
+	networkConnection := network.InitNetwork(portCfg)
 	elevator.InitHardware(elevAddr, management.NumFloors)
-	elev := management.InitElevator(elevID, management.NumFloors)
+	elev, elevChannels := management.InitElevator(elevID, management.NumFloors)
 	globalState := state.InitGlobalState(&elev, elevID)
 
 	// --------------------- Recover on startup ----------------------
-	recoveredElev := network.RecoverOnStartup(&elev, globalState, networkConn.GlobalStateRx)
+	recoveredElev := network.RecoverOnStartup(&elev, globalState, networkConnection.IncomingGlobalStateChannel)
 	elevator.GoToNearestFloorUnder(&elev)
 	globalState.UpdateGlobalState(&elev)
 	if recoveredElev {
 		elevator.UpdateCurrentOrderAndsafeDrive(&elev, globalState)
 	}
 
-	// ------------------- Network ---------------------
-	broadcastInterval := 20 * time.Millisecond
+	// ------------------- Communication ---------------------
 	go network.ListenAndMergeGlobalState(
 		globalState,
-		networkConn.GlobalStateRx,
-		networkConn.WorldViewUpdate,
+		networkConnection.IncomingGlobalStateChannel,
+		networkConnection.WorldViewUpdateChannel,
 	)
-	go network.StartFailureDetector(globalState, networkConn.WorldViewUpdate)
+	go network.StartFailureDetector(globalState, networkConnection.WorldViewUpdateChannel)
 	go network.SendGlobalStatePeriodically(
 		&elev,
 		globalState,
-		networkConn.GlobalStateTx,
-		broadcastInterval,
+		networkConnection.OutgoingGlobalStateChannel,
 	)
 
 	// ----------------- Start elevator FSM -------------------
-	go elevator.RunElevator(&elev, globalState, elevChannels, networkConn)
+	go elevator.RunElevator(&elev, globalState, elevChannels, networkConnection)
 	select {}
 }

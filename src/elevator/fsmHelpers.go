@@ -29,13 +29,13 @@ const IdleTimeOut = 2 * time.Second
 // -------------------------------------------------------------------------------------------
 
 // sets elevators state and call on-state-entry functions
-func setElevState(elev *management.Elevator, gs *state.GlobalState, state management.State) {
+func setElevState(elev *management.Elevator, globalState *state.GlobalState, state management.State) {
 	prev := elev.State
 	elev.State = state
 
 	switch state {
 	case management.ElevIdle:
-		onIdleEntry(elev, gs)
+		onIdleEntry(elev, globalState)
 	case management.ElevMoving:
 		onMovingEntry(elev)
 	case management.ElevObstruction:
@@ -46,13 +46,13 @@ func setElevState(elev *management.Elevator, gs *state.GlobalState, state manage
 }
 
 // turns off door open and stop lamp, and sets motor dir based on next order
-func onIdleEntry(elev *management.Elevator, gs *state.GlobalState) {
+func onIdleEntry(elev *management.Elevator, globalState *state.GlobalState) {
 	elevIO.SetDoorOpenLamp(false)
 	elevIO.SetStopLamp(false)
 	elev.SetElevFloor(elevIO.GetFloor())
-	updateAssignments(elev, gs)
-	UpdateCurrentOrderAndsafeDrive(elev, gs)
-	SetAllLights(elev, gs)
+	updateAssignments(elev, globalState)
+	UpdateCurrentOrderAndsafeDrive(elev, globalState)
+	SetAllLights(elev, globalState)
 	turnOffCanTakeOrdersTimer()
 	elev.SetElevCanTakeOrders(true)
 	startIdleTimer()
@@ -79,25 +79,25 @@ func onObstructionEntry(elev *management.Elevator) {
 // -------------------------------------------------------------------------------------------
 
 // creates order, updates global state and runs hallassigner
-func handleButtonPress(elev *management.Elevator, gs *state.GlobalState, btn elevIO.ButtonEvent, networkChannels network.NetworkConn) bool {
-	order := management.CreateOrder(btn)
+func handleButtonPress(elev *management.Elevator, globalState *state.GlobalState, button elevIO.ButtonEvent, networkChannels network.NetworkConnection) bool {
+	order := management.CreateOrder(button)
 
 	// Ignore button press if we are already at the floor and serving it, but open door
 	if order.Floor == elev.GetFloor() {
-		setElevState(elev, gs, management.ElevObstruction)
+		setElevState(elev, globalState, management.ElevObstruction)
 		return true
 	}
 	if order.ButtonType == management.CabButton {
 		elev.AddCabOrderToElevator(order)
-		gs.UpdateGlobalState(elev)
+		globalState.UpdateGlobalState(elev)
 	} else {
-		gs.AddHallRequest(order)
-		gs.IncrementHallRequestVersion(order.Floor, order.ButtonType)
+		globalState.AddHallRequest(order)
+		globalState.IncrementHallRequestVersion(order.Floor, order.ButtonType)
 	}
 
-	network.SendGlobalState(elev, gs, networkChannels.GlobalStateTx)
-	orderManagement.RunHallAssignerAndApplyAssignments(elev, gs)
-	SetAllLights(elev, gs)
+	network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
+	orderManagement.RunHallAssignerAndApplyAssignments(elev, globalState)
+	SetAllLights(elev, globalState)
 	return false
 }
 
@@ -158,8 +158,8 @@ func ShouldStop(elev *management.Elevator, floor int) bool {
 }
 
 // updates current order and sets motor direction
-func UpdateCurrentOrderAndsafeDrive(elev *management.Elevator, gs *state.GlobalState) {
-	orderManagement.UpdateCurrentOrder(elev, gs)
+func UpdateCurrentOrderAndsafeDrive(elev *management.Elevator, globalState *state.GlobalState) {
+	orderManagement.UpdateCurrentOrder(elev, globalState)
 	UpdateMoveDir(elev)
 	if elev.MoveDir == management.DirIdle {
 		setMotorStop()
@@ -171,19 +171,19 @@ func UpdateCurrentOrderAndsafeDrive(elev *management.Elevator, gs *state.GlobalS
 }
 
 // runs hallAssigner and sets all order lights
-func updateAssignments(elev *management.Elevator, gs *state.GlobalState) {
-	orderManagement.RunHallAssignerAndApplyAssignments(elev, gs)
-	SetAllLights(elev, gs)
+func updateAssignments(elev *management.Elevator, globalState *state.GlobalState) {
+	orderManagement.RunHallAssignerAndApplyAssignments(elev, globalState)
+	SetAllLights(elev, globalState)
 }
 
 // checks if there are any hall-orders at the same floor as elevator
-func needToOpenDoors(elev *management.Elevator, gs *state.GlobalState) bool {
+func needToOpenDoors(elev *management.Elevator, globalState *state.GlobalState) bool {
 	currentFloor := elev.Floor
 	if currentFloor == -1 {
 		return false
 	}
 
-	hallRequests := gs.GetCopy().HallRequests
+	hallRequests := globalState.GetCopy().HallRequests
 
 	for btn := 0; btn < 2; btn++ {
 		if hallRequests[currentFloor][btn] {

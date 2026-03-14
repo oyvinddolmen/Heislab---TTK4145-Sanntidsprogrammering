@@ -21,8 +21,8 @@ func InitLights(numFloors int) {
 }
 
 // sets the hall light based on global state
-func setHallLight(gs *state.GlobalState) {
-	state := gs.GetCopy()
+func setHallLight(globalState *state.GlobalState) {
+	state := globalState.GetCopy()
 
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for button := 0; button < 2; button++ {
@@ -36,8 +36,8 @@ func setHallLight(gs *state.GlobalState) {
 }
 
 // sets cab and hall lights
-func SetAllLights(elevator *management.Elevator, gs *state.GlobalState) {
-	globalState := gs.GetCopy()
+func SetAllLights(elevator *management.Elevator, globalState *state.GlobalState) {
+	globalStateCopy := globalState.GetCopy()
 
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for button := 0; button < management.NumButtons; button++ {
@@ -57,7 +57,7 @@ func SetAllLights(elevator *management.Elevator, gs *state.GlobalState) {
 				elevIO.SetButtonLamp(
 					elevIO.ButtonType(button),
 					floor,
-					globalState.HallRequests[floor][button],
+					globalStateCopy.HallRequests[floor][button],
 				)
 			}
 

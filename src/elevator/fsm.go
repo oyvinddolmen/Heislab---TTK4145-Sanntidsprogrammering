@@ -9,17 +9,11 @@ import (
 	"time"
 )
 
-type ElevChannels struct {
-	NewFloor       chan int
-	Obstruction    chan bool
-	ButtonPresses  chan elevIO.ButtonEvent
-}
-
 func RunElevator(
 	elev *management.Elevator,
 	globalState *state.GlobalState,
-	elevChannels ElevChannels,
-	networkChannels network.NetworkConn,
+	elevChannels management.ElevChannels,
+	networkChannels network.NetworkConnection,
 ) {
 	go elevIO.PollFloorSensor(elevChannels.NewFloor)
 	go elevIO.PollButtons(elevChannels.ButtonPresses)
@@ -35,8 +29,8 @@ func RunElevator(
 func runFSM(
 	elev *management.Elevator,
 	globalState *state.GlobalState,
-	elevChannels ElevChannels,
-	networkChannels network.NetworkConn,
+	elevChannels management.ElevChannels,
+	networkChannels network.NetworkConnection,
 ) {
 	for {
 		switch elev.State {
@@ -44,7 +38,7 @@ func runFSM(
 		// ----------------- Case: IDLE -------------------------
 		case management.ElevIdle:
 			select {
-			case <-networkChannels.WorldViewUpdate:
+			case <-networkChannels.WorldViewUpdateChannel:
 				if needToOpenDoors(elev, globalState) {
 					orderManagement.ServeHallRequestsAtCurrentFloor(elev, globalState)
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
@@ -83,7 +77,7 @@ func runFSM(
 		// ----------------- Case: MOVING -------------------------
 		case management.ElevMoving:
 			select {
-			case <-networkChannels.WorldViewUpdate:
+			case <-networkChannels.WorldViewUpdateChannel:
 				updateAssignments(elev, globalState)
 			case floor := <-elevChannels.NewFloor:
 				setFloorIndicator(floor)
@@ -113,7 +107,7 @@ func runFSM(
 		// ----------------- Case: OBSTRUCTION -------------------------
 		case management.ElevObstruction:
 			select {
-			case <-networkChannels.WorldViewUpdate:
+			case <-networkChannels.WorldViewUpdateChannel:
 				if needToOpenDoors(elev, globalState) {
 					orderManagement.ServeHallRequestsAtCurrentFloor(elev, globalState)
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
