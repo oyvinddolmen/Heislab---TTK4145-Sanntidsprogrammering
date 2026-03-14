@@ -48,22 +48,23 @@ func runFSM(
 			case <-networkChannels.WorldViewUpdate:
 				if needToOpenDoors(elev, gs) {
 					orderManagement.ServeHallRequestsAtCurrentFloor(elev, gs)
-					orderManagement.ClearOrdersAndTurnOffLights(elev, gs)
-					SetAllLights(elev, gs)
+					orderManagement.ClearOrdersAtCurrentFloor(elev, gs)
+					SetAllLights(elev, gs) //Trenger denne?
 					setElevState(elev, gs, management.ElevObstruction)
 				} else {
 					updateAssignments(elev, gs)
 					UpdateCurrentOrderAndsafeDrive(elev, gs)
 				}
 			case btn := <-elevChannels.BtnPresses:
-				HallUpAndHallDownAndCabAtDifferentDir := false
+				HallOrderConflict := false	//Becomes true if HallUp and HallDown active at current floor and 
+											//Caborder is pressed at a different direction then the current dirction
 				OrderWasAtCurrentFloor := handleButtonPress(elev, gs, btn, networkChannels)
 				if !OrderWasAtCurrentFloor {
 					if elev.GetFloor() != -1 {
-						HallUpAndHallDownAndCabAtDifferentDir = orderManagement.ClearOrdersAndTurnOffLights(elev, gs)
+						HallOrderConflict = orderManagement.ClearOrdersAtCurrentFloor(elev, gs)
 						updateAssignments(elev, gs)
 					}
-					if HallUpAndHallDownAndCabAtDifferentDir {
+					if HallOrderConflict {
 						setElevState(elev, gs, management.ElevObstruction)
 					} else {
 						UpdateCurrentOrderAndsafeDrive(elev, gs)
@@ -92,7 +93,7 @@ func runFSM(
 					setMotorStop()
 					elev.SetElevFloor(floor)
 					ChooseDirectionAfterStop(elev, floor)
-					orderManagement.ClearOrdersAndTurnOffLights(elev, gs)
+					orderManagement.ClearOrdersAtCurrentFloor(elev, gs)
 					updateAssignments(elev, gs)
 					if orderManagement.CurrentOrderPlaced(elev) {
 						orderManagement.UpdateCurrentOrder(elev, gs)
@@ -115,7 +116,7 @@ func runFSM(
 			case <-networkChannels.WorldViewUpdate:
 				if needToOpenDoors(elev, gs) {
 					orderManagement.ServeHallRequestsAtCurrentFloor(elev, gs)
-					orderManagement.ClearOrdersAndTurnOffLights(elev, gs)
+					orderManagement.ClearOrdersAtCurrentFloor(elev, gs)
 					SetAllLights(elev, gs)
 					startIdleTimer()
 				} else {
@@ -129,7 +130,7 @@ func runFSM(
 				if !OrderWasAtCurrentFloor {
 
 					if elev.GetFloor() != -1 {
-						mixedHallOrders = orderManagement.ClearOrdersAndTurnOffLights(elev, gs)
+						mixedHallOrders = orderManagement.ClearOrdersAtCurrentFloor(elev, gs)
 						updateAssignments(elev, gs)
 					}
 					if mixedHallOrders || needToOpenDoors(elev, gs) {

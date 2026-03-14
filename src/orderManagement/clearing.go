@@ -6,8 +6,8 @@ import (
 	"heislab/state"
 )
 
-// TODO: COMMENT WHAT DOES THIS FUNCTION DO??
-func ClearOrdersAndTurnOffLights(elev *management.Elevator, globalState *state.GlobalState) bool {
+// Clears orders at current floor and returns true if there is a HallOrder conflict ()
+func ClearOrdersAtCurrentFloor(elev *management.Elevator, globalState *state.GlobalState) bool {
 	currentFloor := elev.Floor
 	if elev.CurrentOrder.Floor == currentFloor {
 		elev.CurrentOrder.OrderPlaced = false
