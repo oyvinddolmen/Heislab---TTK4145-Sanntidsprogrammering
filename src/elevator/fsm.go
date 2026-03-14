@@ -72,6 +72,7 @@ func runFSM(
 			case <-elevChannels.Obstruction:
 				setElevState(elev, gs, management.ElevObstruction)
 			case <-idleTimer.C:
+				updateAssignments(elev, gs)
 				elev.LastOrder.ButtonType = elevIO.CabButton
 				UpdateCurrentOrderAndsafeDrive(elev, gs)
 				if orderManagement.CurrentOrderPlaced(elev) == false {

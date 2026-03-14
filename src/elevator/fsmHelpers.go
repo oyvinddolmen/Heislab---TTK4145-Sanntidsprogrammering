@@ -15,6 +15,7 @@ var doorTimer *time.Timer
 var canTakeOrdersTimer *time.Timer
 var idleTimer *time.Timer
 
+
 // helper variables
 var hallUpAndHallDownAndCabAtDifferentDir bool
 
