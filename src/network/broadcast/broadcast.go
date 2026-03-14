@@ -52,7 +52,8 @@ func GlobalStateReceiver(port int, incomingGlobalStateChannel chan<- state.Globa
 		}
 
 		var globalState state.GlobalStateData
-		if err := json.Unmarshal(receiveBuffer[:numBytes], &globalState); err != nil {
+		err = json.Unmarshal(receiveBuffer[:numBytes], &globalState)
+		if err != nil {
 			fmt.Printf("broadcast.GlobalStateReceiver(%d): json.Unmarshal failed: %v\n", port, err)
 			continue
 		}
