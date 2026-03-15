@@ -28,6 +28,7 @@ func main() {
 
 	/*
 		TODO:
+		- legg å sende og oppdatere worldView hvert sekund
 		- hvert sekund må den kjøre run hallassigner og drive to destination uansett når idle (FIXED IDLE TIMER)
 		- vi har to hallUpAndHallDownAndCabAtDifDir variabler, en med stor første bokstav og den andre ikke (FIXED)
 		- Kutte power når heisen er mellom etasjer (tror den er good, men må teste på fysisk heis)

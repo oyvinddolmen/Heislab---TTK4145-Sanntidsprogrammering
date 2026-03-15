@@ -44,6 +44,10 @@ func (globalState *GlobalState) NewWorldView(remote GlobalStateData) bool {
 		return true
 	}
 
+	if remoteState.CanTakeOrders != localState.CanTakeOrders {
+		return true
+	}
+
 	if remoteState.Behavior != localState.Behavior ||
 		remoteState.Floor != localState.Floor ||
 		remoteState.Direction != localState.Direction {

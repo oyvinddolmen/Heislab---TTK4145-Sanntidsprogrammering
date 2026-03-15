@@ -15,13 +15,12 @@ var doorTimer *time.Timer
 var canTakeOrdersTimer *time.Timer
 var idleTimer *time.Timer
 
-
 // helper variables
 var hallUpAndHallDownAndCabAtDifferentDir bool
 
 // time durations
 const doorOpenDuration = 2 * time.Second
-const canTakeOrdersCountdown = 5 * time.Second
+const canTakeOrdersCountdown = 4 * time.Second
 const IdleTimeOut = 2 * time.Second
 
 // -------------------------------------------------------------------------------------------

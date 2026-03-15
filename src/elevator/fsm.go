@@ -102,7 +102,6 @@ func runFSM(
 				setElevState(elev, globalState, management.ElevObstruction)
 			case <-canTakeOrdersTimer.C:
 				elev.SetElevCanTakeOrders(false)
-				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
 			}
 
 		// ----------------- Case: OBSTRUCTION -------------------------
@@ -149,7 +148,6 @@ func runFSM(
 				}
 			case <-canTakeOrdersTimer.C:
 				elev.SetElevCanTakeOrders(false)
-
 			}
 		}
 	}
