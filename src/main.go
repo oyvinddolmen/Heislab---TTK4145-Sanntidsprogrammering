@@ -28,6 +28,8 @@ func main() {
 
 	/*
 		TODO:
+		- obstruction mens den beveger seg i en etasje skal ikke skje, når heisen kjører på floor sensor skal ikke døra åpne seg
+		- fjern obstruction under case moving
 		- legg å sende og oppdatere worldView hvert sekund
 		- hvert sekund må den kjøre run hallassigner og drive to destination uansett når idle (FIXED IDLE TIMER)
 		- vi har to hallUpAndHallDownAndCabAtDifDir variabler, en med stor første bokstav og den andre ikke (FIXED)
