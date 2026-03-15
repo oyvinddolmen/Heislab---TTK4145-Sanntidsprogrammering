@@ -48,10 +48,10 @@ func runFSM(
 					updateAssignments(elev, globalState)
 					UpdateCurrentOrderAndsafeDrive(elev, globalState)
 				}
-			case btn := <-elevChannels.ButtonPresses:
+			case button := <-elevChannels.ButtonPresses:
 				HallOrderConflict := false //Becomes true if HallUp and HallDown active at current floor and
 				//Caborder is pressed at a different direction then the current dirction
-				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, btn, networkChannels)
+				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, button, networkChannels)
 				if !OrderWasAtCurrentFloor {
 					if elev.GetFloor() != -1 {
 						HallOrderConflict = orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
@@ -95,8 +95,8 @@ func runFSM(
 					}
 					setElevState(elev, globalState, management.ElevObstruction)
 				}
-			case btn := <-elevChannels.ButtonPresses:
-				handleButtonPress(elev, globalState, btn, networkChannels)
+			case button := <-elevChannels.ButtonPresses:
+				handleButtonPress(elev, globalState, button, networkChannels)
 				orderManagement.UpdateCurrentOrder(elev, globalState)
 			case <-elevChannels.Obstruction:
 				setElevState(elev, globalState, management.ElevObstruction)
@@ -118,9 +118,9 @@ func runFSM(
 					orderManagement.UpdateCurrentOrder(elev, globalState)
 					UpdateMoveDir(elev)
 				}
-			case btn := <-elevChannels.ButtonPresses:
+			case button := <-elevChannels.ButtonPresses:
 				mixedHallOrders := false
-				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, btn, networkChannels)
+				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, button, networkChannels)
 				if !OrderWasAtCurrentFloor {
 
 					if elev.GetFloor() != -1 {
