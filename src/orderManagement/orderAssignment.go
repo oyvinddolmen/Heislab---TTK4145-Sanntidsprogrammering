@@ -18,7 +18,6 @@ type AssignerInput struct {
 // kaller hallRequestAssigner, og oppdaterer lokalt heis-objekt
 func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *state.GlobalState) {
 	globalStateCopy := globalState.GetCopy()
-	hallRequests := append([][2]bool(nil), globalStateCopy.HallRequests...) // TODO: Unødvendig?
 
 	activeElevators := make(map[string]state.ElevatorStateJSON)
 	for elevID, state := range globalStateCopy.States {
@@ -27,7 +26,7 @@ func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *
 		}
 	}
 
-	assignments, err := AssignHallRequests(hallRequests, activeElevators)
+	assignments, err := AssignHallRequests(globalStateCopy.HallRequests, activeElevators)
 	if err != nil {
 		fmt.Println("assigner failed: %w", err)
 	}
