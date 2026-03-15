@@ -90,8 +90,8 @@ func handleButtonPress(elev *management.Elevator, globalState *state.GlobalState
 		elev.AddCabOrderToElevator(order)
 		globalState.UpdateGlobalState(elev)
 	} else {
-		globalState.AddHallRequest(order)
-		globalState.IncrementHallRequestVersion(order.Floor, order.ButtonType)
+		globalState.AddHallOrder(order)
+		globalState.IncrementHallOrderVersion(order.Floor, order.ButtonType)
 	}
 
 	network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
@@ -182,10 +182,10 @@ func needToOpenDoors(elev *management.Elevator, globalState *state.GlobalState) 
 		return false
 	}
 
-	hallRequests := globalState.GetCopy().HallRequests
+	hallOrders := globalState.GetCopy().HallOrders
 
-	for btn := 0; btn < 2; btn++ {
-		if hallRequests[currentFloor][btn] {
+	for button := 0; button < management.NumHallButtonTypes; button++ {
+		if hallOrders[currentFloor][button] {
 			return true
 		}
 	}

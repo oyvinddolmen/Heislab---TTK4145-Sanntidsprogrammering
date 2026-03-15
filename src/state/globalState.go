@@ -8,8 +8,8 @@ import (
 )
 
 type GlobalStateData struct {
-	HallRequests        [][2]bool                                        // [floor][0=up,1=down]
-	HallRequestsVersion [][2]int                                         // incremented by one when matching hallRequest is updated
+	HallOrders          [][2]bool                                        // [floor][0=up,1=down]
+	HallOrderVersion    [][2]int                                         // incremented by one when matching hallOrder is updated
 	States              map[string]ElevatorStateJSON // elevatorID -> state
 	LocalID             string
 }
@@ -18,7 +18,7 @@ type ElevatorStateJSON struct {
 	Behavior      string `json:"behaviour"` // idle, moving, doorOpen, offline
 	Floor         int    `json:"floor"`
 	Direction     string `json:"direction"`
-	CabRequests   []bool `json:"cabRequests"`
+	CabOrders     []bool `json:"cabOrders"`
 	CanTakeOrders bool   `json:"canTakeOrders"`
 }
 
@@ -30,8 +30,8 @@ type GlobalState struct {
 func InitGlobalState(elev *management.Elevator, elevID string) *GlobalState {
 	globalState := &GlobalState{}
 
-	globalState.data.HallRequests = make([][2]bool, management.NumFloors)
-	globalState.data.HallRequestsVersion = make([][2]int, management.NumFloors)
+	globalState.data.HallOrders = make([][2]bool, management.NumFloors)
+	globalState.data.HallOrderVersion = make([][2]int, management.NumFloors)
 	globalState.data.States = make(map[string]ElevatorStateJSON)
 	globalState.data.LocalID = elevID
 	globalState.data.States[elevID] = ConvertElevatorToJSON(elev) 
@@ -43,16 +43,16 @@ func InitGlobalState(elev *management.Elevator, elevID string) *GlobalState {
 // -------------------------------------------------------------------------------------------
 
 func ConvertElevatorToJSON(elev *management.Elevator) ElevatorStateJSON {
-	cabRequests := make([]bool, management.NumFloors)
+	cabOrders := make([]bool, management.NumFloors)
 	for floor := 0; floor < management.NumFloors; floor++ {
-		cabRequests[floor] = elev.Orders[floor][management.CabButton].OrderPlaced
+		cabOrders[floor] = elev.Orders[floor][management.CabButton].OrderPlaced
 	}
 
 	return ElevatorStateJSON{
 		Behavior:      convertState(elev.State),
 		Floor:         elev.LastFloor,
 		Direction:     convertDirection(elev.MoveDir),
-		CabRequests:   cabRequests,
+		CabOrders:     cabOrders,
 		CanTakeOrders: elev.CanTakeOrders,
 	}
 }
@@ -91,16 +91,16 @@ func (globalState *GlobalState) UpdateGlobalState(elev *management.Elevator) {
 	globalState.data.States[elev.ID] = ConvertElevatorToJSON(elev)
 }
 
-func (globalState *GlobalState) AddHallRequest(order management.Order) {
+func (globalState *GlobalState) AddHallOrder(order management.Order) {
 	globalState.mutex.Lock()
 	defer globalState.mutex.Unlock()
-	globalState.data.HallRequests[order.Floor][order.ButtonType] = true
+	globalState.data.HallOrders[order.Floor][order.ButtonType] = true
 }
 
-func (globalState *GlobalState) IncrementHallRequestVersion(floor int, btn elevIO.ButtonType) {
+func (globalState *GlobalState) IncrementHallOrderVersion(floor int, button elevIO.ButtonType) {
 	globalState.mutex.Lock()
 	defer globalState.mutex.Unlock()
-	globalState.data.HallRequestsVersion[floor][btn]++
+	globalState.data.HallOrderVersion[floor][button]++
 }
 
 func (globalState *GlobalState) SetElevatorToOffline(deadID string) {
@@ -137,8 +137,8 @@ func (globalState *GlobalState) GetCopy() GlobalStateData {
 	copyState := globalState.data
 
 	// deep copy slices
-	copyState.HallRequests = append([][2]bool(nil), globalState.data.HallRequests...)
-	copyState.HallRequestsVersion = append([][2]int(nil), globalState.data.HallRequestsVersion...)
+	copyState.HallOrders = append([][2]bool(nil), globalState.data.HallOrders...)
+	copyState.HallOrderVersion = append([][2]int(nil), globalState.data.HallOrderVersion...)
 
 	newMap := make(map[string]ElevatorStateJSON)
 	for k, v := range globalState.data.States {
@@ -156,10 +156,10 @@ func (globalState *GlobalState) GetLocalID() string {
     return globalState.data.LocalID
 }
 
-func (globalState *GlobalState) RemoveHallRequest(floor int, button elevIO.ButtonType) {
+func (globalState *GlobalState) RemoveHallOrder(floor int, button elevIO.ButtonType) {
 	globalState.mutex.Lock()
-	globalState.data.HallRequests[floor][button] = false
-	globalState.data.HallRequestsVersion[floor][button]++
+	globalState.data.HallOrders[floor][button] = false
+	globalState.data.HallOrderVersion[floor][button]++
 	globalState.mutex.Unlock()
 }
 
@@ -170,30 +170,30 @@ func (globalState *GlobalState) PrintGlobalState() {
 	fmt.Println("\n========== GLOBAL STATE ==========")
 	fmt.Printf("LocalID: %s\n", globalState.data.LocalID)
 
-	// ---------------- Hall Requests ----------------
-	fmt.Println("\nHall Requests:")
-	for floor := 0; floor < len(globalState.data.HallRequests); floor++ {
-		up := globalState.data.HallRequests[floor][0]
-		down := globalState.data.HallRequests[floor][1]
-		upV := globalState.data.HallRequestsVersion[floor][0]
-		downV := globalState.data.HallRequestsVersion[floor][1]
+	// ---------------- Hall Orders ----------------
+	fmt.Println("\nHall Orders:")
+	for floor := 0; floor < len(globalState.data.HallOrders); floor++ {
+		hallUp := globalState.data.HallOrders[floor][0]
+		hallDown := globalState.data.HallOrders[floor][1]
+		hallUpVersion := globalState.data.HallOrderVersion[floor][0]
+		hallDownVersion := globalState.data.HallOrderVersion[floor][1]
 
 		fmt.Printf("Floor %d | Up: %v (v%d) | Down: %v (v%d)\n",
-			floor, up, upV, down, downV)
+			floor, hallUp, hallUpVersion, hallDown, hallDownVersion)
 	}
 
 	// ---------------- Elevator States ----------------
 	fmt.Println("\nElevator States:")
 
-	for id, state := range globalState.data.States {
+	for elevID, state := range globalState.data.States {
 
-		fmt.Printf("\nElevator %s\n", id)
+		fmt.Printf("\nElevator %s\n", elevID)
 		fmt.Printf("  Behavior:  %s\n", state.Behavior)
 		fmt.Printf("  Floor:     %d\n", state.Floor)
 		fmt.Printf("  Direction: %s\n", state.Direction)
 
-		fmt.Printf("  CabRequests: ")
-		for floor, active := range state.CabRequests {
+		fmt.Printf("  CabOrders: ")
+		for floor, active := range state.CabOrders {
 			if active {
 				fmt.Printf("[%d] ", floor)
 			}

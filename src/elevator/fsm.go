@@ -40,7 +40,7 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdateChannel:
 				if needToOpenDoors(elev, globalState) {
-					orderManagement.ServeHallRequestsAtCurrentFloor(elev, globalState)
+					orderManagement.ServeHallOrdersAtCurrentFloor(elev, globalState)
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 					SetAllLights(elev, globalState) //Trenger denne?
 					setElevState(elev, globalState, management.ElevObstruction)
@@ -109,7 +109,7 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdateChannel:
 				if needToOpenDoors(elev, globalState) {
-					orderManagement.ServeHallRequestsAtCurrentFloor(elev, globalState)
+					orderManagement.ServeHallOrdersAtCurrentFloor(elev, globalState)
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 					SetAllLights(elev, globalState)
 					startIdleTimer()

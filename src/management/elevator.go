@@ -5,6 +5,30 @@ import (
 	"heislab/elevator/elevIO"
 )
 
+const (
+	hallUpButton   	   = 0
+	hallDownButton     = 1
+	NumHallButtonTypes = 2
+	CabButton          = 2
+	NumButtons         = 3
+	NumFloors          = 4
+)
+
+type State int
+const (
+	ElevInit        = 1
+	ElevIdle        = 2
+	ElevMoving      = 3
+	ElevObstruction = 4
+)
+
+type Direction int
+const (
+	DirDown Direction = -1
+	DirIdle Direction = 0
+	DirUp   Direction = 1
+)
+
 type Elevator struct {
 	State         State
 	ID            string
@@ -58,31 +82,6 @@ func InitElevator(elevID string, numFloors int) (Elevator, ElevChannels) {
 	}
 	return elev, elevChannels
 }
-
-const (
-	hallUpButton   = 0
-	hallDownButton = 1
-	CabButton      = 2
-	NumButtons     = 3
-	NumFloors      = 4
-)
-
-type State int
-
-const (
-	ElevInit        = 1
-	ElevIdle        = 2
-	ElevMoving      = 3
-	ElevObstruction = 4
-)
-
-type Direction int
-
-const (
-	DirDown Direction = -1
-	DirIdle Direction = 0
-	DirUp   Direction = 1
-)
 
 // -------------------------------------------------------------------------------------------
 // Get and set functions

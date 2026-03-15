@@ -108,26 +108,26 @@ func RemoveCabOrder(globalState *state.GlobalState, elev *management.Elevator, f
 
 func RemoveHallDown(globalState *state.GlobalState, elev *management.Elevator, floor int) {
 	elev.Orders[floor][elevIO.HallDownButton].OrderPlaced = false
-	globalState.RemoveHallRequest(floor, elevIO.HallDownButton)
+	globalState.RemoveHallOrder(floor, elevIO.HallDownButton)
 	elevIO.SetButtonLamp(elevIO.HallDownButton, floor, false)
 }
 
 func RemoveHallUp(globalState *state.GlobalState, elev *management.Elevator, floor int) {
 	elev.Orders[floor][elevIO.HallUpButton].OrderPlaced = false
-	globalState.RemoveHallRequest(floor, elevIO.HallUpButton)
+	globalState.RemoveHallOrder(floor, elevIO.HallUpButton)
 	elevIO.SetButtonLamp(elevIO.HallUpButton, floor, false)
 }
 
-// Clears hall requests from the shared state for the floor the elevator is currently at
-func ServeHallRequestsAtCurrentFloor(elev *management.Elevator, globalState *state.GlobalState) {
+// Clears hall orders from the shared state for the floor the elevator is currently at
+func ServeHallOrdersAtCurrentFloor(elev *management.Elevator, globalState *state.GlobalState) {
 	currentFloor := elev.Floor
 	if currentFloor != -1 {
-		hallRequests := globalState.GetCopy().HallRequests
+		hallOrders := globalState.GetCopy().HallOrders
 
-		if hallRequests[currentFloor][elevIO.HallUpButton] {
+		if hallOrders[currentFloor][elevIO.HallUpButton] {
 			RemoveHallUp(globalState, elev, currentFloor)
 		}
-		if hallRequests[currentFloor][elevIO.HallDownButton] {
+		if hallOrders[currentFloor][elevIO.HallDownButton] {
 			RemoveHallDown(globalState, elev, currentFloor)
 		}
 

@@ -91,8 +91,8 @@ RECOVER:
 			elevIO.SetFloorIndicator(recovered.Floor)
 		}
 
-		for floor := 0; floor < management.NumFloors && floor < len(recovered.CabRequests); floor++ {
-			if recovered.CabRequests[floor] {
+		for floor := 0; floor < management.NumFloors && floor < len(recovered.CabOrders); floor++ {
+			if recovered.CabOrders[floor] {
 				elev.Orders[floor][elevIO.CabButton].OrderPlaced = true
 				elevIO.SetButtonLamp(elevIO.CabButton, floor, true)
 			}

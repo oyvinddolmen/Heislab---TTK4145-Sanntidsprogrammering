@@ -10,30 +10,29 @@ import (
 )
 
 type AssignerInput struct {
-	HallRequests [][2]bool                    `json:"hallRequests"`
-	States       map[string]state.ElevatorStateJSON `json:"states"`
+	HallOrders     [][2]bool                          `json:"hallOrders"`
+	ElevatorStates map[string]state.ElevatorStateJSON `json:"states"`
 }
 
-// RunHallAssigner kopierer hall requests og online elevator states,
-// kaller hallRequestAssigner, og oppdaterer lokalt heis-objekt
+// Assigns hall orders and applies assigned hall orders to the local elevator.
 func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *state.GlobalState) {
 	globalStateCopy := globalState.GetCopy()
 
-	activeElevators := make(map[string]state.ElevatorStateJSON)
+	activeElevatorStates := make(map[string]state.ElevatorStateJSON)
 	for elevID, state := range globalStateCopy.States {
 		if state.Behavior != "offline" && state.CanTakeOrders {
-			activeElevators[elevID] = state
+			activeElevatorStates[elevID] = state
 		}
 	}
 
-	assignments, err := AssignHallRequests(globalStateCopy.HallRequests, activeElevators)
+	assignments, err := AssignHallOrders(globalStateCopy.HallOrders, activeElevatorStates)
 	if err != nil {
 		fmt.Println("assigner failed: %w", err)
 	}
 	applyAssignments(elev, assignments)
 }
 
-// applyAssignments oppdaterer lokal heis med tildelte hall-orders
+// Applies assigned hall orders to the local elevator.
 func applyAssignments(elev *management.Elevator, assignments map[string][][2]bool) {
 	elevID := elev.GetElevID()
 	assigned, exists := assignments[elevID]
@@ -55,24 +54,23 @@ func applyAssignments(elev *management.Elevator, assignments map[string][][2]boo
 	}
 }
 
-// AssignHallRequests calls the external hall_request_assigner binary
-// and returns hall requests assigned per elevator.
-func AssignHallRequests(
-	hallRequests [][2]bool,
-	states map[string]state.ElevatorStateJSON,
+// Finds and returns hall orders assigned per elevator.
+func AssignHallOrders(
+	hallOrders [][2]bool,
+	elevatorStates map[string]state.ElevatorStateJSON,
 ) (map[string][][2]bool, error) {
 
 	input := AssignerInput{
-		HallRequests: hallRequests,
-		States:       states,
+		HallOrders: hallOrders,
+		ElevatorStates:     elevatorStates,
 	}
 
 	jsonBytes, err := json.Marshal(input)
 	if err != nil {
 		return nil, fmt.Errorf("json.Marshal failed: %w", err)
 	}
-	jsonStr := string(jsonBytes)
-	//fmt.Println("JSON sendt til hall_request_assigner:", jsonStr)
+	jsonString := string(jsonBytes)
+	//fmt.Println("JSON sendt til hall_request_assigner:", jsonStr) TODO fjern
 
 	assignerPath := ""
 	switch runtime.GOOS {
@@ -85,7 +83,7 @@ func AssignHallRequests(
 	}
 
 	// Run binary file
-	cmd := exec.Command(assignerPath, "--input", jsonStr)
+	cmd := exec.Command(assignerPath, "--input", jsonString)
 
 	outputBytes, err := cmd.CombinedOutput()
 	if err != nil {
@@ -96,11 +94,11 @@ func AssignHallRequests(
 		)
 	}
 
-	output := make(map[string][][2]bool)
-	err = json.Unmarshal(outputBytes, &output)
+	assignments := make(map[string][][2]bool)
+	err = json.Unmarshal(outputBytes, &assignments)
 	if err != nil {
 		return nil, fmt.Errorf("json.Unmarshal failed: %w\nOutput: %s", err, string(outputBytes))
 	}
 
-	return output, nil
+	return assignments, nil
 }
