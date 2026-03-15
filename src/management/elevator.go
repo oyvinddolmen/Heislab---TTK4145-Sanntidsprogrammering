@@ -79,6 +79,7 @@ func InitElevator(elevID string, numFloors int) (Elevator, ElevChannels) {
 	return elev, elevChannels
 }
 
+
 // -------------------------------------------------------------------------------------------
 // Set functions for elevator
 // -------------------------------------------------------------------------------------------
@@ -107,13 +108,12 @@ func (elev *Elevator) GetFloor() int { return elev.floor }
 func (elev *Elevator) GetLastFloor() int { return elev.lastFloor }
 func (elev *Elevator) GetMoveDir() Direction { return elev.moveDir }
 func (elev *Elevator) GetCurrentOrder() Order { return elev.currentOrder }
+func (elev *Elevator) GetLastOrder() Order { return elev.lastOrder }
 func (elev *Elevator) GetCanTakeOrders() bool { return elev.canTakeOrders }
 func (elev *Elevator) GetOrder(floor, button int) Order { return elev.orders[floor][button] }
 
 func (elev *Elevator) GetCurrentOrderActiveStatus() bool { return elev.currentOrder.GetActiveStatus() }
 func (elev *Elevator) GetCurrentOrderFloor() int { return elev.currentOrder.GetFloor() }
-func (elev *Elevator) GetCurrentOrderButtonType() elevIO.ButtonType { return elev.currentOrder.GetButtonType() }
-func (elev *Elevator) GetLastOrderButtonType() elevIO.ButtonType { return elev.lastOrder.GetButtonType() }
 func (elev *Elevator) GetOrderActiveStatus(floor, button int) bool { return elev.orders[floor][button].GetActiveStatus() }
 
 
@@ -122,7 +122,7 @@ func (elev *Elevator) GetOrderActiveStatus(floor, button int) bool { return elev
 func (elev *Elevator) PrintOrdersDebug() {
 	fmt.Println("Elev floor:", elev.floor)
 	fmt.Println("MoveDir:", elev.moveDir)
-	fmt.Println("LastOrder.ButtonType (0: HallUp , 1: HallDown , 2: Caborder):", elev.GetLastOrderButtonType())
+	fmt.Println("LastOrder.ButtonType (0: HallUp , 1: HallDown , 2: Caborder):", elev.GetLastOrder().GetButtonType())
 
 	for floor := 0; floor < NumFloors; floor++ {
 		fmt.Println(

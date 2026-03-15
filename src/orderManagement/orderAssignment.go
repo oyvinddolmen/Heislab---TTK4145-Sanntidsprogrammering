@@ -19,9 +19,9 @@ func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *
 	globalStateCopy := globalState.GetCopy()
 
 	activeElevatorStates := make(map[string]state.ElevatorStateJSON)
-	for elevID, state := range globalStateCopy.States {
-		if state.Behavior != "offline" && state.CanTakeOrders {
-			activeElevatorStates[elevID] = state
+	for elevID, elevState := range globalStateCopy.States {
+		if elevState.Behavior != "offline" && elevState.CanTakeOrders {
+			activeElevatorStates[elevID] = elevState
 		}
 	}
 

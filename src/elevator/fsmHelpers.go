@@ -75,7 +75,10 @@ func onObstructionEntry(elev *management.Elevator) {
 // -------------------------------------------------------------------------------------------
 
 // creates order, updates global state and runs hallassigner
-func handleButtonPress(elev *management.Elevator, globalState *state.GlobalState, button elevIO.ButtonEvent, networkChannels network.NetworkConnection) bool {
+func handleButtonPress(elev *management.Elevator,
+		globalState *state.GlobalState,
+		button elevIO.ButtonEvent,
+		networkChannels network.NetworkConnection) bool {
 	order := management.CreateOrder(button)
 
 	// Ignore button press if we are already at the floor and serving it, but open door
@@ -83,7 +86,7 @@ func handleButtonPress(elev *management.Elevator, globalState *state.GlobalState
 		setElevState(elev, globalState, management.ElevObstruction)
 		return true
 	}
-	if order.GetButtonType() == management.CabButton {
+	if order.IsCabOrder() {
 		elev.SetOrder(order)
 		globalState.UpdateGlobalState(elev)
 	} else {
@@ -110,7 +113,7 @@ func ShouldStop(elev *management.Elevator, floor int) bool {
 
 		// Takes hallorderUp when bypassing as long as the current order is not a hallDown not at 4 floor
 		if orderManagement.HallOrderUpAtFloor(elev, floor) {
-			if elev.GetCurrentOrderButtonType() == elevIO.HallDownButton {
+			if elev.GetCurrentOrder().IsHallDownOrder() {
 				if elev.GetCurrentOrderFloor() == management.NumFloors-1 {
 					return true
 				}
@@ -133,7 +136,7 @@ func ShouldStop(elev *management.Elevator, floor int) bool {
 
 		//Takes hallorderUp when bypassing as long as the current order is not a hallDown not at 4 floor
 		if orderManagement.HallOrderDownAtFloor(elev, floor) {
-			if elev.GetCurrentOrderButtonType() == elevIO.HallUpButton {
+			if elev.GetCurrentOrder().IsHallUpOrder() {
 				if elev.GetCurrentOrderFloor() == 0 {
 					return true
 				}
@@ -191,12 +194,12 @@ func needToOpenDoors(elev *management.Elevator, globalState *state.GlobalState) 
 
 func ChooseDirectionAfterStop(elev *management.Elevator, floor int) {
 	// if the currentorder was a hallUp -> Set direction to Up
-	if orderManagement.HallOrderUpAtFloor(elev, floor) && elev.GetCurrentOrderButtonType() == elevIO.HallUpButton {
+	if orderManagement.HallOrderUpAtFloor(elev, floor) && elev.GetCurrentOrder().IsHallUpOrder() {
 		elev.SetMoveDir(management.DirUp)
 		return
 	}
 	// if the current order was a hallDown -> Set direction to Down
-	if orderManagement.HallOrderDownAtFloor(elev, floor) && elev.GetCurrentOrderButtonType() == elevIO.HallDownButton {
+	if orderManagement.HallOrderDownAtFloor(elev, floor) && elev.GetCurrentOrder().IsHallDownOrder() {
 		elev.SetMoveDir(management.DirDown)
 		return
 	}

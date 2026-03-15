@@ -35,13 +35,13 @@ func ClearOrdersAtCurrentFloor(elev *management.Elevator, globalState *state.Glo
 	default:
 
 		if elev.GetOrderActiveStatus(currentFloor, int(elevIO.HallUpButton)) &&
-			elev.GetLastOrderButtonType() == elevIO.HallDownButton &&
+			elev.GetLastOrder().IsHallDownOrder() && 
 			CabOrderAbove(elev, currentFloor) {
 			RemoveHallUp(globalState, elev, currentFloor)
 			return true
 			
 		} else if elev.GetOrderActiveStatus(currentFloor, int(elevIO.HallDownButton)) &&
-			elev.GetLastOrderButtonType() == elevIO.HallUpButton &&
+			elev.GetLastOrder().IsHallUpOrder() &&
 			CabOrderBelow(elev, currentFloor) {
 			RemoveHallDown(globalState, elev, currentFloor)
 			return true

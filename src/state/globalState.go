@@ -8,9 +8,9 @@ import (
 )
 
 type GlobalStateData struct {
-	HallOrders          [][management.NumHallButtonTypes]bool                                        // [floor][0=up,1=down]
-	HallOrderVersion    [][management.NumHallButtonTypes]int                                         // incremented by one when matching hallOrder is updated
-	States              map[string]ElevatorStateJSON // elevatorID -> state
+	HallOrders          [][management.NumHallButtonTypes]bool // [floor][0=up,1=down]
+	HallOrderVersion    [][management.NumHallButtonTypes]int  // incremented by one when matching hallOrder is updated
+	States              map[string]ElevatorStateJSON 		  // elevatorID -> state
 	LocalID             string
 }
 
@@ -115,18 +115,18 @@ func (globalState *GlobalState) SetElevatorToOffline(deadID string) {
 }
 
 // SetElevatorState setter en spesifikk elevator state i globalState
-func (globalState *GlobalState) SetElevatorGlobalState(elevID string, state ElevatorStateJSON) {
+func (globalState *GlobalState) SetElevatorGlobalState(elevID string, elevState ElevatorStateJSON) {
 	globalState.mutex.Lock()
 	defer globalState.mutex.Unlock()
-	globalState.data.States[elevID] = state
+	globalState.data.States[elevID] = elevState
 }
 
 // GetElevatorState henter state for en spesifikk heis
 func (globalState *GlobalState) GetElevatorState(elevID string) (ElevatorStateJSON, bool) {
 	globalState.mutex.Lock()
 	defer globalState.mutex.Unlock()
-	state, ok := globalState.data.States[elevID]
-	return state, ok
+	elevState, exists := globalState.data.States[elevID]
+	return elevState, exists
 }
 
 
@@ -134,19 +134,19 @@ func (globalState *GlobalState) GetCopy() GlobalStateData {
 	globalState.mutex.Lock()
 	defer globalState.mutex.Unlock()
 
-	copyState := globalState.data
+	globalStateCopy := globalState.data
 
 	// deep copy slices
-	copyState.HallOrders = append([][management.NumHallButtonTypes]bool(nil), globalState.data.HallOrders...)
-	copyState.HallOrderVersion = append([][management.NumHallButtonTypes]int(nil), globalState.data.HallOrderVersion...)
+	globalStateCopy.HallOrders = append([][management.NumHallButtonTypes]bool(nil), globalState.data.HallOrders...)
+	globalStateCopy.HallOrderVersion = append([][management.NumHallButtonTypes]int(nil), globalState.data.HallOrderVersion...)
 
-	newMap := make(map[string]ElevatorStateJSON)
-	for k, v := range globalState.data.States {
-		newMap[k] = v
+	elevStatesCopy := make(map[string]ElevatorStateJSON)
+	for elevID, elevState := range globalState.data.States {
+		elevStatesCopy[elevID] = elevState
 	}
-	copyState.States = newMap
+	globalStateCopy.States = elevStatesCopy
 
-	return copyState
+	return globalStateCopy
 }
 
 func (globalState *GlobalState) GetLocalID() string {
@@ -163,6 +163,7 @@ func (globalState *GlobalState) RemoveHallOrder(floor int, button elevIO.ButtonT
 	globalState.mutex.Unlock()
 }
 
+// TODO: Fjern
 func (globalState *GlobalState) PrintGlobalState() {
 	globalState.mutex.Lock()
 	defer globalState.mutex.Unlock()
