@@ -14,7 +14,7 @@ const HeartbeatTimeout = 2 * time.Second
 // Track last time we heard from each elevator
 var (
 	lastSeen = make(map[string]time.Time)
-	mutex      sync.Mutex
+	mutex    sync.Mutex
 )
 
 // Called whenever we receive state from another elevator
@@ -60,20 +60,20 @@ func checkForDeadElevators(globalState *state.GlobalState, worldViewUpdate chan 
 	}
 }
 
-// listens and merge global view received on startup. Returns true if received view 
-func RecoverOnStartup(elev *management.Elevator, globalState *state.GlobalState, globalStateRx <-chan state.GlobalStateData) bool {
+// listens and merge global view received on startup. Returns true if received view
+func RecoverOnStartup(elev *management.Elevator, globalState *state.GlobalState, incomingGlobalStateChannel <-chan state.GlobalStateData) bool {
 	elevID := globalState.GetLocalID()
 	timeout := time.After(1 * time.Second)
-	var recovered *state.ElevatorStateJSON
+	var recoveredElevatorState *state.ElevatorStateJSON
 
 	for {
 		select {
-		case newGlobalState := <-globalStateRx:
+		case newGlobalState := <-incomingGlobalStateChannel:
 			globalState.Merge(newGlobalState)
 
-			if state, exists := newGlobalState.States[elevID]; exists {
-				tmp := state
-				recovered = &tmp
+			if elevState, exists := newGlobalState.States[elevID]; exists {
+				recoveredElevatorState = new(state.ElevatorStateJSON)
+				*recoveredElevatorState = elevState
 			}
 		case <-timeout:
 			goto RECOVER
@@ -81,18 +81,18 @@ func RecoverOnStartup(elev *management.Elevator, globalState *state.GlobalState,
 	}
 
 RECOVER:
-	if recovered == nil {
+	if recoveredElevatorState == nil {
 		fmt.Println("No previous cab state found on startup, starting fresh")
 		return false
 	} else {
-		if recovered.Floor >= 0 && recovered.Floor < management.NumFloors {
-			elev.SetFloor(recovered.Floor)
-			elev.SetLastFloor(recovered.Floor)
-			elevIO.SetFloorIndicator(recovered.Floor)
+		if recoveredElevatorState.Floor >= 0 && recoveredElevatorState.Floor < management.NumFloors {
+			elev.SetFloor(recoveredElevatorState.Floor)
+			elev.SetLastFloor(recoveredElevatorState.Floor)
+			elevIO.SetFloorIndicator(recoveredElevatorState.Floor)
 		}
 
-		for floor := 0; floor < management.NumFloors && floor < len(recovered.CabOrders); floor++ {
-			if recovered.CabOrders[floor] {
+		for floor := 0; floor < management.NumFloors && floor < len(recoveredElevatorState.CabOrders); floor++ {
+			if recoveredElevatorState.CabOrders[floor] {
 				elev.SetOrderActiveStatus(floor, int(elevIO.CabButton), true)
 				elevIO.SetButtonLamp(elevIO.CabButton, floor, true)
 			}

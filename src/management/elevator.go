@@ -52,8 +52,8 @@ func InitElevator(elevID string, numFloors int) (Elevator, ElevChannels) {
 	noOrder.SetActiveStatus(false)
 
 	elev := Elevator{
+		state:        ElevInit,
         id:           elevID,
-        state:        ElevInit,
         floor:        0,
         lastFloor:    0,
         moveDir:      DirIdle,
@@ -61,7 +61,7 @@ func InitElevator(elevID string, numFloors int) (Elevator, ElevChannels) {
         lastOrder:    noOrder,
     }
 
-	// create elev's order-matrix
+	// Create elev's order matrix
 	for floor := 0; floor < numFloors; floor++ {
 		for button := 0; button < NumButtons; button++ {
 			tempOrder := CreateOrder(elevIO.ButtonEvent{Floor: floor, Button: elevIO.ButtonType(button)})

@@ -8,8 +8,8 @@ import (
 )
 
 type GlobalStateData struct {
-	HallOrders          [][2]bool                                        // [floor][0=up,1=down]
-	HallOrderVersion    [][2]int                                         // incremented by one when matching hallOrder is updated
+	HallOrders          [][management.NumHallButtonTypes]bool                                        // [floor][0=up,1=down]
+	HallOrderVersion    [][management.NumHallButtonTypes]int                                         // incremented by one when matching hallOrder is updated
 	States              map[string]ElevatorStateJSON // elevatorID -> state
 	LocalID             string
 }
@@ -30,8 +30,8 @@ type GlobalState struct {
 func InitGlobalState(elev *management.Elevator, elevID string) *GlobalState {
 	globalState := &GlobalState{}
 
-	globalState.data.HallOrders = make([][2]bool, management.NumFloors)
-	globalState.data.HallOrderVersion = make([][2]int, management.NumFloors)
+	globalState.data.HallOrders = make([][management.NumHallButtonTypes]bool, management.NumFloors)
+	globalState.data.HallOrderVersion = make([][management.NumHallButtonTypes]int, management.NumFloors)
 	globalState.data.States = make(map[string]ElevatorStateJSON)
 	globalState.data.LocalID = elevID
 	globalState.data.States[elevID] = ConvertElevatorToJSON(elev) 
@@ -137,8 +137,8 @@ func (globalState *GlobalState) GetCopy() GlobalStateData {
 	copyState := globalState.data
 
 	// deep copy slices
-	copyState.HallOrders = append([][2]bool(nil), globalState.data.HallOrders...)
-	copyState.HallOrderVersion = append([][2]int(nil), globalState.data.HallOrderVersion...)
+	copyState.HallOrders = append([][management.NumHallButtonTypes]bool(nil), globalState.data.HallOrders...)
+	copyState.HallOrderVersion = append([][management.NumHallButtonTypes]int(nil), globalState.data.HallOrderVersion...)
 
 	newMap := make(map[string]ElevatorStateJSON)
 	for k, v := range globalState.data.States {

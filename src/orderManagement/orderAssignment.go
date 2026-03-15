@@ -1,17 +1,17 @@
 package orderManagement
 
 import (
+	"encoding/json"
 	"fmt"
 	"heislab/management"
 	"heislab/state"
-	"encoding/json"
 	"os/exec"
 	"runtime"
 )
 
 type AssignerInput struct {
-	HallOrders     [][2]bool                          `json:"hallOrders"`
-	ElevatorStates map[string]state.ElevatorStateJSON `json:"states"`
+	HallOrders     [][management.NumHallButtonTypes]bool `json:"hallOrders"`
+	ElevatorStates map[string]state.ElevatorStateJSON    `json:"states"`
 }
 
 // Assigns hall orders and applies assigned hall orders to the local elevator.
@@ -33,7 +33,7 @@ func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *
 }
 
 // Applies assigned hall orders to the local elevator.
-func applyAssignments(elev *management.Elevator, assignments map[string][][2]bool) {
+func applyAssignments(elev *management.Elevator, assignments map[string][][management.NumHallButtonTypes]bool) {
 	elevID := elev.GetID()
 	assigned, exists := assignments[elevID]
 	if !exists {
@@ -42,7 +42,7 @@ func applyAssignments(elev *management.Elevator, assignments map[string][][2]boo
 	}
 
 	for floor := 0; floor < management.NumFloors; floor++ {
-		for button := 0; button < management.CabButton; button++ { // only hall buttons
+		for button := 0; button < management.NumHallButtonTypes; button++ {
 			if assigned[floor][button] {
 				elev.SetOrderActiveStatus(floor, button, true)
 			} else {
@@ -54,13 +54,13 @@ func applyAssignments(elev *management.Elevator, assignments map[string][][2]boo
 
 // Finds and returns hall orders assigned per elevator.
 func AssignHallOrders(
-	hallOrders [][2]bool,
+	hallOrders [][management.NumHallButtonTypes]bool,
 	elevatorStates map[string]state.ElevatorStateJSON,
-) (map[string][][2]bool, error) {
+) (map[string][][management.NumHallButtonTypes]bool, error) {
 
 	input := AssignerInput{
-		HallOrders: hallOrders,
-		ElevatorStates:     elevatorStates,
+		HallOrders:     hallOrders,
+		ElevatorStates: elevatorStates,
 	}
 
 	jsonBytes, err := json.Marshal(input)
@@ -92,7 +92,7 @@ func AssignHallOrders(
 		)
 	}
 
-	assignments := make(map[string][][2]bool)
+	assignments := make(map[string][][management.NumHallButtonTypes]bool)
 	err = json.Unmarshal(outputBytes, &assignments)
 	if err != nil {
 		return nil, fmt.Errorf("json.Unmarshal failed: %w\nOutput: %s", err, string(outputBytes))

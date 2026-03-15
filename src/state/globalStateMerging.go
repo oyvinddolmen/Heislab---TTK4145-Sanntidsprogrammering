@@ -11,7 +11,7 @@ func (localGlobalState *GlobalState) NewWorldView(remoteGlobalState GlobalStateD
 
 	// hall order changes
 	for floor := 0; floor < management.NumFloors; floor++ {
-		for button := 0; button < 2; button++ {
+		for button := 0; button < management.NumHallButtonTypes; button++ {
 			localVersion := localGlobalState.data.HallOrderVersion[floor][button]
 			remoteVersion := remoteGlobalState.HallOrderVersion[floor][button]
 
@@ -85,7 +85,7 @@ func (localGlobalState *GlobalState) Merge(remoteGlobalState GlobalStateData) {
 
 func chooseLatestHallOrderVersion(localGlobalState *GlobalStateData, remoteGlobalState GlobalStateData) {
 	for floor := 0; floor < management.NumFloors; floor++ {
-		for button := 0; button < 2; button++ {
+		for button := 0; button < management.NumHallButtonTypes; button++ {
 			localVersion := localGlobalState.HallOrderVersion[floor][button]
 			remoteVersion := remoteGlobalState.HallOrderVersion[floor][button]
 
