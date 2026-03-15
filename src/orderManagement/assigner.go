@@ -2,10 +2,17 @@ package orderManagement
 
 import (
 	"fmt"
-	"heislab/hallRequestAssigner"
 	"heislab/management"
 	"heislab/state"
+	"encoding/json"
+	"os/exec"
+	"runtime"
 )
+
+type AssignerInput struct {
+	HallRequests [][2]bool                    `json:"hallRequests"`
+	States       map[string]state.ElevatorStateJSON `json:"states"`
+}
 
 // RunHallAssigner kopierer hall requests og online elevator states,
 // kaller hallRequestAssigner, og oppdaterer lokalt heis-objekt
@@ -14,14 +21,14 @@ func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *
 
 	hallRequests := append([][2]bool(nil), globalStateCopy.HallRequests...)
 
-	filtered := make(map[string]hallRequestAssigner.ElevatorStateJSON)
+	filtered := make(map[string]state.ElevatorStateJSON)
 	for elevID, s := range globalStateCopy.States {
 		if s.Behavior != "offline" && s.CanTakeOrders {
 			filtered[elevID] = s
 		}
 	}
 
-	assignments, err := hallRequestAssigner.AssignHallRequests(hallRequests, filtered)
+	assignments, err := AssignHallRequests(hallRequests, filtered)
 	if err != nil {
 		fmt.Println("assigner failed: %w", err)
 	}
@@ -48,4 +55,54 @@ func applyAssignments(elev *management.Elevator, assignments map[string][][2]boo
 			}
 		}
 	}
+}
+
+// AssignHallRequests calls the external hall_request_assigner binary
+// and returns hall requests assigned per elevator.
+func AssignHallRequests(
+	hallRequests [][2]bool,
+	states map[string]state.ElevatorStateJSON,
+) (map[string][][2]bool, error) {
+
+	input := AssignerInput{
+		HallRequests: hallRequests,
+		States:       states,
+	}
+
+	jsonBytes, err := json.Marshal(input)
+	if err != nil {
+		return nil, fmt.Errorf("json.Marshal failed: %w", err)
+	}
+	jsonStr := string(jsonBytes)
+	//fmt.Println("JSON sendt til hall_request_assigner:", jsonStr)
+
+	assignerPath := ""
+	switch runtime.GOOS {
+	case "windows":
+		assignerPath = "./hallRequestAssigner/hall_request_assigner.exe"
+	case "darwin":
+		assignerPath = "./hallRequestAssigner/hall_request_assigner_mac"
+	default:
+		assignerPath = "./hallRequestAssigner/hall_request_assigner"
+	}
+
+	// Run binary file
+	cmd := exec.Command(assignerPath, "--input", jsonStr)
+
+	outputBytes, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf(
+			"hall_request_assigner failed: %w\n%s",
+			err,
+			string(outputBytes),
+		)
+	}
+
+	output := make(map[string][][2]bool)
+	err = json.Unmarshal(outputBytes, &output)
+	if err != nil {
+		return nil, fmt.Errorf("json.Unmarshal failed: %w\nOutput: %s", err, string(outputBytes))
+	}
+
+	return output, nil
 }

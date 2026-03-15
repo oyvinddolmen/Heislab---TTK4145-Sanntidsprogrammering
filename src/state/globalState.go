@@ -3,7 +3,6 @@ package state
 import (
 	"fmt"
 	"heislab/elevator/elevIO"
-	"heislab/hallRequestAssigner"
 	"heislab/management"
 	"sync"
 )
@@ -11,8 +10,16 @@ import (
 type GlobalStateData struct {
 	HallRequests        [][2]bool                                        // [floor][0=up,1=down]
 	HallRequestsVersion [][2]int                                         // incremented by one when matching hallRequest is updated
-	States              map[string]hallRequestAssigner.ElevatorStateJSON // elevatorID -> state
+	States              map[string]ElevatorStateJSON // elevatorID -> state
 	LocalID             string
+}
+
+type ElevatorStateJSON struct {
+	Behavior      string `json:"behaviour"` // idle, moving, doorOpen, offline
+	Floor         int    `json:"floor"`
+	Direction     string `json:"direction"`
+	CabRequests   []bool `json:"cabRequests"`
+	CanTakeOrders bool   `json:"canTakeOrders"`
 }
 
 type GlobalState struct {
@@ -25,7 +32,7 @@ func InitGlobalState(elev *management.Elevator, elevID string) *GlobalState {
 
 	globalState.data.HallRequests = make([][2]bool, management.NumFloors)
 	globalState.data.HallRequestsVersion = make([][2]int, management.NumFloors)
-	globalState.data.States = make(map[string]hallRequestAssigner.ElevatorStateJSON)
+	globalState.data.States = make(map[string]ElevatorStateJSON)
 	globalState.data.LocalID = elevID
 	globalState.data.States[elevID] = ConvertElevatorToJSON(elev) 
 	return globalState
@@ -35,13 +42,13 @@ func InitGlobalState(elev *management.Elevator, elevID string) *GlobalState {
 // State conversion
 // -------------------------------------------------------------------------------------------
 
-func ConvertElevatorToJSON(elev *management.Elevator) hallRequestAssigner.ElevatorStateJSON {
+func ConvertElevatorToJSON(elev *management.Elevator) ElevatorStateJSON {
 	cabRequests := make([]bool, management.NumFloors)
 	for floor := 0; floor < management.NumFloors; floor++ {
 		cabRequests[floor] = elev.Orders[floor][management.CabButton].OrderPlaced
 	}
 
-	return hallRequestAssigner.ElevatorStateJSON{
+	return ElevatorStateJSON{
 		Behavior:      convertState(elev.State),
 		Floor:         elev.LastFloor,
 		Direction:     convertDirection(elev.MoveDir),
@@ -108,14 +115,14 @@ func (globalState *GlobalState) SetElevatorToOffline(deadID string) {
 }
 
 // SetElevatorState setter en spesifikk elevator state i globalState
-func (globalState *GlobalState) SetElevatorGlobalState(elevID string, state hallRequestAssigner.ElevatorStateJSON) {
+func (globalState *GlobalState) SetElevatorGlobalState(elevID string, state ElevatorStateJSON) {
 	globalState.mutex.Lock()
 	defer globalState.mutex.Unlock()
 	globalState.data.States[elevID] = state
 }
 
 // GetElevatorState henter state for en spesifikk heis
-func (globalState *GlobalState) GetElevatorState(elevID string) (hallRequestAssigner.ElevatorStateJSON, bool) {
+func (globalState *GlobalState) GetElevatorState(elevID string) (ElevatorStateJSON, bool) {
 	globalState.mutex.Lock()
 	defer globalState.mutex.Unlock()
 	state, ok := globalState.data.States[elevID]
@@ -133,7 +140,7 @@ func (globalState *GlobalState) GetCopy() GlobalStateData {
 	copyState.HallRequests = append([][2]bool(nil), globalState.data.HallRequests...)
 	copyState.HallRequestsVersion = append([][2]int(nil), globalState.data.HallRequestsVersion...)
 
-	newMap := make(map[string]hallRequestAssigner.ElevatorStateJSON)
+	newMap := make(map[string]ElevatorStateJSON)
 	for k, v := range globalState.data.States {
 		newMap[k] = v
 	}
