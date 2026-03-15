@@ -28,11 +28,10 @@ const IdleTimeOut = 2 * time.Second
 // -------------------------------------------------------------------------------------------
 
 // sets elevators state and call on-state-entry functions
-func setElevState(elev *management.Elevator, globalState *state.GlobalState, state management.State) {
-	prev := elev.State
-	elev.State = state
+func setElevState(elev *management.Elevator, globalState *state.GlobalState, newState management.State) {
+	elev.SetState(newState)
 
-	switch state {
+	switch newState {
 	case management.ElevIdle:
 		onIdleEntry(elev, globalState)
 	case management.ElevMoving:
@@ -40,20 +39,18 @@ func setElevState(elev *management.Elevator, globalState *state.GlobalState, sta
 	case management.ElevObstruction:
 		onObstructionEntry(elev)
 	}
-
-	fmt.Println("STATE CHANGE:", prev, "->", state)
 }
 
 // turns off door open and stop lamp, and sets motor dir based on next order
 func onIdleEntry(elev *management.Elevator, globalState *state.GlobalState) {
 	elevIO.SetDoorOpenLamp(false)
 	elevIO.SetStopLamp(false)
-	elev.SetElevFloor(elevIO.GetFloor())
+	elev.SetFloor(elevIO.GetFloor())
 	updateAssignments(elev, globalState)
 	UpdateCurrentOrderAndsafeDrive(elev, globalState)
 	SetAllLights(elev, globalState)
 	turnOffCanTakeOrdersTimer()
-	elev.SetElevCanTakeOrders(true)
+	elev.SetCanTakeOrders(true)
 	startIdleTimer()
 }
 
@@ -61,7 +58,7 @@ func onIdleEntry(elev *management.Elevator, globalState *state.GlobalState) {
 func onMovingEntry(elev *management.Elevator) {
 	elevIO.SetDoorOpenLamp(false)
 	elevIO.SetStopLamp(false)
-	elev.SetElevFloor(-1)
+	elev.SetFloor(-1)
 	startNewCanTakeOrdersTimer()
 }
 
@@ -82,16 +79,16 @@ func handleButtonPress(elev *management.Elevator, globalState *state.GlobalState
 	order := management.CreateOrder(button)
 
 	// Ignore button press if we are already at the floor and serving it, but open door
-	if order.Floor == elev.GetFloor() {
+	if order.GetFloor() == elev.GetFloor() {
 		setElevState(elev, globalState, management.ElevObstruction)
 		return true
 	}
-	if order.ButtonType == management.CabButton {
-		elev.AddCabOrderToElevator(order)
+	if order.GetButtonType() == management.CabButton {
+		elev.SetOrder(order)
 		globalState.UpdateGlobalState(elev)
 	} else {
 		globalState.AddHallOrder(order)
-		globalState.IncrementHallOrderVersion(order.Floor, order.ButtonType)
+		globalState.IncrementHallOrderVersion(order.GetFloor(), order.GetButtonType())
 	}
 
 	network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
@@ -101,11 +98,11 @@ func handleButtonPress(elev *management.Elevator, globalState *state.GlobalState
 }
 
 func ShouldStop(elev *management.Elevator, floor int) bool {
-	if elev.CurrentOrder.OrderPlaced == false {
+	if !elev.GetCurrentOrderActiveStatus() {
 		return true
 	}
 
-	switch elev.MoveDir {
+	switch elev.GetMoveDir() {
 	case management.DirUp:
 		if orderManagement.CabOrderAtFloor(elev, floor) {
 			return true
@@ -113,8 +110,8 @@ func ShouldStop(elev *management.Elevator, floor int) bool {
 
 		// Takes hallorderUp when bypassing as long as the current order is not a hallDown not at 4 floor
 		if orderManagement.HallOrderUpAtFloor(elev, floor) {
-			if elev.CurrentOrder.ButtonType == elevIO.HallDownButton {
-				if elev.CurrentOrder.Floor == management.NumFloors-1 {
+			if elev.GetCurrentOrderButtonType() == elevIO.HallDownButton {
+				if elev.GetCurrentOrderFloor() == management.NumFloors-1 {
 					return true
 				}
 			} else {
@@ -136,8 +133,8 @@ func ShouldStop(elev *management.Elevator, floor int) bool {
 
 		//Takes hallorderUp when bypassing as long as the current order is not a hallDown not at 4 floor
 		if orderManagement.HallOrderDownAtFloor(elev, floor) {
-			if elev.CurrentOrder.ButtonType == elevIO.HallUpButton {
-				if elev.CurrentOrder.Floor == 0 {
+			if elev.GetCurrentOrderButtonType() == elevIO.HallUpButton {
+				if elev.GetCurrentOrderFloor() == 0 {
 					return true
 				}
 			} else {
@@ -160,7 +157,7 @@ func ShouldStop(elev *management.Elevator, floor int) bool {
 func UpdateCurrentOrderAndsafeDrive(elev *management.Elevator, globalState *state.GlobalState) {
 	orderManagement.UpdateCurrentOrder(elev, globalState)
 	UpdateMoveDir(elev)
-	if elev.MoveDir == management.DirIdle {
+	if elev.GetMoveDir() == management.DirIdle {
 		setMotorStop()
 		return
 	}
@@ -177,7 +174,7 @@ func updateAssignments(elev *management.Elevator, globalState *state.GlobalState
 
 // checks if there are any hall-orders at the same floor as elevator
 func needToOpenDoors(elev *management.Elevator, globalState *state.GlobalState) bool {
-	currentFloor := elev.Floor
+	currentFloor := elev.GetFloor()
 	if currentFloor == -1 {
 		return false
 	}
@@ -193,24 +190,24 @@ func needToOpenDoors(elev *management.Elevator, globalState *state.GlobalState) 
 }
 
 func ChooseDirectionAfterStop(elev *management.Elevator, floor int) {
-	// if the currentorder was a hallUP -> Set direction to Up
-	if orderManagement.HallOrderUpAtFloor(elev, floor) && elev.CurrentOrder.ButtonType == elevIO.HallUpButton {
-		elev.MoveDir = management.DirUp
+	// if the currentorder was a hallUp -> Set direction to Up
+	if orderManagement.HallOrderUpAtFloor(elev, floor) && elev.GetCurrentOrderButtonType() == elevIO.HallUpButton {
+		elev.SetMoveDir(management.DirUp)
 		return
 	}
-	// if the currentorder was a hallDown -> Set direction to down
-	if orderManagement.HallOrderDownAtFloor(elev, floor) && elev.CurrentOrder.ButtonType == elevIO.HallDownButton {
-		elev.MoveDir = management.DirDown
+	// if the current order was a hallDown -> Set direction to Down
+	if orderManagement.HallOrderDownAtFloor(elev, floor) && elev.GetCurrentOrderButtonType() == elevIO.HallDownButton {
+		elev.SetMoveDir(management.DirDown)
 		return
 	}
 	UpdateMoveDir(elev)
 }
 
 func UpdateMoveDir(elev *management.Elevator) {
-	currentOrderFloor := elev.CurrentOrder.Floor
-	elevFloor := elev.Floor
+	currentOrderFloor := elev.GetCurrentOrderFloor()
+	elevFloor := elev.GetFloor()
 
-	if elev.CurrentOrder.OrderPlaced == false {
+	if !elev.GetCurrentOrderActiveStatus() {
 
 		fmt.Println("currentorder.orderplaced == false, stop")
 		return
@@ -218,17 +215,17 @@ func UpdateMoveDir(elev *management.Elevator) {
 
 	// if between floors, use last floor as reference
 	if elevFloor == -1 {
-		elevFloor = elev.LastFloor
+		elevFloor = elev.GetLastFloor()
 	}
 
 	fmt.Println("Elev floor used in updateMovDir is:", elevFloor)
 
 	if currentOrderFloor > elevFloor {
-		elev.MoveDir = management.DirUp
-	} else if currentOrderFloor < elev.Floor {
-		elev.MoveDir = management.DirDown
+		elev.SetMoveDir(management.DirUp)
+	} else if currentOrderFloor < elev.GetFloor() {
+		elev.SetMoveDir(management.DirDown)
 	} else {
-		elev.MoveDir = management.DirIdle
+		elev.SetMoveDir(management.DirIdle)
 	}
 }
 

@@ -86,14 +86,14 @@ RECOVER:
 		return false
 	} else {
 		if recovered.Floor >= 0 && recovered.Floor < management.NumFloors {
-			elev.Floor = recovered.Floor
-			elev.LastFloor = recovered.Floor
+			elev.SetFloor(recovered.Floor)
+			elev.SetLastFloor(recovered.Floor)
 			elevIO.SetFloorIndicator(recovered.Floor)
 		}
 
 		for floor := 0; floor < management.NumFloors && floor < len(recovered.CabOrders); floor++ {
 			if recovered.CabOrders[floor] {
-				elev.Orders[floor][elevIO.CabButton].OrderPlaced = true
+				elev.SetOrderActiveStatus(floor, int(elevIO.CabButton), true)
 				elevIO.SetButtonLamp(elevIO.CabButton, floor, true)
 			}
 		}

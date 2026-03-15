@@ -7,75 +7,78 @@ import (
 	"heislab/state"
 )
 
-func UpdateCurrentOrder(elev *management.Elevator, gs *state.GlobalState) {
+func UpdateCurrentOrder(elev *management.Elevator, globalState *state.GlobalState) {
 	elev.PrintOrdersDebug()
-	floor := elev.Floor
-	if elev.Floor == -1 {
+	floor := elev.GetFloor()
+	if elev.GetFloor() == -1 {
 		return
 	}
 
-	switch elev.MoveDir {
+	switch elev.GetMoveDir() {
 	case management.DirUp:
-		if assignUp(gs, elev, floor) {
+		if assignUp(globalState, elev, floor) {
 			return
 		}
 
-		if OrdersBelow(elev, elev.Floor) {
-			assignDown(gs, elev, floor)
+		if OrdersBelow(elev, elev.GetFloor()) {
+			assignDown(globalState, elev, floor)
 			elev.SetMoveDir(management.DirDown)
 			return
 		}
 
 	case management.DirDown:
-		if assignDown(gs, elev, floor) {
+		if assignDown(globalState, elev, floor) {
 			return
 		}
 
-		if OrdersAbove(elev, elev.Floor) {
-			assignUp(gs, elev, floor)
+		if OrdersAbove(elev, elev.GetFloor()) {
+			assignUp(globalState, elev, floor)
 			elev.SetMoveDir(management.DirUp)
 			return
 		}
 
 	default: // Idle
-		if assignUp(gs, elev, floor) {
+		if assignUp(globalState, elev, floor) {
 			elev.SetMoveDir(management.DirUp)
 			return
 		}
-		if assignDown(gs, elev, floor) {
+		if assignDown(globalState, elev, floor) {
 			elev.SetMoveDir(management.DirDown)
 			return
 		}
 	}
-	elev.CurrentOrder.OrderPlaced = false
+
+	elev.SetCurrentOrderActiveStatus(false)
 }
 
 // TODO: what does this function do?
-func assignUp(gs *state.GlobalState, elev *management.Elevator, startFloor int) bool {
+func assignUp(globalState *state.GlobalState, elev *management.Elevator, startFloor int) bool {
 
 	for floor := startFloor + 1; floor < management.NumFloors; floor++ {
 
 		// CAB priority
 		if CabOrderAtFloor(elev, floor) {
-			if elev.LastOrder.ButtonType == elevIO.HallDownButton && HallOrderUpAtFloor(elev, elev.Floor) {
-				RemoveHallUp(gs, elev, elev.Floor)
+			if elev.GetLastOrderButtonType() == elevIO.HallDownButton && HallOrderUpAtFloor(elev, elev.GetFloor()) {
+				RemoveHallUp(globalState, elev, elev.GetFloor())
 			}
-			elev.LastOrder = elev.CurrentOrder
-			elev.CurrentOrder = elev.Orders[floor][elevIO.CabButton]
+			elev.SetLastOrder(elev.GetCurrentOrder())
+			elev.SetCurrentOrder(elev.GetOrder(floor, int(elevIO.CabButton)))
 			return true
 		}
 
 		// hallUp if going up
-		if HallOrderUpAtFloor(elev, floor) && elev.LastOrder.ButtonType != elevIO.HallDownButton {
-			elev.LastOrder = elev.CurrentOrder
-			elev.CurrentOrder = elev.Orders[floor][elevIO.HallUpButton]
+		if HallOrderUpAtFloor(elev, floor) && elev.GetLastOrderButtonType() != elevIO.HallDownButton {
+			elev.SetLastOrder(elev.GetCurrentOrder())
+			elev.SetCurrentOrder(elev.GetOrder(floor, int(elevIO.HallUpButton)))
 			return true
 		}
 
 		if !OrdersAbove(elev, floor) && HallOrderDownAtFloor(elev, floor) &&
-			(elev.LastOrder.ButtonType == elevIO.CabButton || (elev.LastOrder.ButtonType == elevIO.HallUpButton && floor == management.NumFloors-1)) {
-			elev.LastOrder = elev.CurrentOrder
-			elev.CurrentOrder = elev.Orders[floor][elevIO.HallDownButton]
+				(elev.GetLastOrderButtonType() == elevIO.CabButton ||
+				(elev.GetLastOrderButtonType() == elevIO.HallUpButton &&
+				floor == management.NumFloors-1)) {
+			elev.SetLastOrder(elev.GetCurrentOrder())
+			elev.SetCurrentOrder(elev.GetOrder(floor, int(elevIO.HallDownButton)))
 			return true
 		}
 	}
@@ -83,31 +86,31 @@ func assignUp(gs *state.GlobalState, elev *management.Elevator, startFloor int) 
 }
 
 // TODO: what does this function do?
-func assignDown(gs *state.GlobalState, elev *management.Elevator, startFloor int) bool {
+func assignDown(globalState *state.GlobalState, elev *management.Elevator, startFloor int) bool {
 	for floor := startFloor - 1; floor >= 0; floor-- {
 		// CAB prioritet
 		if CabOrderAtFloor(elev, floor) {
-			if elev.LastOrder.ButtonType == elevIO.HallUpButton && HallOrderDownAtFloor(elev, elev.Floor) {
-				RemoveHallDown(gs, elev, floor)
+			if elev.GetLastOrderButtonType() == elevIO.HallUpButton && HallOrderDownAtFloor(elev, elev.GetFloor()) {
+				RemoveHallDown(globalState, elev, floor)
 			}
-			elev.LastOrder = elev.CurrentOrder
-			elev.CurrentOrder = elev.Orders[floor][elevIO.CabButton]
+			elev.SetLastOrder(elev.GetCurrentOrder())
+			elev.SetCurrentOrder(elev.GetOrder(floor, int(elevIO.CabButton)))
 			return true
 		}
 
 		// hallDown hvis vi går ned
-		if HallOrderDownAtFloor(elev, floor) && elev.LastOrder.ButtonType != elevIO.HallUpButton {
-			elev.LastOrder = elev.CurrentOrder
-			elev.CurrentOrder = elev.Orders[floor][elevIO.HallDownButton]
+		if HallOrderDownAtFloor(elev, floor) && elev.GetLastOrderButtonType() != elevIO.HallUpButton {
+			elev.SetLastOrder(elev.GetCurrentOrder())
+			elev.SetCurrentOrder(elev.GetOrder(floor, int(elevIO.HallDownButton)))
 			return true
 		}
 
 		// hvis ingen under og hallOrder-logikk oppfylt → kan ta hallUp
 		if !OrdersBelow(elev, floor) && HallOrderUpAtFloor(elev, floor) &&
-			(elev.LastOrder.ButtonType == elevIO.CabButton ||
-				(elev.LastOrder.ButtonType == elevIO.HallDownButton && floor == 0)) {
-			elev.LastOrder = elev.CurrentOrder
-			elev.CurrentOrder = elev.Orders[floor][elevIO.HallUpButton]
+				(elev.GetLastOrderButtonType() == elevIO.CabButton ||
+				(elev.GetLastOrderButtonType() == elevIO.HallDownButton && floor == 0)) {
+			elev.SetLastOrder(elev.GetCurrentOrder())
+			elev.SetCurrentOrder(elev.GetOrder(floor, int(elevIO.HallUpButton)))
 			return true
 		}
 	}
@@ -115,15 +118,15 @@ func assignDown(gs *state.GlobalState, elev *management.Elevator, startFloor int
 }
 
 func CabOrderAtFloor(elev *management.Elevator, floor int) bool {
-	return elev.Orders[floor][elevIO.CabButton].OrderPlaced
+	return elev.GetOrderActiveStatus(floor, int(elevIO.CabButton))
 }
 
 func HallOrderUpAtFloor(elev *management.Elevator, floor int) bool {
-	return elev.Orders[floor][elevIO.HallUpButton].OrderPlaced
+	return elev.GetOrderActiveStatus(floor, int(elevIO.HallUpButton))
 }
 
 func HallOrderDownAtFloor(elev *management.Elevator, floor int) bool {
-	return elev.Orders[floor][elevIO.HallDownButton].OrderPlaced
+	return elev.GetOrderActiveStatus(floor, int(elevIO.HallDownButton))
 }
 
 func AnyOrderAtFloor(elev *management.Elevator, floor int) bool {
@@ -132,15 +135,11 @@ func AnyOrderAtFloor(elev *management.Elevator, floor int) bool {
 		HallOrderDownAtFloor(elev, floor)
 }
 
-func CurrentOrderPlaced(elev *management.Elevator) bool {
-	return elev.CurrentOrder.OrderPlaced
-}
-
 func PrintOrders(elev *management.Elevator) {
-	for f := 0; f < management.NumFloors; f++ {
-		for b := 0; b < management.NumButtons; b++ {
-			order := elev.Orders[f][b]
-			fmt.Printf("Floor: %d Button: %d OrderPlaced: %t\n", order.Floor, order.ButtonType, order.OrderPlaced)
+	for floor := 0; floor < management.NumFloors; floor++ {
+		for button := 0; button < management.NumButtons; button++ {
+			order := elev.GetOrder(floor, button)
+			fmt.Printf("Floor: %d Button: %d OrderPlaced: %t\n", order.GetFloor(), order.GetButtonType(), order.GetActiveStatus())
 		}
 	}
 }

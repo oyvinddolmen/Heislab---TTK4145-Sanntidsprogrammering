@@ -28,15 +28,15 @@ func GoToNearestFloorUnder(elev *management.Elevator) {
 	
 	elevIO.SetMotorDirection(elevIO.MotorDirStop)
 	elevIO.SetFloorIndicator(elevIO.GetFloor())
-	elev.Floor = elevIO.GetFloor()
-	elev.LastFloor = elevIO.GetFloor()
-	elev.MoveDir = management.DirIdle
-	elev.State = management.ElevIdle
+	elev.SetFloor(elevIO.GetFloor())
+	elev.SetLastFloor(elevIO.GetFloor())
+	elev.SetMoveDir(management.DirIdle)
+	elev.SetState(management.ElevIdle)
 }
 
 // Sets motor direction based on elevator-struct's MoveDir
 func setMotorFromDir(elev *management.Elevator) {
-	switch elev.MoveDir {
+	switch elev.GetMoveDir() {
 	case management.DirUp:
 		elevIO.SetMotorDirection(elevIO.MotorDirUp)
 	case management.DirDown:

@@ -30,15 +30,15 @@ const (
 )
 
 type Elevator struct {
-	State         State
-	ID            string
-	Floor         int // -1 if between floors
-	LastFloor     int
-	MoveDir       Direction
-	CurrentOrder  Order
-	LastOrder     Order
-	CanTakeOrders bool
-	Orders        [NumFloors][NumButtons]Order
+	state         State
+	id            string
+	floor         int // -1 if between floors
+	lastFloor     int
+	moveDir       Direction
+	currentOrder  Order
+	lastOrder     Order
+	canTakeOrders bool
+	orders        [NumFloors][NumButtons]Order
 }
 
 type ElevChannels struct {
@@ -48,20 +48,26 @@ type ElevChannels struct {
 }
 
 func InitElevator(elevID string, numFloors int) (Elevator, ElevChannels) {
-	noOrder := Order{
-		Floor:       1,
-		ButtonType:  elevIO.CabButton,
-		OrderPlaced: false,
-	}
+	noOrder := CreateOrder(elevIO.ButtonEvent{Floor: 1, Button: elevIO.ButtonType(elevIO.CabButton)})
+	noOrder.SetActiveStatus(false)
 
 	elev := Elevator{
-		ID:           elevID,
-		State:        ElevInit,
-		Floor:        0,
-		LastFloor:    0,
-		MoveDir:      DirIdle,
-		CurrentOrder: noOrder,
-		LastOrder:    noOrder,
+        id:           elevID,
+        state:        ElevInit,
+        floor:        0,
+        lastFloor:    0,
+        moveDir:      DirIdle,
+        currentOrder: noOrder,
+        lastOrder:    noOrder,
+    }
+
+	// create elev's order-matrix
+	for floor := 0; floor < numFloors; floor++ {
+		for button := 0; button < NumButtons; button++ {
+			tempOrder := CreateOrder(elevIO.ButtonEvent{Floor: floor, Button: elevIO.ButtonType(button)})
+			tempOrder.SetActiveStatus(false)
+			elev.orders[floor][button] = tempOrder
+		}
 	}
 
 	elevChannels := ElevChannels{
@@ -70,69 +76,60 @@ func InitElevator(elevID string, numFloors int) (Elevator, ElevChannels) {
 		ButtonPresses: make(chan elevIO.ButtonEvent),
 	}
 
-	// create elev's order-matrix
-	for floor := 0; floor < numFloors; floor++ {
-		for button := 0; button < NumButtons; button++ {
-			elev.Orders[floor][button] = Order{
-				Floor:       floor,
-				ButtonType:  elevIO.ButtonType(button),
-				OrderPlaced: false,
-			}
-		}
-	}
 	return elev, elevChannels
 }
 
 // -------------------------------------------------------------------------------------------
-// Get and set functions
+// Set functions for elevator
 // -------------------------------------------------------------------------------------------
 
-func (elev *Elevator) SetMoveDir(moveDir Direction) {
-	elev.MoveDir = moveDir
-}
+func (elev *Elevator) SetState(state State) { elev.state = state }
+func (elev *Elevator) SetFloor(floor int) { elev.floor = floor }
+func (elev *Elevator) SetLastFloor(lastFloor int) { elev.lastFloor = lastFloor }
+func (elev *Elevator) SetMoveDir(moveDir Direction) { elev.moveDir = moveDir }
+func (elev *Elevator) SetCurrentOrder(currentOrder Order) { elev.currentOrder = currentOrder }
+func (elev *Elevator) SetLastOrder(lastOrder Order) { elev.lastOrder = lastOrder }
+func (elev *Elevator) SetCanTakeOrders(canTakeOrders bool) { elev.canTakeOrders = canTakeOrders }
+func (elev *Elevator) SetOrder(order Order) { elev.orders[order.GetFloor()][int(order.GetButtonType())] = order }
 
-func (elev *Elevator) SetElevLastFloor(lastFloor int) {
-	elev.LastFloor = lastFloor
-}
+func (elev *Elevator) SetCurrentOrderActiveStatus(active bool) { elev.currentOrder.SetActiveStatus(active) }
+func (elev *Elevator) SetLastOrderButtonType(button elevIO.ButtonType) { elev.lastOrder.SetButtonType(button) }
+func (elev *Elevator) SetOrderActiveStatus(floor, button int, active bool) { elev.orders[floor][button].SetActiveStatus(active) }
 
-func (elev *Elevator) SetElevFloor(floor int) {
-	elev.Floor = floor
-}
 
-func (elev *Elevator) SetElevCanTakeOrders(canTakeOrders bool) {
-	elev.CanTakeOrders = canTakeOrders
-	fmt.Println("Set elev can take order:", canTakeOrders)
-}
+// -------------------------------------------------------------------------------------------
+// Get functions for elevator
+// -------------------------------------------------------------------------------------------
 
-func (elev *Elevator) GetFloor() int {
-	return elev.Floor
-}
+func (elev *Elevator) GetState() State { return elev.state }
+func (elev *Elevator) GetID() string { return elev.id }
+func (elev *Elevator) GetFloor() int { return elev.floor }
+func (elev *Elevator) GetLastFloor() int { return elev.lastFloor }
+func (elev *Elevator) GetMoveDir() Direction { return elev.moveDir }
+func (elev *Elevator) GetCurrentOrder() Order { return elev.currentOrder }
+func (elev *Elevator) GetCanTakeOrders() bool { return elev.canTakeOrders }
+func (elev *Elevator) GetOrder(floor, button int) Order { return elev.orders[floor][button] }
 
-func (elev *Elevator) GetElevID() string {
-	return elev.ID
-}
+func (elev *Elevator) GetCurrentOrderActiveStatus() bool { return elev.currentOrder.GetActiveStatus() }
+func (elev *Elevator) GetCurrentOrderFloor() int { return elev.currentOrder.GetFloor() }
+func (elev *Elevator) GetCurrentOrderButtonType() elevIO.ButtonType { return elev.currentOrder.GetButtonType() }
+func (elev *Elevator) GetLastOrderButtonType() elevIO.ButtonType { return elev.lastOrder.GetButtonType() }
+func (elev *Elevator) GetOrderActiveStatus(floor, button int) bool { return elev.orders[floor][button].GetActiveStatus() }
 
-func (elev *Elevator) AddCabOrderToElevator(order Order) {
-	elev.Orders[order.Floor][int(order.ButtonType)] = order
-}
-
-func (elev *Elevator) GetCurrentOrderFloor() int {
-	return elev.CurrentOrder.Floor
-}
 
 // Printer alle relevante ordre- og tilstandsinformasjon for heisen
 // TODO: remove before handing in code
 func (elev *Elevator) PrintOrdersDebug() {
-	fmt.Println("Elev floor:", elev.Floor)
-	fmt.Println("MoveDir:", elev.MoveDir)
-	fmt.Println("LastOrder.ButtonType (0: HallUp , 1: HallDown , 2: Caborder):", elev.LastOrder.ButtonType)
+	fmt.Println("Elev floor:", elev.floor)
+	fmt.Println("MoveDir:", elev.moveDir)
+	fmt.Println("LastOrder.ButtonType (0: HallUp , 1: HallDown , 2: Caborder):", elev.GetLastOrderButtonType())
 
 	for floor := 0; floor < NumFloors; floor++ {
 		fmt.Println(
 			"floor", floor,
-			"cab", elev.Orders[floor][elevIO.CabButton].OrderPlaced,
-			"up", elev.Orders[floor][elevIO.HallUpButton].OrderPlaced,
-			"down", elev.Orders[floor][elevIO.HallDownButton].OrderPlaced,
+			"cab", elev.orders[floor][elevIO.CabButton].GetActiveStatus(),
+			"up", elev.orders[floor][elevIO.HallUpButton].GetActiveStatus(),
+			"down", elev.orders[floor][elevIO.HallDownButton].GetActiveStatus(),
 		)
 	}
 }

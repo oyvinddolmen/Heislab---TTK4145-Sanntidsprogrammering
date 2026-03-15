@@ -34,8 +34,8 @@ type ButtonEvent struct {
 	Button ButtonType
 }
 
-// struct for cab and floor lights
-type CabfloorLights struct {
+// TODO: struct for cab and floor lights brukes heller ikke?
+type CabFloorLights struct {
 	Floor  int
 	Button ButtonType
 	Value  bool
@@ -97,6 +97,7 @@ func PollButtons(receiver chan<- ButtonEvent) {
 	}
 }
 
+// TODO: Brukes denne?
 func PollFloorSensor(receiver chan<- int) {
 	previousFloor := -1
 

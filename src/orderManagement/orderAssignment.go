@@ -34,21 +34,19 @@ func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *
 
 // Applies assigned hall orders to the local elevator.
 func applyAssignments(elev *management.Elevator, assignments map[string][][2]bool) {
-	elevID := elev.GetElevID()
+	elevID := elev.GetID()
 	assigned, exists := assignments[elevID]
 	if !exists {
 		fmt.Println("assignments[elevID] finnes ikke!!!")
 		return
 	}
 
-	//fmt.Println("assigned: ", assigned)
-
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for button := 0; button < management.CabButton; button++ { // only hall buttons
 			if assigned[floor][button] {
-				elev.Orders[floor][button].OrderPlaced = true
+				elev.SetOrderActiveStatus(floor, button, true)
 			} else {
-				elev.Orders[floor][button].OrderPlaced = false
+				elev.SetOrderActiveStatus(floor, button, false)
 			}
 		}
 	}

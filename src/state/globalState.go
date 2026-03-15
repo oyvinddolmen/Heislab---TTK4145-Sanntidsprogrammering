@@ -45,15 +45,15 @@ func InitGlobalState(elev *management.Elevator, elevID string) *GlobalState {
 func ConvertElevatorToJSON(elev *management.Elevator) ElevatorStateJSON {
 	cabOrders := make([]bool, management.NumFloors)
 	for floor := 0; floor < management.NumFloors; floor++ {
-		cabOrders[floor] = elev.Orders[floor][management.CabButton].OrderPlaced
+		cabOrders[floor] = elev.GetOrderActiveStatus(floor, management.CabButton)
 	}
 
 	return ElevatorStateJSON{
-		Behavior:      convertState(elev.State),
-		Floor:         elev.LastFloor,
-		Direction:     convertDirection(elev.MoveDir),
+		Behavior:      convertState(elev.GetState()),
+		Floor:         elev.GetFloor(),
+		Direction:     convertDirection(elev.GetMoveDir()),
 		CabOrders:     cabOrders,
-		CanTakeOrders: elev.CanTakeOrders,
+		CanTakeOrders: elev.GetCanTakeOrders(),
 	}
 }
 
@@ -88,13 +88,13 @@ func convertDirection(direction management.Direction) string {
 func (globalState *GlobalState) UpdateGlobalState(elev *management.Elevator) {
 	globalState.mutex.Lock()
 	defer globalState.mutex.Unlock()
-	globalState.data.States[elev.ID] = ConvertElevatorToJSON(elev)
+	globalState.data.States[elev.GetID()] = ConvertElevatorToJSON(elev)
 }
 
 func (globalState *GlobalState) AddHallOrder(order management.Order) {
 	globalState.mutex.Lock()
 	defer globalState.mutex.Unlock()
-	globalState.data.HallOrders[order.Floor][order.ButtonType] = true
+	globalState.data.HallOrders[order.GetFloor()][order.GetButtonType()] = true
 }
 
 func (globalState *GlobalState) IncrementHallOrderVersion(floor int, button elevIO.ButtonType) {

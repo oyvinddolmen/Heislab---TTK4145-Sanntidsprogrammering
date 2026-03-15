@@ -33,7 +33,7 @@ func runFSM(
 	networkChannels network.NetworkConnection,
 ) {
 	for {
-		switch elev.State {
+		switch elev.GetState() {
 
 		// ----------------- Case: IDLE -------------------------
 		case management.ElevIdle:
@@ -67,9 +67,9 @@ func runFSM(
 				setElevState(elev, globalState, management.ElevObstruction)
 			case <-idleTimer.C:
 				updateAssignments(elev, globalState)
-				elev.LastOrder.ButtonType = elevIO.CabButton
+				elev.SetLastOrderButtonType(elevIO.CabButton)
 				UpdateCurrentOrderAndsafeDrive(elev, globalState)
-				if orderManagement.CurrentOrderPlaced(elev) == false {
+				if !elev.GetCurrentOrderActiveStatus() {
 					startIdleTimer()
 				}
 			}
@@ -81,15 +81,15 @@ func runFSM(
 				updateAssignments(elev, globalState)
 			case floor := <-elevChannels.NewFloor:
 				setFloorIndicator(floor)
-				elev.SetElevLastFloor(floor)
-				elev.SetElevCanTakeOrders(true)
+				elev.SetLastFloor(floor)
+				elev.SetCanTakeOrders(true)
 				if ShouldStop(elev, floor) {
 					setMotorStop()
-					elev.SetElevFloor(floor)
+					elev.SetFloor(floor)
 					ChooseDirectionAfterStop(elev, floor)
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 					updateAssignments(elev, globalState)
-					if orderManagement.CurrentOrderPlaced(elev) {
+					if elev.GetCurrentOrderActiveStatus() {
 						orderManagement.UpdateCurrentOrder(elev, globalState)
 						UpdateMoveDir(elev)
 					}
@@ -101,7 +101,7 @@ func runFSM(
 			case <-elevChannels.Obstruction:
 				setElevState(elev, globalState, management.ElevObstruction)
 			case <-canTakeOrdersTimer.C:
-				elev.SetElevCanTakeOrders(false)
+				elev.SetCanTakeOrders(false)
 			}
 
 		// ----------------- Case: OBSTRUCTION -------------------------
@@ -147,7 +147,7 @@ func runFSM(
 					startNewDoorTimer()
 				}
 			case <-canTakeOrdersTimer.C:
-				elev.SetElevCanTakeOrders(false)
+				elev.SetCanTakeOrders(false)
 			}
 		}
 	}

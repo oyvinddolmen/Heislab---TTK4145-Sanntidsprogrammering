@@ -41,13 +41,13 @@ func SetAllLights(elevator *management.Elevator, globalState *state.GlobalState)
 
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for button := 0; button < management.NumButtons; button++ {
-			order := elevator.Orders[floor][button]
+			order := elevator.GetOrder(floor, button)
 
 			if button == management.CabButton {
 				elevIO.SetButtonLamp(
 					elevIO.ButtonType(button),
 					floor,
-					order.OrderPlaced,
+					order.GetActiveStatus(),
 				)
 
 			} else {
