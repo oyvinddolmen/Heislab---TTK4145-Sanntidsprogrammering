@@ -36,11 +36,10 @@ func main() {
 		- før innlevering: fjerne alle print-og debugfunksjoner. Fjerne README fra utlevert kode
 	*/
 
-	// ---------------- FlaglobalState for ID and Ports --------------------
+	// ---------------- Flag GlobalState for ID and Ports --------------------
 	simHost := flag.String("simHost", "localhost", "Simulator host")
 	simPort := flag.Int("simPort", 15657, "Simulator port")
 	simAddr := flag.String("simAddr", "", "Full simulator address host:port (overrides simHost/simPort)")
-	peersPort := flag.Int("peersPort", 15667, "UDP port for peer discovery")
 	broadcastPort := flag.Int("bcastPort", 15668, "UDP port for global state broadcast")
 	elevIDFlag := flag.String("id", "1", "Elevator ID (optional)")
 	flag.Parse()
@@ -51,20 +50,14 @@ func main() {
 	}
 	elevID := *elevIDFlag
 
-	// ------------- Port Configuration --------------------
-	portCfg := network.PortConfig{
-		PeerDiscoveryPort: *peersPort,
-		MessageBcastPort:  *broadcastPort,
-		LocalID:           elevID,
-	}
-
 	// --------------------- Init elev, network and globalState ----------------------
-	networkConnection := network.InitNetwork(portCfg)
+	networkConnection := network.InitNetwork(*broadcastPort)
 	elevator.InitHardware(elevAddr, management.NumFloors)
 	elev, elevChannels := management.InitElevator(elevID, management.NumFloors)
 	globalState := state.InitGlobalState(&elev, elevID)
 
 	// --------------------- Recover on startup ----------------------
+	// TODO: Flytte inn i RunElevator. Må også gå an å få logikken under inn i RecoverOnStartup.
 	recoveredElev := network.RecoverOnStartup(&elev, globalState, networkConnection.IncomingGlobalStateChannel)
 	elevator.GoToNearestFloorUnder(&elev)
 	globalState.UpdateGlobalState(&elev)
@@ -73,6 +66,7 @@ func main() {
 	}
 
 	// ------------------- Communication ---------------------
+	// TODO: Plassere i InitCommunication eller noe ?
 	go network.ListenAndMergeGlobalState(
 		globalState,
 		networkConnection.IncomingGlobalStateChannel,
