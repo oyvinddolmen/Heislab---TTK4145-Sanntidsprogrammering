@@ -2,12 +2,11 @@ package network
 
 import (
 	"fmt"
+	"heislab/elevator/elevIO"
 	"heislab/management"
+	"heislab/state"
 	"sync"
 	"time"
-	"heislab/hallRequestAssigner"
-	"heislab/elevator/elevIO"
-	"heislab/state"
 )
 
 const HeartbeatTimeout = 2 * time.Second
@@ -65,7 +64,7 @@ func checkForDeadElevators(globalState *state.GlobalState, worldViewUpdate chan 
 func RecoverOnStartup(elev *management.Elevator, globalState *state.GlobalState, globalStateRx <-chan state.GlobalStateData) bool {
 	elevID := globalState.GetLocalID()
 	timeout := time.After(1 * time.Second)
-	var recovered *hallRequestAssigner.ElevatorStateJSON
+	var recovered *state.ElevatorStateJSON
 
 	for {
 		select {
