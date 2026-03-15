@@ -49,8 +49,8 @@ func runFSM(
 					UpdateCurrentOrderAndsafeDrive(elev, globalState)
 				}
 			case btn := <-elevChannels.ButtonPresses:
-				HallOrderConflict := false	//Becomes true if HallUp and HallDown active at current floor and 
-											//Caborder is pressed at a different direction then the current dirction
+				HallOrderConflict := false //Becomes true if HallUp and HallDown active at current floor and
+				//Caborder is pressed at a different direction then the current dirction
 				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, btn, networkChannels)
 				if !OrderWasAtCurrentFloor {
 					if elev.GetFloor() != -1 {
@@ -102,6 +102,7 @@ func runFSM(
 				setElevState(elev, globalState, management.ElevObstruction)
 			case <-canTakeOrdersTimer.C:
 				elev.SetElevCanTakeOrders(false)
+				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
 			}
 
 		// ----------------- Case: OBSTRUCTION -------------------------
