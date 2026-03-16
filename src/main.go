@@ -52,7 +52,7 @@ func main() {
 
 	// --------------------- Init elev, network and globalState ----------------------
 	networkConnection := network.InitNetwork(*broadcastPort)
-	elevator.InitHardware(elevAddr, management.NumFloors)
+	elevator.InitHardware(elevAddr)
 	elev, elevChannels := management.InitElevator(elevID, management.NumFloors)
 	globalState := state.InitGlobalState(&elev, elevID)
 

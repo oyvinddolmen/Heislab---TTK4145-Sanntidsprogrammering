@@ -10,12 +10,13 @@ import (
 // Elevator initialization
 // -------------------------------------------------------------------------------------------
 
-func InitHardware(address string, numFloors int) {
-    elevIO.InitElevatorIO(address, numFloors)
-    InitLights(numFloors)
+// Initializes elevator input/output functionality.
+func InitHardware(address string) {
+    elevIO.InitElevatorIO(address, management.NumFloors)
+    InitLights()
 }
 
-// moves elevator to closest floor under elevators position
+// Moves elevator to closest floor under elevators position.
 func GoToNearestFloorUnder(elev *management.Elevator) {
 	floor := elevIO.GetFloor()
 
@@ -34,7 +35,7 @@ func GoToNearestFloorUnder(elev *management.Elevator) {
 	elev.SetState(management.ElevIdle)
 }
 
-// Sets motor direction based on elevator-struct's MoveDir
+// Sets motor direction based on elevator struct's MoveDir.
 func setMotorFromDir(elev *management.Elevator) {
 	switch elev.GetMoveDir() {
 	case management.DirUp:
@@ -46,13 +47,13 @@ func setMotorFromDir(elev *management.Elevator) {
 	}
 }
 
-// Sets elevIO motor direction to stop and sets move direction in Elev struct
+// Sets elevIO motor direction to stop and sets move direction in Elev struct.
 func stopElevator(elev *management.Elevator) {
 	elevIO.SetMotorDirection(elevIO.MotorDirStop)
 	elev.SetMoveDir(management.DirIdle)
 }
 
-// sets elevIO motordirection to stop
+// Sets elevIO motor direction to stop.
 func setMotorStop() {
 	elevIO.SetMotorDirection(elevIO.MotorDirStop)
 }
