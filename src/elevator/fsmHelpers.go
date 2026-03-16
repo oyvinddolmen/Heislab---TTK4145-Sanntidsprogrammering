@@ -27,7 +27,7 @@ const IdleTimeOut = 2 * time.Second
 // Setting state and on-state-entry functions
 // -------------------------------------------------------------------------------------------
 
-// Sets elevators state and calls on-state-entry functions
+// Sets elevators state and calls on-state-entry functions.
 func setElevState(elev *management.Elevator, globalState *state.GlobalState, newState management.State) {
 	elev.SetState(newState)
 
@@ -194,12 +194,12 @@ func needToOpenDoors(elev *management.Elevator, globalState *state.GlobalState) 
 
 func ChooseDirectionAfterStop(elev *management.Elevator, floor int) {
 	// if the currentorder was a hallUp -> Set direction to Up
-	if orderManagement.HallOrderUpAtFloor(elev, floor) && elev.GetCurrentOrder().IsHallUpOrder() {
+	if elev.GetCurrentOrder().IsHallUpOrder() && orderManagement.HallOrderUpAtFloor(elev, floor) {
 		elev.SetMoveDir(management.DirUp)
 		return
 	}
 	// if the current order was a hallDown -> Set direction to Down
-	if orderManagement.HallOrderDownAtFloor(elev, floor) && elev.GetCurrentOrder().IsHallDownOrder() {
+	if elev.GetCurrentOrder().IsHallDownOrder() && orderManagement.HallOrderDownAtFloor(elev, floor) {
 		elev.SetMoveDir(management.DirDown)
 		return
 	}

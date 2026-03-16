@@ -41,7 +41,7 @@ type CabFloorLights struct {
 	Value  bool
 }
 
-func InitElevatorIO(address string, totalFloors int) {
+func InitElevatorIO(elevAddress string, totalFloors int) {
 	if initialized {
 		fmt.Println("Driver already initialized!")
 		return
@@ -50,7 +50,7 @@ func InitElevatorIO(address string, totalFloors int) {
 	numFloors = totalFloors
 	mutex = sync.Mutex{}
 	var err error
-	connection, err = net.Dial("tcp", address)
+	connection, err = net.Dial("tcp", elevAddress)
 	if err != nil {
 		panic(err.Error())
 	}

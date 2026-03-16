@@ -42,12 +42,12 @@ type Elevator struct {
 }
 
 type ElevChannels struct {
-	NewFloorChannel      chan int
-	ObstructionChannel   chan bool
-	ButtonPressChannel   chan elevIO.ButtonEvent
+	NewFloorChannel    chan int
+	ObstructionChannel chan bool
+	ButtonPressChannel chan elevIO.ButtonEvent
 }
 
-func InitElevator(elevID string, numFloors int) (Elevator, ElevChannels) {
+func InitElevator(elevID string) (Elevator, ElevChannels) {
 	noOrder := CreateOrder(elevIO.ButtonEvent{Floor: 1, Button: elevIO.ButtonType(elevIO.CabButton)})
 	noOrder.SetActiveStatus(false)
 
@@ -62,7 +62,7 @@ func InitElevator(elevID string, numFloors int) (Elevator, ElevChannels) {
     }
 
 	// Create elev's order matrix
-	for floor := 0; floor < numFloors; floor++ {
+	for floor := 0; floor < NumFloors; floor++ {
 		for button := 0; button < NumButtons; button++ {
 			tempOrder := CreateOrder(elevIO.ButtonEvent{Floor: floor, Button: elevIO.ButtonType(button)})
 			tempOrder.SetActiveStatus(false)

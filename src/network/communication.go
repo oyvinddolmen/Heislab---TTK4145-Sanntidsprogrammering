@@ -8,6 +8,21 @@ import (
 
 const broadcastInterval = 20 * time.Millisecond
 
+func InitCommunication(elev management.Elevator, globalState *state.GlobalState, networkChannels NetworkChannels) {
+	go ListenAndMergeGlobalState(
+		globalState,
+		networkChannels.IncomingGlobalStateChannel,
+		networkChannels.WorldViewUpdateChannel,
+	)
+	go StartFailureDetector(globalState, networkChannels.WorldViewUpdateChannel)
+	go SendGlobalStatePeriodically(
+		&elev,
+		globalState,
+		networkChannels.OutgoingGlobalStateChannel,
+	)
+}
+
+
 // Listens for incoming worldViews, updates globalState and sends on worldView-channel.
 func ListenAndMergeGlobalState(globalState *state.GlobalState, incomingGlobalStateChannel <-chan state.GlobalStateData, worldViewUpdateChannel chan bool) {
 	localID := globalState.GetLocalID()

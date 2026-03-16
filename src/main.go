@@ -36,29 +36,18 @@ func main() {
 		- før innlevering: fjerne alle print-og debugfunksjoner. Fjerne README fra utlevert kode
 	*/
 
-	// ---------------- Flag GlobalState for ID and Ports --------------------
-	simHost := flag.String("simHost", "localhost", "Simulator host")
-	simPort := flag.Int("simPort", 15657, "Simulator port")
-	simAddr := flag.String("simAddr", "", "Full simulator address host:port (overrides simHost/simPort)")
-	broadcastPort := flag.Int("bcastPort", 15668, "UDP port for global state broadcast")
-	elevIDFlag := flag.String("id", "1", "Elevator ID (optional)")
-	flag.Parse()
+	// --------------- Get elevator ID, address and port from terminal input -------------------
+	elevID, elevAddress, broadcastPort := inputFromTerminal()
 
-	elevAddr := *simAddr
-	if elevAddr == "" {
-		elevAddr = fmt.Sprintf("%s:%d", *simHost, *simPort)
-	}
-	elevID := *elevIDFlag
-
-	// --------------------- Init elev, network and globalState ----------------------
-	networkConnection := network.InitNetwork(*broadcastPort)
-	elevator.InitHardware(elevAddr)
-	elev, elevChannels := management.InitElevator(elevID, management.NumFloors)
+	// --------------------- Initialize elevator, network and globalState ----------------------
+	networkChannels := network.InitNetwork(*broadcastPort)
+	elevator.InitHardware(elevAddress)
+	elev, elevChannels := management.InitElevator(elevID)
 	globalState := state.InitGlobalState(&elev, elevID)
 
 	// --------------------- Recover on startup ----------------------
 	// TODO: Flytte inn i RunElevator. Må også gå an å få logikken under inn i RecoverOnStartup.
-	recoveredElev := network.RecoverOnStartup(&elev, globalState, networkConnection.IncomingGlobalStateChannel)
+	recoveredElev := network.RecoverOnStartup(&elev, globalState, networkChannels.IncomingGlobalStateChannel)
 	elevator.GoToNearestFloorUnder(&elev)
 	globalState.UpdateGlobalState(&elev)
 	if recoveredElev {
@@ -66,20 +55,29 @@ func main() {
 	}
 
 	// ------------------- Communication ---------------------
-	// TODO: Plassere i InitCommunication eller noe ?
-	go network.ListenAndMergeGlobalState(
-		globalState,
-		networkConnection.IncomingGlobalStateChannel,
-		networkConnection.WorldViewUpdateChannel,
-	)
-	go network.StartFailureDetector(globalState, networkConnection.WorldViewUpdateChannel)
-	go network.SendGlobalStatePeriodically(
-		&elev,
-		globalState,
-		networkConnection.OutgoingGlobalStateChannel,
-	)
+	network.InitCommunication(elev, globalState, networkChannels)
 
 	// ----------------- Start elevator FSM -------------------
-	go elevator.RunElevator(&elev, globalState, elevChannels, networkConnection)
+	go elevator.RunElevator(&elev, globalState, elevChannels, networkChannels)
 	select {}
+}
+
+
+
+// Takes input from terminal on startup and returns elevator ID, network address and state broadcast port.
+func inputFromTerminal() (string, string, *int) {
+	simHost := flag.String("simHost", "localhost", "Simulator host")
+	simPort := flag.Int("simPort", 15657, "Simulator port")
+	simAddress := flag.String("simAddr", "", "Full simulator address host:port (overrides simHost/simPort)")
+	broadcastPort := flag.Int("bcastPort", 15668, "UDP port for global state broadcast")
+	elevIDFlag := flag.String("id", "1", "Elevator ID (optional)")
+	flag.Parse()
+
+	elevAddress := *simAddress
+	if elevAddress == "" {
+		elevAddress = fmt.Sprintf("%s:%d", *simHost, *simPort)
+	}
+	elevID := *elevIDFlag
+
+	return elevID, elevAddress, broadcastPort
 }

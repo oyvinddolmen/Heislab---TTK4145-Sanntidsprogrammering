@@ -5,9 +5,9 @@ import (
 )
 
 type Order struct {
-	isActive    bool
-	floor       int
-	buttonType  elevIO.ButtonType
+	isActive   bool
+	floor      int
+	buttonType elevIO.ButtonType
 }
 
 func CreateOrder(buttonPress elevIO.ButtonEvent) Order {
@@ -18,7 +18,6 @@ func CreateOrder(buttonPress elevIO.ButtonEvent) Order {
 	}
 	return order
 }
-
 
 // -------------------------------------------------------------------------------------------
 // Set and get functions for elevator
@@ -33,7 +32,7 @@ func (order Order) GetButtonType() elevIO.ButtonType { return order.buttonType }
 
 
 // -------------------------------------------------------------------------------------------
-// TODO: Comment
+// Order helper functions
 // -------------------------------------------------------------------------------------------
 
 func (order Order) IsCabOrder() bool { return order.buttonType == elevIO.CabButton }

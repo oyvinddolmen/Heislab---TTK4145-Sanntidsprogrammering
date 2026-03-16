@@ -11,8 +11,8 @@ import (
 // -------------------------------------------------------------------------------------------
 
 // Initializes elevator input/output functionality.
-func InitHardware(address string) {
-    elevIO.InitElevatorIO(address, management.NumFloors)
+func InitHardware(elevAddress string) {
+    elevIO.InitElevatorIO(elevAddress, management.NumFloors)
     InitLights()
 }
 
@@ -34,6 +34,11 @@ func GoToNearestFloorUnder(elev *management.Elevator) {
 	elev.SetMoveDir(management.DirIdle)
 	elev.SetState(management.ElevIdle)
 }
+
+
+// -------------------------------------------------------------------------------------------
+// Elevator helper functions
+// -------------------------------------------------------------------------------------------
 
 // Sets motor direction based on elevator struct's MoveDir.
 func setMotorFromDir(elev *management.Elevator) {
