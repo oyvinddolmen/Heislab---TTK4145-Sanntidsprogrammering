@@ -61,7 +61,7 @@ func InitElevator(elevID string) (Elevator, ElevChannels) {
         lastOrder:    noOrder,
     }
 
-	// Create elev's order matrix
+	// Create elev's order matrix.
 	for floor := 0; floor < NumFloors; floor++ {
 		for button := 0; button < NumButtons; button++ {
 			tempOrder := CreateOrder(elevIO.ButtonEvent{Floor: floor, Button: elevIO.ButtonType(button)})
@@ -78,7 +78,6 @@ func InitElevator(elevID string) (Elevator, ElevChannels) {
 
 	return elev, elevChannels
 }
-
 
 // -------------------------------------------------------------------------------------------
 // Set functions for elevator

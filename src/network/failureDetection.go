@@ -60,7 +60,11 @@ func checkForDeadElevators(globalState *state.GlobalState, worldViewUpdateChanne
 }
 
 // Listens and merges global state received on startup. Returns true if received state.
-func RecoverOnStartup(elev *management.Elevator, globalState *state.GlobalState, incomingGlobalStateChannel <-chan state.GlobalStateData) bool {
+func RecoverOnStartup(
+	elev *management.Elevator,
+	globalState *state.GlobalState,
+	incomingGlobalStateChannel <-chan state.GlobalStateData,
+) bool {
 	elevID := globalState.GetLocalID()
 	timeout := time.After(1 * time.Second)
 	var recoveredElevatorState *state.ElevatorStateJSON

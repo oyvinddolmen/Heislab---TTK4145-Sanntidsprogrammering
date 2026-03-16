@@ -129,12 +129,15 @@ func HallOrderDownAtFloor(elev *management.Elevator, floor int) bool {
 	return elev.GetOrderActiveStatus(floor, int(elevIO.HallDownButton))
 }
 
+// TODO not in use
 func AnyOrderAtFloor(elev *management.Elevator, floor int) bool {
 	return CabOrderAtFloor(elev, floor) ||
 		HallOrderUpAtFloor(elev, floor) ||
 		HallOrderDownAtFloor(elev, floor)
 }
 
+
+// TODO remove before handin
 func PrintOrders(elev *management.Elevator) {
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for button := 0; button < management.NumButtons; button++ {

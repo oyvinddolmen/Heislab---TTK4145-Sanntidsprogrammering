@@ -8,7 +8,11 @@ import (
 
 const broadcastInterval = 20 * time.Millisecond
 
-func InitCommunication(elev management.Elevator, globalState *state.GlobalState, networkChannels NetworkChannels) {
+func InitCommunication(
+	elev management.Elevator,
+	globalState *state.GlobalState,
+	networkChannels NetworkChannels,
+) {
 	go ListenAndMergeGlobalState(
 		globalState,
 		networkChannels.IncomingGlobalStateChannel,
@@ -24,7 +28,11 @@ func InitCommunication(elev management.Elevator, globalState *state.GlobalState,
 
 
 // Listens for incoming worldViews, updates globalState and sends on worldView-channel.
-func ListenAndMergeGlobalState(globalState *state.GlobalState, incomingGlobalStateChannel <-chan state.GlobalStateData, worldViewUpdateChannel chan bool) {
+func ListenAndMergeGlobalState(
+	globalState *state.GlobalState,
+	incomingGlobalStateChannel <-chan state.GlobalStateData,
+	worldViewUpdateChannel chan bool,
+) {
 	localID := globalState.GetLocalID()
 	for remoteGlobalState := range incomingGlobalStateChannel {
 
@@ -42,20 +50,28 @@ func ListenAndMergeGlobalState(globalState *state.GlobalState, incomingGlobalSta
 	}
 }
 
-func SendGlobalStatePeriodically(elev *management.Elevator, globalState *state.GlobalState, outgoingGlobalStateChannel chan<- state.GlobalStateData) {
+func SendGlobalStatePeriodically(
+	elev *management.Elevator,
+	globalState *state.GlobalState,
+	outgoingGlobalStateChannel chan<- state.GlobalStateData,
+) {
 	ticker := time.NewTicker(broadcastInterval)
 	defer ticker.Stop()
 
-	for range ticker.C {					// TODO fjern eller oppdater kommentarer
-		globalState.UpdateGlobalState(elev) // oppdater egen state
-		msg := globalState.GetCopy()        // ta sikker kopi under mutex
-		outgoingGlobalStateChannel <- msg   // send
+	for range ticker.C {						// TODO fjern eller oppdater kommentarer
+		globalState.UpdateGlobalState(elev) 	// oppdater egen state
+		message := globalState.GetCopy()        // ta sikker kopi under mutex
+		outgoingGlobalStateChannel <- message   // send
 	}
 }
 
 // Sends global state once.
-func SendGlobalState(elev *management.Elevator, globalState *state.GlobalState, outgoingGlobalStateChannel chan<- state.GlobalStateData) {
+func SendGlobalState(
+	elev *management.Elevator,
+	globalState *state.GlobalState,
+	outgoingGlobalStateChannel chan<- state.GlobalStateData,
+) {
 	globalState.UpdateGlobalState(elev)
-	msg := globalState.GetCopy()
-	outgoingGlobalStateChannel <- msg
+	message := globalState.GetCopy()
+	outgoingGlobalStateChannel <- message
 }

@@ -16,8 +16,8 @@ func RunElevator(
 	networkChannels network.NetworkChannels,
 ) {
 	go elevIO.PollFloorSensor(elevChannels.NewFloorChannel)
-	go elevIO.PollButtons(elevChannels.ButtonPressChannel)
 	go elevIO.PollObstructionSwitch(elevChannels.ObstructionChannel)
+	go elevIO.PollButtons(elevChannels.ButtonPressChannel)
 	setElevState(elev, globalState, management.ElevIdle)
 	go runFSM(elev, globalState, elevChannels, networkChannels)
 }

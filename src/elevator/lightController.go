@@ -62,7 +62,7 @@ func SetAllLights(elev *management.Elevator, globalState *state.GlobalState) {
 	}
 }
 
-// TODO: Unødvendig?
+// TODO: Unødvendig? elevIO er inkludert der denne brukes
 func setFloorIndicator(floor int) {
 	elevIO.SetFloorIndicator(floor)
 }
