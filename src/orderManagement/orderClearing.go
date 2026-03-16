@@ -6,6 +6,7 @@ import (
 	"heislab/state"
 )
 
+// TODO: Burde dette vært to forskjellige funksjoner?
 // Clears orders at current floor and returns true if there is a HallOrder conflict ()
 func ClearOrdersAtCurrentFloor(elev *management.Elevator, globalState *state.GlobalState) bool {
 	currentFloor := elev.GetFloor()
@@ -33,13 +34,14 @@ func ClearOrdersAtCurrentFloor(elev *management.Elevator, globalState *state.Glo
 		}
 
 	default:
-
+		// If active HallUp order at current floor and active Cab order above, and last order was HallDown.
 		if elev.GetOrderActiveStatus(currentFloor, int(elevIO.HallUpButton)) &&
 			elev.GetLastOrder().IsHallDownOrder() && 
 			CabOrderAbove(elev, currentFloor) {
 			RemoveHallUp(globalState, elev, currentFloor)
 			return true
-			
+		
+		// Else if active HallDown order at current floor and active Cab order below, and last order was HallUp.
 		} else if elev.GetOrderActiveStatus(currentFloor, int(elevIO.HallDownButton)) &&
 			elev.GetLastOrder().IsHallUpOrder() &&
 			CabOrderBelow(elev, currentFloor) {

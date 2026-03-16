@@ -40,24 +40,24 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdateChannel:
 				if needToOpenDoors(elev, globalState) {
-					orderManagement.ServeHallOrdersAtCurrentFloor(elev, globalState)
-					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
-					SetAllLights(elev, globalState) //Trenger denne?
+					orderManagement.ServeHallOrdersAtCurrentFloor(elev, globalState) // TODO både denne og
+					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)	 // denne fjerner hallup/down, unødvendig?
+					SetAllLights(elev, globalState) // TODO Trenger denne?
 					setElevState(elev, globalState, management.ElevObstruction)
 				} else {
 					updateAssignments(elev, globalState)
 					UpdateCurrentOrderAndsafeDrive(elev, globalState)
 				}
 			case button := <-elevChannels.ButtonPressChannel:
-				HallOrderConflict := false //Becomes true if HallUp and HallDown active at current floor and
-				//Caborder is pressed at a different direction then the current dirction
+				hallOrderConflict := false // Becomes true if HallUp and HallDown active at current floor and
+										   // Caborder is pressed at a different direction then the current dirction
 				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, button, networkChannels)
 				if !OrderWasAtCurrentFloor {
 					if elev.GetFloor() != -1 {
-						HallOrderConflict = orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
+						hallOrderConflict = orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 						updateAssignments(elev, globalState)
 					}
-					if HallOrderConflict {
+					if hallOrderConflict {
 						setElevState(elev, globalState, management.ElevObstruction)
 					} else {
 						UpdateCurrentOrderAndsafeDrive(elev, globalState)
