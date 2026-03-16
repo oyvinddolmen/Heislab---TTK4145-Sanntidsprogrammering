@@ -13,11 +13,11 @@ func RunElevator(
 	elev *management.Elevator,
 	globalState *state.GlobalState,
 	elevChannels management.ElevChannels,
-	networkChannels network.NetworkConnection,
+	networkChannels network.NetworkChannels,
 ) {
-	go elevIO.PollFloorSensor(elevChannels.NewFloor)
-	go elevIO.PollButtons(elevChannels.ButtonPresses)
-	go elevIO.PollObstructionSwitch(elevChannels.Obstruction)
+	go elevIO.PollFloorSensor(elevChannels.NewFloorChannel)
+	go elevIO.PollButtons(elevChannels.ButtonPressChannel)
+	go elevIO.PollObstructionSwitch(elevChannels.ObstructionChannel)
 	setElevState(elev, globalState, management.ElevIdle)
 	go runFSM(elev, globalState, elevChannels, networkChannels)
 }
@@ -30,7 +30,7 @@ func runFSM(
 	elev *management.Elevator,
 	globalState *state.GlobalState,
 	elevChannels management.ElevChannels,
-	networkChannels network.NetworkConnection,
+	networkChannels network.NetworkChannels,
 ) {
 	for {
 		switch elev.GetState() {
@@ -48,7 +48,7 @@ func runFSM(
 					updateAssignments(elev, globalState)
 					UpdateCurrentOrderAndsafeDrive(elev, globalState)
 				}
-			case button := <-elevChannels.ButtonPresses:
+			case button := <-elevChannels.ButtonPressChannel:
 				HallOrderConflict := false //Becomes true if HallUp and HallDown active at current floor and
 				//Caborder is pressed at a different direction then the current dirction
 				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, button, networkChannels)
@@ -63,7 +63,7 @@ func runFSM(
 						UpdateCurrentOrderAndsafeDrive(elev, globalState)
 					}
 				}
-			case <-elevChannels.Obstruction:
+			case <-elevChannels.ObstructionChannel:
 				setElevState(elev, globalState, management.ElevObstruction)
 			case <-idleTimer.C:
 				updateAssignments(elev, globalState)
@@ -79,7 +79,7 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdateChannel:
 				updateAssignments(elev, globalState)
-			case floor := <-elevChannels.NewFloor:
+			case floor := <-elevChannels.NewFloorChannel:
 				setFloorIndicator(floor)
 				elev.SetLastFloor(floor)
 				elev.SetCanTakeOrders(true)
@@ -95,10 +95,10 @@ func runFSM(
 					}
 					setElevState(elev, globalState, management.ElevObstruction)
 				}
-			case button := <-elevChannels.ButtonPresses:
+			case button := <-elevChannels.ButtonPressChannel:
 				handleButtonPress(elev, globalState, button, networkChannels)
 				orderManagement.UpdateCurrentOrder(elev, globalState)
-			case <-elevChannels.Obstruction:
+			case <-elevChannels.ObstructionChannel:
 				setElevState(elev, globalState, management.ElevObstruction)
 			case <-canTakeOrdersTimer.C:
 				elev.SetCanTakeOrders(false)
@@ -118,7 +118,7 @@ func runFSM(
 					orderManagement.UpdateCurrentOrder(elev, globalState)
 					UpdateMoveDir(elev)
 				}
-			case button := <-elevChannels.ButtonPresses:
+			case button := <-elevChannels.ButtonPressChannel:
 				mixedHallOrders := false
 				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, button, networkChannels)
 				if !OrderWasAtCurrentFloor {

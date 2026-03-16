@@ -8,10 +8,10 @@ import (
 
 const broadcastInterval = 20 * time.Millisecond
 
-// Listens for incoming worldViews, updates globalState and sends on worldView-channel
-func ListenAndMergeGlobalState(globalState *state.GlobalState, globalStateRx <-chan state.GlobalStateData, worldViewUpdate chan bool) {
+// Listens for incoming worldViews, updates globalState and sends on worldView-channel.
+func ListenAndMergeGlobalState(globalState *state.GlobalState, incomingGlobalStateChannel <-chan state.GlobalStateData, worldViewUpdateChannel chan bool) {
 	localID := globalState.GetLocalID()
-	for remoteGlobalState := range globalStateRx {
+	for remoteGlobalState := range incomingGlobalStateChannel {
 
 		// Prevents elev from listening to itself
 		if remoteGlobalState.LocalID == globalState.GetCopy().LocalID{
@@ -20,27 +20,27 @@ func ListenAndMergeGlobalState(globalState *state.GlobalState, globalStateRx <-c
 
 		RegisterHeartbeat(localID, remoteGlobalState.LocalID)
 		if globalState.NewWorldView(remoteGlobalState) {
-			globalState.Merge(remoteGlobalState) // Need to merge global view before sending on worldViewupdate for lights to be correct
-			worldViewUpdate <- true
+			globalState.Merge(remoteGlobalState) // Need to merge global view before sending on worldViewupdate for lights to be correct.
+			worldViewUpdateChannel <- true
 			continue
 		}
 	}
 }
 
-func SendGlobalStatePeriodically(elev *management.Elevator, globalState *state.GlobalState, globalStateTx chan<- state.GlobalStateData) {
+func SendGlobalStatePeriodically(elev *management.Elevator, globalState *state.GlobalState, outgoingGlobalStateChannel chan<- state.GlobalStateData) {
 	ticker := time.NewTicker(broadcastInterval)
 	defer ticker.Stop()
 
-	for range ticker.C {
+	for range ticker.C {					// TODO fjern eller oppdater kommentarer
 		globalState.UpdateGlobalState(elev) // oppdater egen state
 		msg := globalState.GetCopy()        // ta sikker kopi under mutex
-		globalStateTx <- msg                // send
+		outgoingGlobalStateChannel <- msg   // send
 	}
 }
 
-// Sends global state once
-func SendGlobalState(elev *management.Elevator, globalState *state.GlobalState, globalStateTx chan<- state.GlobalStateData) {
+// Sends global state once.
+func SendGlobalState(elev *management.Elevator, globalState *state.GlobalState, outgoingGlobalStateChannel chan<- state.GlobalStateData) {
 	globalState.UpdateGlobalState(elev)
 	msg := globalState.GetCopy()
-	globalStateTx <- msg
+	outgoingGlobalStateChannel <- msg
 }

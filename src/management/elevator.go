@@ -42,9 +42,9 @@ type Elevator struct {
 }
 
 type ElevChannels struct {
-	NewFloor      chan int
-	Obstruction   chan bool
-	ButtonPresses chan elevIO.ButtonEvent
+	NewFloorChannel      chan int
+	ObstructionChannel   chan bool
+	ButtonPressChannel   chan elevIO.ButtonEvent
 }
 
 func InitElevator(elevID string, numFloors int) (Elevator, ElevChannels) {
@@ -71,9 +71,9 @@ func InitElevator(elevID string, numFloors int) (Elevator, ElevChannels) {
 	}
 
 	elevChannels := ElevChannels{
-		NewFloor:      make(chan int),
-		Obstruction:   make(chan bool),
-		ButtonPresses: make(chan elevIO.ButtonEvent),
+		NewFloorChannel:      make(chan int),
+		ObstructionChannel:   make(chan bool),
+		ButtonPressChannel:   make(chan elevIO.ButtonEvent),
 	}
 
 	return elev, elevChannels

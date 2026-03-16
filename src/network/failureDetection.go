@@ -14,13 +14,12 @@ const HeartbeatTimeout = 2 * time.Second
 // Track last time we heard from each elevator
 var (
 	lastSeen = make(map[string]time.Time)
-	mutex    sync.Mutex
+	mutex sync.Mutex
 )
 
-// Called whenever we receive state from another elevator
+// Called whenever we receive state from another elevator.
 func RegisterHeartbeat(localID string, remoteElevID string) {
-	if remoteElevID == "" || remoteElevID == localID {
-		// Ignore empty/self IDs
+	if remoteElevID == "" || remoteElevID == localID { // Ignore empty/self IDs.
 		return
 	}
 	mutex.Lock()
@@ -28,18 +27,18 @@ func RegisterHeartbeat(localID string, remoteElevID string) {
 	mutex.Unlock()
 }
 
-// Periodically check if elevators have died
-func StartFailureDetector(globalState *state.GlobalState, worldViewUpdate chan bool) {
+// Periodically checks if elevators have died.
+func StartFailureDetector(globalState *state.GlobalState, worldViewUpdateChannel chan bool) {
 	ticker := time.NewTicker(200 * time.Millisecond)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		checkForDeadElevators(globalState, worldViewUpdate)
+		checkForDeadElevators(globalState, worldViewUpdateChannel)
 	}
 }
 
-// Detect and handle dead elevators
-func checkForDeadElevators(globalState *state.GlobalState, worldViewUpdate chan bool) {
+// Detects and handles dead elevators.
+func checkForDeadElevators(globalState *state.GlobalState, worldViewUpdateChannel chan bool) {
 	now := time.Now()
 	localID := globalState.GetLocalID()
 
@@ -47,7 +46,7 @@ func checkForDeadElevators(globalState *state.GlobalState, worldViewUpdate chan 
 	defer mutex.Unlock()
 
 	for elevID, t := range lastSeen {
-		if elevID == localID { // we do not delete ourself
+		if elevID == localID { // We do not delete ourself
 			continue
 		}
 
@@ -55,12 +54,12 @@ func checkForDeadElevators(globalState *state.GlobalState, worldViewUpdate chan 
 			fmt.Println("---------- ELEV", elevID, "went offline -------------")
 			globalState.SetElevatorToOffline(elevID)
 			delete(lastSeen, elevID)
-			worldViewUpdate <- true
+			worldViewUpdateChannel <- true
 		}
 	}
 }
 
-// listens and merge global view received on startup. Returns true if received view
+// Listens and merges global state received on startup. Returns true if received state.
 func RecoverOnStartup(elev *management.Elevator, globalState *state.GlobalState, incomingGlobalStateChannel <-chan state.GlobalStateData) bool {
 	elevID := globalState.GetLocalID()
 	timeout := time.After(1 * time.Second)

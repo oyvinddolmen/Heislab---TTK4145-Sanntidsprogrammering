@@ -79,7 +79,7 @@ func onObstructionEntry(elev *management.Elevator) {
 func handleButtonPress(elev *management.Elevator,
 		globalState *state.GlobalState,
 		button elevIO.ButtonEvent,
-		networkChannels network.NetworkConnection) bool {
+		networkChannels network.NetworkChannels) bool {
 	order := management.CreateOrder(button)
 
 	// Ignore button press if we are already at the floor and serving it, but open door.
