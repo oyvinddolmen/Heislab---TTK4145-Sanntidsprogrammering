@@ -11,15 +11,15 @@ type NetworkChannels struct {
 	WorldViewUpdateChannel 	   chan bool
 }
 
-// Initializes network channels and goroutines for global state broadcasts
+// Initializes network channels and goroutines for global state broadcasts.
 func InitNetwork(broadcastPort int) NetworkChannels {
-	networkConnection := NetworkChannels{
+	networkChannels := NetworkChannels{
 		OutgoingGlobalStateChannel: make(chan state.GlobalStateData, 16),
 		IncomingGlobalStateChannel: make(chan state.GlobalStateData, 16),
 		WorldViewUpdateChannel: 	make(chan bool, 1),
 	}
-	go broadcast.GlobalStateTransmitter(broadcastPort, networkConnection.OutgoingGlobalStateChannel)
-	go broadcast.GlobalStateReceiver(broadcastPort, networkConnection.IncomingGlobalStateChannel)
+	go broadcast.GlobalStateTransmitter(broadcastPort, networkChannels.OutgoingGlobalStateChannel)
+	go broadcast.GlobalStateReceiver(broadcastPort, networkChannels.IncomingGlobalStateChannel)
 
-	return networkConnection
+	return networkChannels
 }
