@@ -59,6 +59,7 @@ func checkForDeadElevators(globalState *state.GlobalState, worldViewUpdateChanne
 	}
 }
 
+// TODO: Hører denne hjemme her?
 // Listens and merges global state received on startup. Returns true if received state.
 func RecoverOnStartup(
 	elev *management.Elevator,

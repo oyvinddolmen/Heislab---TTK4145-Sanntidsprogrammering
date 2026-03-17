@@ -8,26 +8,26 @@ import (
 
 const broadcastInterval = 20 * time.Millisecond
 
+// -------------------------------------------------------------------------------------------
+// Global state communication and peer tracking TODO bedre kommentar ?
+// -------------------------------------------------------------------------------------------
+
+// Initializes communication go routines.
 func InitCommunication(
 	elev *management.Elevator,
 	globalState *state.GlobalState,
 	networkChannels NetworkChannels,
 ) {
+	go StartFailureDetector(globalState, networkChannels.WorldViewUpdateChannel)
+	go SendGlobalStatePeriodically(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
 	go ListenAndMergeGlobalState(
 		globalState,
 		networkChannels.IncomingGlobalStateChannel,
 		networkChannels.WorldViewUpdateChannel,
 	)
-	go StartFailureDetector(globalState, networkChannels.WorldViewUpdateChannel)
-	go SendGlobalStatePeriodically(
-		elev,
-		globalState,
-		networkChannels.OutgoingGlobalStateChannel,
-	)
 }
 
-
-// Listens for incoming worldViews, updates globalState and sends on worldView-channel.
+// Listens for incoming worldViews, updates globalState and sends on worldViewUpdate channel.
 func ListenAndMergeGlobalState(
 	globalState *state.GlobalState,
 	incomingGlobalStateChannel <-chan state.GlobalStateData,
@@ -37,7 +37,7 @@ func ListenAndMergeGlobalState(
 	for remoteGlobalState := range incomingGlobalStateChannel {
 
 		// Prevents elev from listening to itself
-		if remoteGlobalState.LocalID == globalState.GetCopy().LocalID{
+		if remoteGlobalState.LocalID == globalState.GetCopy().LocalID {
 			continue
 		}
 
@@ -50,6 +50,7 @@ func ListenAndMergeGlobalState(
 	}
 }
 
+// Sends global state periodically at interval given by broadcastInterval constant.
 func SendGlobalStatePeriodically(
 	elev *management.Elevator,
 	globalState *state.GlobalState,
@@ -58,10 +59,8 @@ func SendGlobalStatePeriodically(
 	ticker := time.NewTicker(broadcastInterval)
 	defer ticker.Stop()
 
-	for range ticker.C {						// TODO fjern eller oppdater kommentarer
-		globalState.UpdateGlobalState(elev) 	// oppdater egen state
-		message := globalState.GetCopy()        // ta sikker kopi under mutex
-		outgoingGlobalStateChannel <- message   // send
+	for range ticker.C {
+		SendGlobalState(elev, globalState, outgoingGlobalStateChannel)
 	}
 }
 

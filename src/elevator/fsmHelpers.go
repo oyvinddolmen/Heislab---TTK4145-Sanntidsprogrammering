@@ -210,13 +210,14 @@ func UpdateMoveDir(elev *management.Elevator) {
 	currentOrderFloor := elev.GetCurrentOrderFloor()
 	elevFloor := elev.GetFloor()
 
+	// If elev has no assigned orders.
 	if !elev.GetCurrentOrderActiveStatus() {
 		// TODO remove print
 		fmt.Println("currentorder.orderplaced == false, stop")
 		return
 	}
 
-	// if between floors, use last floor as reference
+	// If between floors, use last floor as reference
 	if elevFloor == -1 {
 		elevFloor = elev.GetLastFloor()
 	}
@@ -225,7 +226,7 @@ func UpdateMoveDir(elev *management.Elevator) {
 
 	if currentOrderFloor > elevFloor {
 		elev.SetMoveDir(management.DirUp)
-	} else if currentOrderFloor < elev.GetFloor() {
+	} else if currentOrderFloor < elevFloor {
 		elev.SetMoveDir(management.DirDown)
 	} else {
 		elev.SetMoveDir(management.DirIdle)

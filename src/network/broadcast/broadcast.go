@@ -10,6 +10,10 @@ import (
 
 const bufferSize = 1024
 
+// -------------------------------------------------------------------------------------------
+// Global state transmitter and receiver
+// -------------------------------------------------------------------------------------------
+
 // TODO: Comment
 func GlobalStateTransmitter(port int, outgoingGlobalStateChannel <-chan state.GlobalStateData) {
 	udpConnection := connection.DialBroadcastUDP(port)
