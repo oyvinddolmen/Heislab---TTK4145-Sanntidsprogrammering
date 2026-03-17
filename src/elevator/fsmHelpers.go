@@ -103,16 +103,12 @@ func handleButtonPress(elev *management.Elevator,
 
 // Determines if elevator should stop at current floor.
 func ShouldStop(elev *management.Elevator, floor int) bool {
-	if !elev.GetCurrentOrderActiveStatus() {
+	if !elev.GetCurrentOrderActiveStatus() || orderManagement.CabOrderAtFloor(elev, floor) {
 		return true
 	}
 
 	switch elev.GetMoveDir() {
 	case management.DirUp:
-		if orderManagement.CabOrderAtFloor(elev, floor) {
-			return true
-		}
-
 		// Takes HallUp order when bypassing as long as current order is not a HallDown at floor 1-3.
 		if orderManagement.HallOrderUpAtFloor(elev, floor) {
 			currentOrderIsHallDown := elev.GetCurrentOrder().IsHallDownOrder()
@@ -122,7 +118,6 @@ func ShouldStop(elev *management.Elevator, floor int) bool {
 				return true
 			}
 		}
-
 		if !orderManagement.OrdersAbove(elev, floor) && orderManagement.HallOrderDownAtFloor(elev, floor) {
 			return true
 		}
@@ -131,10 +126,6 @@ func ShouldStop(elev *management.Elevator, floor int) bool {
 		}
 
 	case management.DirDown:
-		if orderManagement.CabOrderAtFloor(elev, floor) {
-			return true
-		}
-
 		// Takes HallDown order when bypassing as long as current order is not a HallUp at floor 2-4.
 		if orderManagement.HallOrderDownAtFloor(elev, floor) {
 			currentOrderIsHallUp := elev.GetCurrentOrder().IsHallUpOrder()
@@ -144,7 +135,6 @@ func ShouldStop(elev *management.Elevator, floor int) bool {
 				return true
 			}
 		}
-
 		if !orderManagement.OrdersBelow(elev, floor) && orderManagement.HallOrderUpAtFloor(elev, floor) {
 			return true
 		}
@@ -164,7 +154,6 @@ func UpdateCurrentOrderAndsafeDrive(elev *management.Elevator, globalState *stat
 		setMotorStop()
 		return
 	}
-
 	setMotorFromDir(elev)
 	setElevState(elev, nil, management.ElevMoving)
 }
@@ -215,8 +204,6 @@ func UpdateMoveDir(elev *management.Elevator) {
 		fmt.Println("currentorder.orderplaced == false, stop")
 		return
 	}
-
-	// if between floors, use last floor as reference
 	if elevFloor == -1 {
 		elevFloor = elev.GetLastFloor()
 	}
