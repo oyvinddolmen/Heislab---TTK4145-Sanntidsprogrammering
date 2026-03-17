@@ -73,11 +73,11 @@ func AssignHallOrders(
 	assignerPath := ""
 	switch runtime.GOOS {
 	case "windows":
-		assignerPath = "./hallRequestAssigner/hall_request_assigner.exe"
+		assignerPath = "./orderManagement/hallOrderAssigner/hall_request_assigner.exe"
 	case "darwin":
-		assignerPath = "./hallRequestAssigner/hall_request_assigner_mac"
+		assignerPath = "./orderManagement/hallOrderAssigner/hall_request_assigner_mac"
 	default:
-		assignerPath = "./hallRequestAssigner/hall_request_assigner"
+		assignerPath = "./orderManagement/hallOrderAssigner/hall_request_assigner"
 	}
 
 	// Run binary file
