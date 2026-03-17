@@ -6,12 +6,12 @@ import (
 	"heislab/state"
 )
 
-// Turns off all hall and cab lights
-func InitLights(numFloors int) {
-	for floor := 0; floor < numFloors; floor++ {
+// Turns off all hall and cab lights.
+func InitLights() {
+	for floor := 0; floor < management.NumFloors; floor++ {
 		elevIO.SetButtonLamp(elevIO.CabButton, floor, false)
 
-		if floor < numFloors-1 {
+		if floor < management.NumFloors-1 {
 			elevIO.SetButtonLamp(elevIO.HallUpButton, floor, false)
 		}
 		if floor > 0 {
@@ -20,44 +20,41 @@ func InitLights(numFloors int) {
 	}
 }
 
-// sets the hall light based on global state
+// Sets the hall light based on global state.
 func setHallLight(globalState *state.GlobalState) {
-	state := globalState.GetCopy()
+	globalStateCopy := globalState.GetCopy()
 
 	for floor := 0; floor < management.NumFloors; floor++ {
-		for button := 0; button < 2; button++ {
+		for button := 0; button < management.NumHallButtonTypes; button++ {
 			elevIO.SetButtonLamp(
 				elevIO.ButtonType(button),
 				floor,
-				state.HallRequests[floor][button],
+				globalStateCopy.HallOrders[floor][button],
 			)
 		}
 	}
 }
 
-// sets cab and hall lights
-func SetAllLights(elevator *management.Elevator, globalState *state.GlobalState) {
+// Sets cab and hall lights
+func SetAllLights(elev *management.Elevator, globalState *state.GlobalState) {
 	globalStateCopy := globalState.GetCopy()
 
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for button := 0; button < management.NumButtons; button++ {
+			order := elev.GetOrder(floor, button)
 
-			order := elevator.Orders[floor][button]
-
-			// for cab-orders
-			if button == 2 {
+			if order.IsCabOrder() {
 				elevIO.SetButtonLamp(
 					elevIO.ButtonType(button),
 					floor,
-					order.OrderPlaced,
+					order.GetActiveStatus(),
 				)
 
 			} else {
-				// for hall-orders
 				elevIO.SetButtonLamp(
 					elevIO.ButtonType(button),
 					floor,
-					globalStateCopy.HallRequests[floor][button],
+					globalStateCopy.HallOrders[floor][button],
 				)
 			}
 
@@ -65,11 +62,12 @@ func SetAllLights(elevator *management.Elevator, globalState *state.GlobalState)
 	}
 }
 
+// TODO: Unødvendig? elevIO er inkludert der denne brukes
 func setFloorIndicator(floor int) {
 	elevIO.SetFloorIndicator(floor)
 }
 
-func setDoorOpenLampIfNotBetweenFloors() {
+func setDoorOpenLampIfAtFloor() {
 	if elevIO.GetFloor() != -1 {
 		elevIO.SetDoorOpenLamp(true)
 	}

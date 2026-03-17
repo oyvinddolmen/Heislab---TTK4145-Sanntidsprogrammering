@@ -10,12 +10,13 @@ import (
 // Elevator initialization
 // -------------------------------------------------------------------------------------------
 
-func InitHardware(address string, numFloors int) {
-    elevIO.InitElevatorIO(address, numFloors)
-    InitLights(numFloors)
+// Initializes elevator input/output functionality.
+func InitHardware(elevAddress string) {
+    elevIO.InitElevatorIO(elevAddress, management.NumFloors)
+    InitLights()
 }
 
-// moves elevator to closest floor under elevators position
+// Moves elevator to closest floor under elevators position.
 func GoToNearestFloorUnder(elev *management.Elevator) {
 	floor := elevIO.GetFloor()
 
@@ -28,15 +29,20 @@ func GoToNearestFloorUnder(elev *management.Elevator) {
 	
 	elevIO.SetMotorDirection(elevIO.MotorDirStop)
 	elevIO.SetFloorIndicator(elevIO.GetFloor())
-	elev.Floor = elevIO.GetFloor()
-	elev.LastFloor = elevIO.GetFloor()
-	elev.MoveDir = management.DirIdle
-	elev.State = management.ElevIdle
+	elev.SetFloor(elevIO.GetFloor())
+	elev.SetLastFloor(elevIO.GetFloor())
+	elev.SetMoveDir(management.DirIdle)
+	elev.SetState(management.ElevIdle)
 }
 
-// Sets motor direction based on elevator-struct's MoveDir
+
+// -------------------------------------------------------------------------------------------
+// Elevator helper functions
+// -------------------------------------------------------------------------------------------
+
+// Sets motor direction based on elevator struct's MoveDir.
 func setMotorFromDir(elev *management.Elevator) {
-	switch elev.MoveDir {
+	switch elev.GetMoveDir() {
 	case management.DirUp:
 		elevIO.SetMotorDirection(elevIO.MotorDirUp)
 	case management.DirDown:
@@ -46,13 +52,13 @@ func setMotorFromDir(elev *management.Elevator) {
 	}
 }
 
-// Sets elevIO motor direction to stop and sets move direction in Elev struct
+// Sets elevIO motor direction to stop and sets move direction in Elev struct.
 func stopElevator(elev *management.Elevator) {
 	elevIO.SetMotorDirection(elevIO.MotorDirStop)
 	elev.SetMoveDir(management.DirIdle)
 }
 
-// sets elevIO motordirection to stop
+// Sets elevIO motor direction to stop.
 func setMotorStop() {
 	elevIO.SetMotorDirection(elevIO.MotorDirStop)
 }

@@ -13,11 +13,11 @@ func RunElevator(
 	elev *management.Elevator,
 	globalState *state.GlobalState,
 	elevChannels management.ElevChannels,
-	networkChannels network.NetworkConnection,
+	networkChannels network.NetworkChannels,
 ) {
-	go elevIO.PollFloorSensor(elevChannels.NewFloor)
-	go elevIO.PollButtons(elevChannels.ButtonPresses)
-	go elevIO.PollObstructionSwitch(elevChannels.Obstruction)
+	go elevIO.PollFloorSensor(elevChannels.NewFloorChannel)
+	go elevIO.PollObstructionSwitch(elevChannels.ObstructionChannel)
+	go elevIO.PollButtons(elevChannels.ButtonPressChannel)
 	setElevState(elev, globalState, management.ElevIdle)
 	go runFSM(elev, globalState, elevChannels, networkChannels)
 }
@@ -30,46 +30,46 @@ func runFSM(
 	elev *management.Elevator,
 	globalState *state.GlobalState,
 	elevChannels management.ElevChannels,
-	networkChannels network.NetworkConnection,
+	networkChannels network.NetworkChannels,
 ) {
 	for {
-		switch elev.State {
+		switch elev.GetState() {
 
 		// ----------------- Case: IDLE -------------------------
 		case management.ElevIdle:
 			select {
 			case <-networkChannels.WorldViewUpdateChannel:
 				if needToOpenDoors(elev, globalState) {
-					orderManagement.ServeHallRequestsAtCurrentFloor(elev, globalState)
-					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
-					SetAllLights(elev, globalState) //Trenger denne?
+					orderManagement.ServeHallOrdersAtCurrentFloor(elev, globalState) // TODO både denne og
+					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)	 // denne fjerner hallup/down, unødvendig?
+					SetAllLights(elev, globalState) // TODO Trenger denne?
 					setElevState(elev, globalState, management.ElevObstruction)
 				} else {
 					updateAssignments(elev, globalState)
 					UpdateCurrentOrderAndsafeDrive(elev, globalState)
 				}
-			case btn := <-elevChannels.ButtonPresses:
-				HallOrderConflict := false //Becomes true if HallUp and HallDown active at current floor and
-				//Caborder is pressed at a different direction then the current dirction
-				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, btn, networkChannels)
+			case button := <-elevChannels.ButtonPressChannel:
+				hallOrderConflict := false // Becomes true if HallUp and HallDown active at current floor and
+										   // Caborder is pressed at a different direction then the current dirction
+				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, button, networkChannels)
 				if !OrderWasAtCurrentFloor {
 					if elev.GetFloor() != -1 {
-						HallOrderConflict = orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
+						hallOrderConflict = orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 						updateAssignments(elev, globalState)
 					}
-					if HallOrderConflict {
+					if hallOrderConflict {
 						setElevState(elev, globalState, management.ElevObstruction)
 					} else {
 						UpdateCurrentOrderAndsafeDrive(elev, globalState)
 					}
 				}
-			case <-elevChannels.Obstruction:
+			case <-elevChannels.ObstructionChannel:
 				setElevState(elev, globalState, management.ElevObstruction)
 			case <-idleTimer.C:
 				updateAssignments(elev, globalState)
-				elev.LastOrder.ButtonType = elevIO.CabButton
+				elev.SetLastOrderButtonType(elevIO.CabButton)
 				UpdateCurrentOrderAndsafeDrive(elev, globalState)
-				if orderManagement.CurrentOrderPlaced(elev) == false {
+				if !elev.GetCurrentOrderActiveStatus() {
 					startIdleTimer()
 				}
 			}
@@ -79,29 +79,29 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdateChannel:
 				updateAssignments(elev, globalState)
-			case floor := <-elevChannels.NewFloor:
+			case floor := <-elevChannels.NewFloorChannel:
 				setFloorIndicator(floor)
-				elev.SetElevLastFloor(floor)
-				elev.SetElevCanTakeOrders(true)
+				elev.SetLastFloor(floor)
+				elev.SetCanTakeOrders(true)
 				if ShouldStop(elev, floor) {
 					setMotorStop()
-					elev.SetElevFloor(floor)
+					elev.SetFloor(floor)
 					ChooseDirectionAfterStop(elev, floor)
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 					updateAssignments(elev, globalState)
-					if orderManagement.CurrentOrderPlaced(elev) {
+					if elev.GetCurrentOrderActiveStatus() {
 						orderManagement.UpdateCurrentOrder(elev, globalState)
 						UpdateMoveDir(elev)
 					}
 					setElevState(elev, globalState, management.ElevObstruction)
 				}
-			case btn := <-elevChannels.ButtonPresses:
-				handleButtonPress(elev, globalState, btn, networkChannels)
+			case button := <-elevChannels.ButtonPressChannel:
+				handleButtonPress(elev, globalState, button, networkChannels)
 				orderManagement.UpdateCurrentOrder(elev, globalState)
-			case <-elevChannels.Obstruction:
+			case <-elevChannels.ObstructionChannel:
 				setElevState(elev, globalState, management.ElevObstruction)
 			case <-canTakeOrdersTimer.C:
-				elev.SetElevCanTakeOrders(false)
+				elev.SetCanTakeOrders(false)
 			}
 
 		// ----------------- Case: OBSTRUCTION -------------------------
@@ -109,7 +109,7 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdateChannel:
 				if needToOpenDoors(elev, globalState) {
-					orderManagement.ServeHallRequestsAtCurrentFloor(elev, globalState)
+					orderManagement.ServeHallOrdersAtCurrentFloor(elev, globalState)
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 					SetAllLights(elev, globalState)
 					startIdleTimer()
@@ -118,9 +118,9 @@ func runFSM(
 					orderManagement.UpdateCurrentOrder(elev, globalState)
 					UpdateMoveDir(elev)
 				}
-			case btn := <-elevChannels.ButtonPresses:
+			case button := <-elevChannels.ButtonPressChannel:
 				mixedHallOrders := false
-				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, btn, networkChannels)
+				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, button, networkChannels)
 				if !OrderWasAtCurrentFloor {
 
 					if elev.GetFloor() != -1 {
@@ -147,7 +147,7 @@ func runFSM(
 					startNewDoorTimer()
 				}
 			case <-canTakeOrdersTimer.C:
-				elev.SetElevCanTakeOrders(false)
+				elev.SetCanTakeOrders(false)
 			}
 		}
 	}

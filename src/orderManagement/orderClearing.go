@@ -6,42 +6,44 @@ import (
 	"heislab/state"
 )
 
+// TODO: Burde dette vært to forskjellige funksjoner?
 // Clears orders at current floor and returns true if there is a HallOrder conflict ()
 func ClearOrdersAtCurrentFloor(elev *management.Elevator, globalState *state.GlobalState) bool {
-	currentFloor := elev.Floor
-	if elev.CurrentOrder.Floor == currentFloor {
-		elev.CurrentOrder.OrderPlaced = false
-		elev.LastOrder = elev.CurrentOrder
+	currentFloor := elev.GetFloor()
+	if elev.GetCurrentOrderFloor() == currentFloor {
+		elev.SetCurrentOrderActiveStatus(false)
+		elev.SetLastOrder(elev.GetCurrentOrder())
 	}
 
-	if elev.Orders[currentFloor][elevIO.CabButton].OrderPlaced {
+	if elev.GetOrderActiveStatus(currentFloor, int(elevIO.CabButton)) {
 		RemoveCabOrder(globalState, elev, currentFloor)
 	}
 
-	switch elev.MoveDir {
+	switch elev.GetMoveDir() {
 
 	case management.DirUp:
 
-		if elev.Orders[currentFloor][elevIO.HallUpButton].OrderPlaced {
+		if elev.GetOrderActiveStatus(currentFloor, int(elevIO.HallUpButton)) {
 			RemoveHallUp(globalState, elev, currentFloor)
 		}
 
 	case management.DirDown:
 
-		if elev.Orders[currentFloor][elevIO.HallDownButton].OrderPlaced {
+		if elev.GetOrderActiveStatus(currentFloor, int(elevIO.HallDownButton)) {
 			RemoveHallDown(globalState, elev, currentFloor)
 		}
 
 	default:
-
-		if elev.Orders[currentFloor][elevIO.HallUpButton].OrderPlaced &&
-			elev.LastOrder.ButtonType == elevIO.HallDownButton &&
+		// If active HallUp order at current floor and active Cab order above, and last order was HallDown.
+		if elev.GetOrderActiveStatus(currentFloor, int(elevIO.HallUpButton)) &&
+			elev.GetLastOrder().IsHallDownOrder() && 
 			CabOrderAbove(elev, currentFloor) {
 			RemoveHallUp(globalState, elev, currentFloor)
 			return true
-
-		} else if elev.Orders[currentFloor][elevIO.HallDownButton].OrderPlaced &&
-			elev.LastOrder.ButtonType == elevIO.HallUpButton &&
+		
+		// Else if active HallDown order at current floor and active Cab order below, and last order was HallUp.
+		} else if elev.GetOrderActiveStatus(currentFloor, int(elevIO.HallDownButton)) &&
+			elev.GetLastOrder().IsHallUpOrder() &&
 			CabOrderBelow(elev, currentFloor) {
 			RemoveHallDown(globalState, elev, currentFloor)
 			return true
@@ -53,7 +55,7 @@ func ClearOrdersAtCurrentFloor(elev *management.Elevator, globalState *state.Glo
 
 func CabOrderAbove(elev *management.Elevator, currentFloor int) bool {
 	for floor := currentFloor + 1; floor < management.NumFloors; floor++ {
-		if elev.Orders[floor][elevIO.CabButton].OrderPlaced {
+		if elev.GetOrderActiveStatus(floor, int(elevIO.CabButton)) {
 			return true
 		}
 	}
@@ -62,7 +64,7 @@ func CabOrderAbove(elev *management.Elevator, currentFloor int) bool {
 
 func CabOrderBelow(elev *management.Elevator, currentFloor int) bool {
 	for floor := currentFloor - 1; floor >= 0; floor-- {
-		if elev.Orders[floor][elevIO.CabButton].OrderPlaced {
+		if elev.GetOrderActiveStatus(floor, int(elevIO.CabButton)) {
 			return true
 		}
 	}
@@ -76,7 +78,7 @@ func OrdersAbove(elev *management.Elevator, floorUnderInspection int) bool {
 
 	for floor := floorUnderInspection + 1; floor < management.NumFloors; floor++ {
 		for button := 0; button < management.NumButtons; button++ {
-			if elev.Orders[floor][button].OrderPlaced {
+			if elev.GetOrderActiveStatus(floor, button) {
 				return true
 			}
 		}
@@ -92,7 +94,7 @@ func OrdersBelow(elev *management.Elevator, floorUnderInspection int) bool {
 
 	for floor := floorUnderInspection - 1; floor >= 0; floor-- {
 		for button := 0; button < management.NumButtons; button++ {
-			if elev.Orders[floor][button].OrderPlaced {
+			if elev.GetOrderActiveStatus(floor, button) {
 				return true
 			}
 		}
@@ -101,33 +103,33 @@ func OrdersBelow(elev *management.Elevator, floorUnderInspection int) bool {
 }
 
 func RemoveCabOrder(globalState *state.GlobalState, elev *management.Elevator, floor int) {
-	elev.Orders[floor][elevIO.CabButton].OrderPlaced = false
+	elev.SetOrderActiveStatus(floor, int(elevIO.CabButton), false)
 	globalState.UpdateGlobalState(elev)
 	elevIO.SetButtonLamp(elevIO.CabButton, floor, false)
 }
 
 func RemoveHallDown(globalState *state.GlobalState, elev *management.Elevator, floor int) {
-	elev.Orders[floor][elevIO.HallDownButton].OrderPlaced = false
-	globalState.RemoveHallRequest(floor, elevIO.HallDownButton)
+	elev.SetOrderActiveStatus(floor, int(elevIO.HallDownButton), false)
+	globalState.RemoveHallOrder(floor, elevIO.HallDownButton)
 	elevIO.SetButtonLamp(elevIO.HallDownButton, floor, false)
 }
 
 func RemoveHallUp(globalState *state.GlobalState, elev *management.Elevator, floor int) {
-	elev.Orders[floor][elevIO.HallUpButton].OrderPlaced = false
-	globalState.RemoveHallRequest(floor, elevIO.HallUpButton)
+	elev.SetOrderActiveStatus(floor, int(elevIO.HallUpButton), false)
+	globalState.RemoveHallOrder(floor, elevIO.HallUpButton)
 	elevIO.SetButtonLamp(elevIO.HallUpButton, floor, false)
 }
 
-// Clears hall requests from the shared state for the floor the elevator is currently at
-func ServeHallRequestsAtCurrentFloor(elev *management.Elevator, globalState *state.GlobalState) {
-	currentFloor := elev.Floor
+// Clears hall orders from the shared state for the floor the elevator is currently at
+func ServeHallOrdersAtCurrentFloor(elev *management.Elevator, globalState *state.GlobalState) {
+	currentFloor := elev.GetFloor()
 	if currentFloor != -1 {
-		hallRequests := globalState.GetCopy().HallRequests
+		hallOrders := globalState.GetCopy().HallOrders
 
-		if hallRequests[currentFloor][elevIO.HallUpButton] {
+		if hallOrders[currentFloor][elevIO.HallUpButton] {
 			RemoveHallUp(globalState, elev, currentFloor)
 		}
-		if hallRequests[currentFloor][elevIO.HallDownButton] {
+		if hallOrders[currentFloor][elevIO.HallDownButton] {
 			RemoveHallDown(globalState, elev, currentFloor)
 		}
 

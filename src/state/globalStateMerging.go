@@ -5,61 +5,61 @@ import (
 )
 
 // checks if incoming worldView differ from current worldView
-func (globalState *GlobalState) NewWorldView(remote GlobalStateData) bool {
-	globalState.mutex.Lock()
-	defer globalState.mutex.Unlock()
+func (localGlobalState *GlobalState) NewWorldView(remoteGlobalState GlobalStateData) bool {
+	localGlobalState.mutex.Lock()
+	defer localGlobalState.mutex.Unlock()
 
-	// hall request changes
+	// hall order changes
 	for floor := 0; floor < management.NumFloors; floor++ {
-		for button := 0; button < 2; button++ {
-			localVersion := globalState.data.HallRequestsVersion[floor][button]
-			remoteVersion := remote.HallRequestsVersion[floor][button]
+		for button := 0; button < management.NumHallButtonTypes; button++ {
+			localVersion := localGlobalState.data.HallOrderVersion[floor][button]
+			remoteVersion := remoteGlobalState.HallOrderVersion[floor][button]
 
 			if remoteVersion > localVersion {
 				return true
 			}
 
-			// same version but remote has request we don't
+			// same version but remote has orders we don't
 			if remoteVersion == localVersion &&
-				remote.HallRequests[floor][button] &&
-				!globalState.data.HallRequests[floor][button] {
+				remoteGlobalState.HallOrders[floor][button] &&
+				!localGlobalState.data.HallOrders[floor][button] {
 				return true
 			}
 		}
 	}
 
 	// elevator state changes
-	senderID := remote.LocalID
-	if senderID == "" || senderID == globalState.data.LocalID {
+	remoteID := remoteGlobalState.LocalID
+	if remoteID == "" || remoteID == localGlobalState.data.LocalID {
 		return false
 	}
 
-	remoteState, ok := remote.States[senderID]
-	if !ok {
+	remoteState, existsInRemote := remoteGlobalState.States[remoteID]
+	if !existsInRemote {
 		return false
 	}
 
-	localState, exists := globalState.data.States[senderID]
-	if !exists {
+	localRemoteState, existsInLocal := localGlobalState.data.States[remoteID]
+	if !existsInLocal {
 		return true
 	}
 
-	if remoteState.CanTakeOrders != localState.CanTakeOrders {
+	if remoteState.CanTakeOrders != localRemoteState.CanTakeOrders {
 		return true
 	}
 
-	if remoteState.Behavior != localState.Behavior ||
-		remoteState.Floor != localState.Floor ||
-		remoteState.Direction != localState.Direction {
+	if remoteState.Behavior != localRemoteState.Behavior ||
+		remoteState.Floor != localRemoteState.Floor ||
+		remoteState.Direction != localRemoteState.Direction {
 		return true
 	}
 
-	if len(remoteState.CabRequests) != len(localState.CabRequests) {
+	if len(remoteState.CabOrders) != len(localRemoteState.CabOrders) {
 		return true
 	}
 
-	for i := range remoteState.CabRequests {
-		if remoteState.CabRequests[i] != localState.CabRequests[i] {
+	for floor := range remoteState.CabOrders {
+		if remoteState.CabOrders[floor] != localRemoteState.CabOrders[floor] {
 			return true
 		}
 	}
@@ -68,34 +68,34 @@ func (globalState *GlobalState) NewWorldView(remote GlobalStateData) bool {
 }
 
 // merges new global view by choosing newest version available
-func (globalState *GlobalState) Merge(remote GlobalStateData) {
-	globalState.mutex.Lock()
-	defer globalState.mutex.Unlock()
+func (localGlobalState *GlobalState) Merge(remoteGlobalState GlobalStateData) {
+	localGlobalState.mutex.Lock()
+	defer localGlobalState.mutex.Unlock()
 
-	localID := globalState.data.LocalID
-	senderID := remote.LocalID
+	localID := localGlobalState.data.LocalID
+	remoteID := remoteGlobalState.LocalID
 
-	if senderID != localID {
-		if st, exists := remote.States[senderID]; exists {
-			globalState.data.States[senderID] = st
+	if remoteID != localID {
+		if remoteState, exists := remoteGlobalState.States[remoteID]; exists {
+			localGlobalState.data.States[remoteID] = remoteState
 		}
 	}
-	chooseLatestHallRequestVersion(&globalState.data, remote)
+	chooseLatestHallOrderVersion(&localGlobalState.data, remoteGlobalState)
 }
 
-func chooseLatestHallRequestVersion(local *GlobalStateData, remote GlobalStateData) {
+func chooseLatestHallOrderVersion(localGlobalState *GlobalStateData, remoteGlobalState GlobalStateData) {
 	for floor := 0; floor < management.NumFloors; floor++ {
-		for button := 0; button < 2; button++ {
-			localVersion := local.HallRequestsVersion[floor][button]
-			remoteVersion := remote.HallRequestsVersion[floor][button]
+		for button := 0; button < management.NumHallButtonTypes; button++ {
+			localVersion := localGlobalState.HallOrderVersion[floor][button]
+			remoteVersion := remoteGlobalState.HallOrderVersion[floor][button]
 
 			switch {
 			case remoteVersion > localVersion:
-				local.HallRequests[floor][button] = remote.HallRequests[floor][button]
-				local.HallRequestsVersion[floor][button] = remoteVersion
+				localGlobalState.HallOrders[floor][button] = remoteGlobalState.HallOrders[floor][button]
+				localGlobalState.HallOrderVersion[floor][button] = remoteVersion
 			case remoteVersion == localVersion:
-				if remote.HallRequests[floor][button] {
-					local.HallRequests[floor][button] = true
+				if remoteGlobalState.HallOrders[floor][button] {
+					localGlobalState.HallOrders[floor][button] = true
 				}
 			}
 		}
