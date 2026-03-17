@@ -9,7 +9,7 @@ import (
 const broadcastInterval = 20 * time.Millisecond
 
 func InitCommunication(
-	elev management.Elevator,
+	elev *management.Elevator,
 	globalState *state.GlobalState,
 	networkChannels NetworkChannels,
 ) {
@@ -20,7 +20,7 @@ func InitCommunication(
 	)
 	go StartFailureDetector(globalState, networkChannels.WorldViewUpdateChannel)
 	go SendGlobalStatePeriodically(
-		&elev,
+		elev,
 		globalState,
 		networkChannels.OutgoingGlobalStateChannel,
 	)
