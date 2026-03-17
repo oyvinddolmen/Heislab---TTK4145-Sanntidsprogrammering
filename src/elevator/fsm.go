@@ -83,6 +83,7 @@ func runFSM(
 				setFloorIndicator(floor)
 				elev.SetLastFloor(floor)
 				elev.SetCanTakeOrders(true)
+				resetCanTakeOrdersTimer()
 				if ShouldStop(elev, floor) {
 					setMotorStop()
 					elev.SetFloor(floor)

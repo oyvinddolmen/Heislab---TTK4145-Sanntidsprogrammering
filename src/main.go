@@ -22,9 +22,9 @@ func main() {
 
 
 		RUNNING MULTIPLE ELEVATORS
-		go run . -simPort 15657 -peersPort 20001 -bcastPort 20002 -id 1
-		go run . -simPort 15667 -peersPort 20001 -bcastPort 20002 -id 2
-		go run . -simPort 15677 -peersPort 20001 -bcastPort 20002 -id 3
+		go run . -simPort 15657 -bcastPort 20002 -id 1
+		go run . -simPort 15667 -bcastPort 20002 -id 2
+		go run . -simPort 15677 -bcastPort 20002 -id 3
 
 
 		På lab: begge programmene skal ha samme simPort 15657
