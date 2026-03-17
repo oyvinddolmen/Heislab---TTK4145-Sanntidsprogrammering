@@ -9,9 +9,9 @@ for å starte opp simulatoren:
     dmd -w -g src\sim_server.d src\timer_event.d -ofSimElevatorServer.exe
     .\SimElevatorServer.exe
  
- for å starte opp simulatoren MAC: 
- 1.-    dmd -w -g Simulator-v2-master/src/sim_server.d Simulator-v2-master/src/timer_event.d -ofSimElevatorServer
-2.-    ./SimElevatorServer
+ for å kjøre simulatoren MAC: 
+    ./SimElevatorServer --port 15657
+    go run main.go -simPort 15657 -bcastPort 20002 -id 1 
 
 Linux:
 
