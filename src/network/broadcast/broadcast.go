@@ -65,3 +65,4 @@ func GlobalStateReceiver(port int, incomingGlobalStateChannel chan<- state.Globa
 		incomingGlobalStateChannel <- globalState
 	}
 }
+

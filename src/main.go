@@ -17,6 +17,10 @@ func main() {
 		.\SimElevatorServer.exe --port 15667
 		.\SimElevatorServer.exe --port 15677
 
+		MAC: ./SimElevatorServer --port 15657
+		     go run main.go --id=1 --simPort=15657
+
+
 		RUNNING MULTIPLE ELEVATORS
 		go run . -simPort 15657 -peersPort 20001 -bcastPort 20002 -id 1
 		go run . -simPort 15667 -peersPort 20001 -bcastPort 20002 -id 2
@@ -46,7 +50,7 @@ func main() {
 	elevator.InitHardware(elevAddress)
 	elev, elevChannels := management.InitElevator(elevID)
 	globalState := state.InitGlobalState(&elev, elevID)
-
+	fmt.Println("elevID fra startup: ", globalState.GetLocalID(), elev.GetID())
 	// --------------------- Recover on startup ----------------------
 	// TODO: Flytte inn i RunElevator. Må også gå an å få logikken under inn i RecoverOnStartup.
 	recoveredElev := network.RecoverOnStartup(&elev, globalState, networkChannels.IncomingGlobalStateChannel)
@@ -55,7 +59,7 @@ func main() {
 	if recoveredElev {
 		elevator.UpdateCurrentOrderAndsafeDrive(&elev, globalState)
 	}
-
+	fmt.Println("elevID etter recovered: ", globalState.GetLocalID(), elev.GetID())
 	// ------------------- Communication ---------------------
 	network.InitCommunication(&elev, globalState, networkChannels)
 
