@@ -10,13 +10,20 @@ import (
 )
 
 type AssignerInput struct {
-	HallOrders     [][management.NumHallButtonTypes]bool `json:"hallOrders"`
+	HallOrders     [][management.NumHallButtonTypes]bool `json:"hallRequests"`
 	ElevatorStates map[string]state.ElevatorStateJSON    `json:"states"`
 }
 
 // Assigns hall orders and applies assigned hall orders to the local elevator.
 func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *state.GlobalState) {
 	globalStateCopy := globalState.GetCopy()
+
+	for id, s := range globalStateCopy.States {
+		fmt.Printf(
+			"before assigner: id=%s floor=%d behavior=%s dir=%s canTakeOrders=%v\n",
+			id, s.Floor, s.Behavior, s.Direction, s.CanTakeOrders,
+		)
+	}
 
 	activeElevatorStates := make(map[string]state.ElevatorStateJSON)
 	for elevID, elevState := range globalStateCopy.States {

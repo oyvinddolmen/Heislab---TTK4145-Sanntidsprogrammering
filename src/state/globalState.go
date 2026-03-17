@@ -18,7 +18,7 @@ type ElevatorStateJSON struct {
 	Behavior      string `json:"behaviour"` // idle, moving, doorOpen, offline
 	Floor         int    `json:"floor"`
 	Direction     string `json:"direction"`
-	CabOrders     []bool `json:"cabOrders"`
+	CabOrders     []bool `json:"cabRequests"`
 	CanTakeOrders bool   `json:"canTakeOrders"`
 }
 
@@ -50,7 +50,7 @@ func ConvertElevatorToJSON(elev *management.Elevator) ElevatorStateJSON {
 
 	return ElevatorStateJSON{
 		Behavior:      convertState(elev.GetState()),
-		Floor:         elev.GetFloor(),
+		Floor:         elev.GetLastFloor(),
 		Direction:     convertDirection(elev.GetMoveDir()),
 		CabOrders:     cabOrders,
 		CanTakeOrders: elev.GetCanTakeOrders(),
