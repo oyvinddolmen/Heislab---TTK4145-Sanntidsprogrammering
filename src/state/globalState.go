@@ -38,6 +38,7 @@ func InitGlobalState(elev *management.Elevator, elevID string) *GlobalState {
 	return globalState
 }
 
+// TODO: State conversion i egen fil?
 // -------------------------------------------------------------------------------------------
 // State conversion
 // -------------------------------------------------------------------------------------------
@@ -152,15 +153,14 @@ func (globalState *GlobalState) GetCopy() GlobalStateData {
 func (globalState *GlobalState) GetLocalID() string {
     globalState.mutex.Lock()
     defer globalState.mutex.Unlock()
-
     return globalState.data.LocalID
 }
 
 func (globalState *GlobalState) RemoveHallOrder(floor int, button elevIO.ButtonType) {
 	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
 	globalState.data.HallOrders[floor][button] = false
 	globalState.data.HallOrderVersion[floor][button]++
-	globalState.mutex.Unlock()
 }
 
 // TODO: Fjern
