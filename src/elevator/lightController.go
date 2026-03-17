@@ -67,7 +67,7 @@ func setFloorIndicator(floor int) {
 	elevIO.SetFloorIndicator(floor)
 }
 
-func setDoorOpenLampIfAtFloor() {
+func setDoorOpenLamp() {
 	if elevIO.GetFloor() != -1 {
 		elevIO.SetDoorOpenLamp(true)
 	}

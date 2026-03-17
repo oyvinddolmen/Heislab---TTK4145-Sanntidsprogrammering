@@ -1,6 +1,7 @@
 package elevator
 
 import (
+	"fmt"
 	"heislab/elevator/elevIO"
 	"heislab/management"
 	"heislab/network"
@@ -40,35 +41,38 @@ func runFSM(
 			select {
 			case <-networkChannels.WorldViewUpdateChannel:
 				if needToOpenDoors(elev, globalState) {
-					orderManagement.ServeHallOrdersAtCurrentFloor(elev, globalState) // TODO både denne og
-					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)	 // denne fjerner hallup/down, unødvendig?
-					SetAllLights(elev, globalState) // TODO Trenger denne?
+					orderManagement.ServeHallOrdersAtCurrentFloor(elev, globalState) 
 					setElevState(elev, globalState, management.ElevObstruction)
 				} else {
 					updateAssignments(elev, globalState)
-					UpdateCurrentOrderAndsafeDrive(elev, globalState)
+					UpdateCurrentOrderAndDrive(elev, globalState)
 				}
 			case button := <-elevChannels.ButtonPressChannel:
 				hallOrderConflict := false // Becomes true if HallUp and HallDown active at current floor and
 										   // Caborder is pressed at a different direction then the current dirction
-				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, button, networkChannels)
-				if !OrderWasAtCurrentFloor {
-					if elev.GetFloor() != -1 {
-						hallOrderConflict = orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
-						updateAssignments(elev, globalState)
-					}
-					if hallOrderConflict {
-						setElevState(elev, globalState, management.ElevObstruction)
-					} else {
-						UpdateCurrentOrderAndsafeDrive(elev, globalState)
-					}
+				if atButtonFloor(elev, button){
+					setElevState(elev, globalState, management.ElevObstruction)
+					return
+				}
+				registerOrder(elev, globalState, button)
+				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
+				orderManagement.RunHallAssignerAndApplyAssignments(elev, globalState)
+				SetAllLights(elev, globalState)
+				if elev.GetFloor() != -1 {
+					hallOrderConflict = orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
+					updateAssignments(elev, globalState)
+				}
+				if hallOrderConflict {
+					setElevState(elev, globalState, management.ElevObstruction)
+				} else {
+					UpdateCurrentOrderAndDrive(elev, globalState)
 				}
 			case <-elevChannels.ObstructionChannel:
 				setElevState(elev, globalState, management.ElevObstruction)
 			case <-idleTimer.C:
 				updateAssignments(elev, globalState)
 				elev.SetLastOrderButtonType(elevIO.CabButton)
-				UpdateCurrentOrderAndsafeDrive(elev, globalState)
+				UpdateCurrentOrderAndDrive(elev, globalState)
 				if !elev.GetCurrentOrderActiveStatus() {
 					startIdleTimer()
 				}
@@ -95,10 +99,11 @@ func runFSM(
 						UpdateMoveDir(elev)
 					}
 					setElevState(elev, globalState, management.ElevObstruction)
-				}
+				} 
 			case button := <-elevChannels.ButtonPressChannel:
-				handleButtonPress(elev, globalState, button, networkChannels)
-				orderManagement.UpdateCurrentOrder(elev, globalState)
+				registerOrder(elev, globalState, button)
+				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
+				updateAssignments(elev, globalState)
 			case <-elevChannels.ObstructionChannel:
 				setElevState(elev, globalState, management.ElevObstruction)
 			case <-canTakeOrdersTimer.C:
@@ -111,42 +116,38 @@ func runFSM(
 			case <-networkChannels.WorldViewUpdateChannel:
 				if needToOpenDoors(elev, globalState) {
 					orderManagement.ServeHallOrdersAtCurrentFloor(elev, globalState)
-					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
-					SetAllLights(elev, globalState)
-					startIdleTimer()
+					setElevState(elev, globalState, management.ElevObstruction)
 				} else {
 					updateAssignments(elev, globalState)
-					orderManagement.UpdateCurrentOrder(elev, globalState)
-					UpdateMoveDir(elev)
+					updateCurrentOrderAndMoveDir(elev, globalState)
 				}
 			case button := <-elevChannels.ButtonPressChannel:
 				mixedHallOrders := false
-				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, button, networkChannels)
-				if !OrderWasAtCurrentFloor {
 
-					if elev.GetFloor() != -1 {
-						mixedHallOrders = orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
-						updateAssignments(elev, globalState)
-					}
-					if mixedHallOrders || needToOpenDoors(elev, globalState) {
-						doorTimer = time.NewTimer(doorOpenDuration)
-					} else {
-						orderManagement.UpdateCurrentOrder(elev, globalState)
-						UpdateMoveDir(elev)
-					}
+				if atButtonFloor(elev, button){
+					setElevState(elev, globalState, management.ElevObstruction)
+					return
 				}
-				if hallUpAndHallDownAndCabAtDifferentDir || needToOpenDoors(elev, globalState) {
+				registerOrder(elev, globalState, button)
+				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
+				updateAssignments(elev, globalState)
+				if elev.GetFloor() != -1 {
+					mixedHallOrders = orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
+					updateAssignments(elev, globalState)
+				}
+				if mixedHallOrders || needToOpenDoors(elev, globalState) {
 					doorTimer = time.NewTimer(doorOpenDuration)
-				} else {
-					orderManagement.UpdateCurrentOrder(elev, globalState)
-					UpdateMoveDir(elev)
-				}
+				} 
+				updateCurrentOrderAndMoveDir(elev, globalState)
+				
 			case <-doorTimer.C:
 				if !elevIO.GetObstruction() {
+					fmt.Println("doorTimer!!!!!!")
 					setElevState(elev, globalState, management.ElevIdle)
-				} else {
-					startNewDoorTimer()
-				}
+					return
+				} 
+				startNewDoorTimer()
+				
 			case <-canTakeOrdersTimer.C:
 				elev.SetCanTakeOrders(false)
 			}

@@ -57,7 +57,7 @@ func main() {
 	elevator.GoToNearestFloorUnder(&elev)
 	globalState.UpdateGlobalState(&elev)
 	if recoveredElev {
-		elevator.UpdateCurrentOrderAndsafeDrive(&elev, globalState)
+		elevator.UpdateCurrentOrderAndDrive(&elev, globalState)
 	}
 	fmt.Println("elevID etter recovered: ", globalState.GetLocalID(), elev.GetID())
 	// ------------------- Communication ---------------------
