@@ -57,7 +57,7 @@ func main() {
 	}
 
 	// ------------------- Communication ---------------------
-	network.InitCommunication(elev, globalState, networkChannels)
+	network.InitCommunication(&elev, globalState, networkChannels)
 
 	// ----------------- Start elevator FSM -------------------
 	go elevator.RunElevator(&elev, globalState, elevChannels, networkChannels)

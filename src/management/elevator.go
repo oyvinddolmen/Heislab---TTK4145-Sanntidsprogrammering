@@ -52,13 +52,14 @@ func InitElevator(elevID string) (Elevator, ElevChannels) {
 	noOrder.SetActiveStatus(false)
 
 	elev := Elevator{
-		state:        ElevInit,
-        id:           elevID,
-        floor:        0,
-        lastFloor:    0,
-        moveDir:      DirIdle,
-        currentOrder: noOrder,
-        lastOrder:    noOrder,
+		state:         ElevInit,
+        id:            elevID,
+        floor:         0,
+        lastFloor:     0,
+        moveDir:       DirIdle,
+        currentOrder:  noOrder,
+        lastOrder:     noOrder,
+		canTakeOrders: true,
     }
 
 	// Create elev's order matrix.
