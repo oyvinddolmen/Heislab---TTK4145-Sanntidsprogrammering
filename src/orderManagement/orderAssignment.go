@@ -75,7 +75,6 @@ func AssignHallOrders(
 		return nil, fmt.Errorf("json.Marshal failed: %w", err)
 	}
 	jsonString := string(jsonBytes)
-	//fmt.Println("JSON sendt til hall_request_assigner:", jsonStr) TODO fjern
 
 	assignerPath := ""
 	switch runtime.GOOS {

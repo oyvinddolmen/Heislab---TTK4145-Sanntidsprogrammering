@@ -8,18 +8,10 @@ import (
 )
 
 type GlobalStateData struct {
-	HallOrders          [][management.NumHallButtonTypes]bool // [floor][0=up,1=down]
-	HallOrderVersion    [][management.NumHallButtonTypes]int  // incremented by one when matching hallOrder is updated
-	States              map[string]ElevatorStateJSON 		  // elevatorID -> state
+	HallOrders          [][management.NumHallButtonTypes]bool 		 // [floor][0=up,1=down]
+	HallOrderVersion    [][management.NumHallButtonTypes]int  		 // incremented by one when matching hallOrder is updated
+	States              map[string]ElevatorStateJSON // elevatorID -> state
 	LocalID             string
-}
-
-type ElevatorStateJSON struct {
-	Behavior      string `json:"behaviour"` // idle, moving, doorOpen, offline
-	Floor         int    `json:"floor"`
-	Direction     string `json:"direction"`
-	CabOrders     []bool `json:"cabRequests"`
-	CanTakeOrders bool   `json:"canTakeOrders"`
 }
 
 type GlobalState struct {
@@ -36,50 +28,6 @@ func InitGlobalState(elev *management.Elevator, elevID string) *GlobalState {
 	globalState.data.LocalID = elevID
 	globalState.data.States[elevID] = ConvertElevatorToJSON(elev) 
 	return globalState
-}
-
-// TODO: State conversion i egen fil?
-// -------------------------------------------------------------------------------------------
-// State conversion
-// -------------------------------------------------------------------------------------------
-
-func ConvertElevatorToJSON(elev *management.Elevator) ElevatorStateJSON {
-	cabOrders := make([]bool, management.NumFloors)
-	for floor := 0; floor < management.NumFloors; floor++ {
-		cabOrders[floor] = elev.GetOrderActiveStatus(floor, management.CabButton)
-	}
-
-	return ElevatorStateJSON{
-		Behavior:      convertState(elev.GetState()),
-		Floor:         elev.GetLastFloor(),
-		Direction:     convertDirection(elev.GetMoveDir()),
-		CabOrders:     cabOrders,
-		CanTakeOrders: elev.GetCanTakeOrders(),
-	}
-}
-
-func convertState(state management.State) string {
-	switch state {
-	case management.ElevIdle:
-		return "idle"
-	case management.ElevMoving:
-		return "moving"
-	case management.ElevInit:
-		return "moving"
-	default:
-		return "idle"
-	}
-}
-
-func convertDirection(direction management.Direction) string {
-	switch direction {
-	case management.DirUp:
-		return "up"
-	case management.DirDown:
-		return "down"
-	default:
-		return "stop"
-	}
 }
 
 // -------------------------------------------------------------------------------------------
