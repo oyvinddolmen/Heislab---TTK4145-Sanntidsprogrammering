@@ -6,7 +6,6 @@ import (
 	"heislab/state"
 )
 
-// Clears orders at current floor and returns true if there is a HallOrder conflict.
 func ClearOrdersAtCurrentFloor(elev *management.Elevator, globalState *state.GlobalState) {
 	currentFloor := elev.GetFloor()
 	if elev.GetCurrentOrderFloor() == currentFloor {

@@ -6,6 +6,7 @@ import (
 	"heislab/orderManagement"
 	"heislab/state"
 	"time"
+	"heislab/network"
 )
 
 // Timer variables
@@ -65,21 +66,6 @@ func onObstructionEntry(elev *management.Elevator) {
 // FSM stopping and moving logic
 // -------------------------------------------------------------------------------------------
 
-// Creates order, updates global state and runs hall order assigner.
-func registerOrder(
-	elev *management.Elevator,
-	globalState *state.GlobalState,
-	button elevIO.ButtonEvent,
-){
-	order := management.CreateOrder(button)
-	if order.IsCabOrder() {
-		elev.SetOrder(order)
-		globalState.UpdateGlobalState(elev)
-	} else {
-		globalState.AddHallOrder(order)
-		globalState.IncrementHallOrderVersion(order.GetFloor(), order.GetButtonType())
-	}
-}
 
 // Checks if the elevator is currently at a floor with hall up and halldown order,
 // and the button press is in a different direction than the cleared hallorder
@@ -163,16 +149,6 @@ func UpdateCurrentOrderAndDrive(elev *management.Elevator, globalState *state.Gl
 	}
 }
 
-func updateAssignmentsAndSetLights(elev *management.Elevator, globalState *state.GlobalState) {
-	orderManagement.RunHallAssignerAndApplyAssignments(elev, globalState)
-	SetAllLights(elev, globalState)
-}
-
-func updateCurrentOrderAndMoveDir(elev *management.Elevator, globalState *state.GlobalState) {
-	orderManagement.UpdateCurrentOrder(elev, globalState)
-	UpdateMoveDir(elev)
-}
-
 // Checks if there are any hall orders at the same floor as elevator.
 func needToOpenDoors(elev *management.Elevator, globalState *state.GlobalState) bool {
 	currentFloor := elev.GetFloor()
@@ -225,6 +201,45 @@ func UpdateMoveDir(elev *management.Elevator) {
 	} else {
 		elev.SetMoveDir(management.DirIdle)
 	}
+}
+
+// -------------------------------------------------------------------------------------------
+// FSM Readebility functions
+// -------------------------------------------------------------------------------------------
+
+func updateAssignmentsAndSetLights(elev *management.Elevator, globalState *state.GlobalState) {
+	orderManagement.RunHallAssignerAndApplyAssignments(elev, globalState)
+	SetAllLights(elev, globalState)
+}
+
+func updateCurrentOrderAndMoveDir(elev *management.Elevator, globalState *state.GlobalState) {
+	orderManagement.UpdateCurrentOrder(elev, globalState)
+	UpdateMoveDir(elev)
+}
+func registerAndBroadcastOrder(
+	elev *management.Elevator,
+	globalState *state.GlobalState,
+	button elevIO.ButtonEvent,
+	networkChannels network.NetworkChannels,
+) {
+	order := management.CreateOrder(button)
+	if order.IsCabOrder() {
+		elev.SetOrder(order)
+		globalState.UpdateGlobalState(elev)
+	} else {
+		globalState.AddHallOrder(order)
+		globalState.IncrementHallOrderVersion(order.GetFloor(), order.GetButtonType())
+	}
+	network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
+}
+
+func clearOrdersAndBroadcast(
+	elev *management.Elevator,
+	globalState *state.GlobalState,
+	networkChannels network.NetworkChannels,
+) {
+	orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
+	network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
 }
 
 // -------------------------------------------------------------------------------------------

@@ -51,12 +51,10 @@ func runFSM(
 					setElevState(elev, globalState, management.ElevObstruction)
 					continue
 				}
-				registerOrder(elev, globalState, button)
-				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
+				registerAndBroadcastOrder(elev, globalState, button, networkChannels)
 				updateAssignmentsAndSetLights(elev, globalState)
 				if isCabOrderAtDifferentDir(elev) {
-					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
-					network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
+					clearOrdersAndBroadcast(elev, globalState, networkChannels)
 					setElevState(elev, globalState, management.ElevObstruction)
 					continue
 				}
@@ -82,14 +80,12 @@ func runFSM(
 					setMotorStop()
 					elev.SetFloor(floor)
 					ChooseDirectionAfterStop(elev, floor)
-					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
-					network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
+					clearOrdersAndBroadcast(elev, globalState, networkChannels)
 					updateAssignmentsAndSetLights(elev, globalState)
 					setElevState(elev, globalState, management.ElevObstruction)
 				}
 			case button := <-elevChannels.ButtonPressChannel:
-				registerOrder(elev, globalState, button)
-				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
+				registerAndBroadcastOrder(elev, globalState, button, networkChannels)
 				updateAssignmentsAndSetLights(elev, globalState)
 			case <-elevChannels.ObstructionChannel:
 				setElevState(elev, globalState, management.ElevObstruction)
@@ -113,12 +109,10 @@ func runFSM(
 					startNewDoorTimer()
 					continue
 				}
-				registerOrder(elev, globalState, button)
-				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
+				registerAndBroadcastOrder(elev, globalState, button, networkChannels)
 				updateAssignmentsAndSetLights(elev, globalState)
 				if isCabOrderAtDifferentDir(elev) {
-					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
-					network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
+					clearOrdersAndBroadcast(elev, globalState, networkChannels)
 					startNewDoorTimer()
 					continue
 				}
