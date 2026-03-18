@@ -17,7 +17,7 @@ func InitHardware(elevAddress string) {
 }
 
 // Moves elevator to closest floor under elevators position.
-func GoToNearestFloorUnder(elev *management.Elevator) {
+func goToNearestFloorUnder(elev *management.Elevator) {
 	floor := elevIO.GetFloor()
 
 	if floor == -1 {

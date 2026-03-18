@@ -14,7 +14,14 @@ func RunElevator(
 	globalState *state.GlobalState,
 	elevChannels management.ElevChannels,
 	networkChannels network.NetworkChannels,
+	recoveredElev bool,
 ) {
+	goToNearestFloorUnder(elev)
+	globalState.UpdateGlobalState(elev)
+	if recoveredElev {
+		updateCurrentOrderAndDrive(elev, globalState)
+	}
+
 	go elevIO.PollFloorSensor(elevChannels.NewFloorChannel)
 	go elevIO.PollObstructionSwitch(elevChannels.ObstructionChannel)
 	go elevIO.PollButtons(elevChannels.ButtonPressChannel)
@@ -45,7 +52,7 @@ func runFSM(
 					continue
 				}
 				updateAssignmentsAndSetLights(elev, globalState)
-				UpdateCurrentOrderAndDrive(elev, globalState)
+				updateCurrentOrderAndDrive(elev, globalState)
 			case button := <-elevChannels.ButtonPressChannel:
 				if atButtonFloor(elev, button) {
 					setElevState(elev, globalState, management.ElevObstruction)
@@ -58,12 +65,12 @@ func runFSM(
 					setElevState(elev, globalState, management.ElevObstruction)
 					continue
 				}
-				UpdateCurrentOrderAndDrive(elev, globalState)
+				updateCurrentOrderAndDrive(elev, globalState)
 			case <-elevChannels.ObstructionChannel:
 				setElevState(elev, globalState, management.ElevObstruction)
 			case <-idleTimer.C: // Tells the elevator to take any order
 				elev.SetLastOrderButtonType(elevIO.CabButton)
-				UpdateCurrentOrderAndDrive(elev, globalState)
+				updateCurrentOrderAndDrive(elev, globalState)
 			}
 
 		// ----------------- Case: MOVING -------------------------

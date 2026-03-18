@@ -29,7 +29,7 @@ func setElevState(elev *management.Elevator, globalState *state.GlobalState, new
 // Turns off door open lamp, finds and drives to next order
 func onIdleEntry(elev *management.Elevator, globalState *state.GlobalState) {
 	elevIO.SetDoorOpenLamp(false)
-	UpdateCurrentOrderAndDrive(elev, globalState)
+	updateCurrentOrderAndDrive(elev, globalState)
 	turnOffCanTakeOrdersTimer()
 	elev.SetCanTakeOrders(true)
 	if !elev.GetCurrentOrderActiveStatus() {
@@ -130,7 +130,7 @@ func shouldStop(elev *management.Elevator, floor int) bool {
 	return false
 }
 
-func UpdateCurrentOrderAndDrive(elev *management.Elevator, globalState *state.GlobalState) {
+func updateCurrentOrderAndDrive(elev *management.Elevator, globalState *state.GlobalState) {
 	updateCurrentOrderAndMoveDir(elev, globalState)
 	setMotorFromDir(elev)
 	if elev.GetMoveDir() != management.DirIdle {
@@ -193,7 +193,7 @@ func UpdateMoveDir(elev *management.Elevator) {
 }
 
 // -------------------------------------------------------------------------------------------
-// FSM Readebility functions
+// FSM Readbility functions
 // -------------------------------------------------------------------------------------------
 
 func updateAssignmentsAndSetLights(elev *management.Elevator, globalState *state.GlobalState) {
@@ -205,6 +205,7 @@ func updateCurrentOrderAndMoveDir(elev *management.Elevator, globalState *state.
 	orderManagement.UpdateCurrentOrder(elev, globalState)
 	UpdateMoveDir(elev)
 }
+
 func registerAndBroadcastOrder(
 	elev *management.Elevator,
 	globalState *state.GlobalState,

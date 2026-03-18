@@ -11,27 +11,21 @@ import (
 
 func main() {
 
-	// --------------------- Initialize elevator, network and globalState ----------------------
+	// Initialize elevator, network and globalState
 	elevID, elevAddress, broadcastPort := inputFromTerminal()
 	networkChannels := network.InitNetwork(*broadcastPort)
 	elevator.InitHardware(elevAddress)
 	elev, elevChannels := management.InitElevator(elevID)
 	globalState := state.InitGlobalState(&elev, elevID)
-	fmt.Println("elevID fra startup: ", globalState.GetLocalID(), elev.GetID())
 
-	// --------------------- Recover on startup ----------------------
+	// Check if elev can recover orders on startup
 	recoveredElev := network.RecoverOnStartup(&elev, globalState, networkChannels.IncomingGlobalStateChannel)
-	elevator.GoToNearestFloorUnder(&elev)
-	globalState.UpdateGlobalState(&elev)
-	if recoveredElev {
-		elevator.UpdateCurrentOrderAndDrive(&elev, globalState)
-	}
 
-	// ----------------- Initialize communication ---------------------
+	// Initialize communication
 	network.InitCommunication(&elev, globalState, networkChannels)
 
-	// ----------------- Start elevator FSM -------------------
-	elevator.RunElevator(&elev, globalState, elevChannels, networkChannels)
+	// Start elevator FSM
+	elevator.RunElevator(&elev, globalState, elevChannels, networkChannels, recoveredElev)
 	select {}
 }
 

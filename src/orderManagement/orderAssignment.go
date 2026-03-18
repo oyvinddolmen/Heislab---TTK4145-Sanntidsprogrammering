@@ -26,8 +26,8 @@ func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *
 	}
 
 	elevIDList := make([]string, 0, len(globalStateCopy.States))
-	for id := range globalStateCopy.States {
-		elevIDList = append(elevIDList, id)
+	for elevID := range globalStateCopy.States {
+		elevIDList = append(elevIDList, elevID)
 	}
 	sort.Strings(elevIDList)
 
@@ -36,14 +36,7 @@ func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *
 		elevState := globalStateCopy.States[elevID]
 		if elevState.Behavior != "offline" && elevState.CanTakeOrders {
 			activeElevatorStates[elevID] = elevState
-			fmt.Println("Added elevator" + elevID + "to activeElevatorStates")
 		}
-	}
-
-	// always set local elevator active
-	if elev.GetCanTakeOrders() {
-		activeElevatorStates[elev.GetID()] = globalStateCopy.States[elev.GetID()]
-		fmt.Printf("View self as active elevator")
 	}
 
 	assignments, err := AssignHallOrders(globalStateCopy.HallOrders, activeElevatorStates)
