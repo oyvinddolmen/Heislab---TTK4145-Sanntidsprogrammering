@@ -4,11 +4,6 @@ import (
 	"heislab/management"
 )
 
-// TODO: Comment
-// -------------------------------------------------------------------------------------------
-// State conversion
-// -------------------------------------------------------------------------------------------
-
 type ElevatorStateJSON struct {
 	Behavior      string `json:"behaviour"` // idle, moving, doorOpen, offline
 	Floor         int    `json:"floor"`

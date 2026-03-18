@@ -15,10 +15,10 @@ type AssignerInput struct {
 	ElevatorStates map[string]state.ElevatorStateJSON    `json:"states"`
 }
 
+// Runs the handed out hallRequestAssigner and assigns orders to elevators
 func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *state.GlobalState) {
 	globalStateCopy := globalState.GetCopy()
 
-	//Hent og sorter keys
 	ids := make([]string, 0, len(globalStateCopy.States))
 	for id := range globalStateCopy.States {
 		ids = append(ids, id)
@@ -33,7 +33,6 @@ func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *
 		)
 	}
 
-	//Bygg activeElevatorStates i samme rekkefølge
 	activeElevatorStates := make(map[string]state.ElevatorStateJSON)
 	for _, elevID := range ids {
 		elevState := globalStateCopy.States[elevID]
@@ -55,7 +54,7 @@ func applyAssignments(elev *management.Elevator, assignments map[string][][manag
 	elevID := elev.GetID()
 	assigned, exists := assignments[elevID]
 	if !exists {
-		fmt.Println("assignments[elevID] finnes ikke!!!")
+		fmt.Println("error: elevID does not exist")
 		return
 	}
 

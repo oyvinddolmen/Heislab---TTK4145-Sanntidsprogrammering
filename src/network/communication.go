@@ -2,15 +2,11 @@ package network
 
 import (
 	"heislab/management"
-	"time"
 	"heislab/state"
+	"time"
 )
 
 const broadcastInterval = 20 * time.Millisecond
-
-// -------------------------------------------------------------------------------------------
-// Global state communication and peer tracking TODO bedre kommentar ?
-// -------------------------------------------------------------------------------------------
 
 // Initializes communication go routines.
 func InitCommunication(
@@ -28,7 +24,7 @@ func InitCommunication(
 	)
 }
 
-// Listens for incoming worldViews, updates globalState and sends on worldViewUpdate channel.
+// Listens for incoming worldViews, updates globalState and notifies if there is a new world view 
 func ListenAndMergeGlobalState(
 	elev *management.Elevator,
 	globalState *state.GlobalState,
@@ -45,17 +41,17 @@ func ListenAndMergeGlobalState(
 
 		RegisterHeartbeat(localID, remoteGlobalState.LocalID)
 		if globalState.NewWorldView(remoteGlobalState) {
-			if globalState.IsOffline(){
+			if globalState.IsOffline() {
 				globalState.SetSelfToOnline(elev)
 			}
-			globalState.Merge(remoteGlobalState) 
+			globalState.Merge(remoteGlobalState)
 			worldViewUpdateChannel <- true
 			continue
 		}
 	}
 }
 
-// Sends global state periodically at interval given by broadcastInterval constant.
+// Sends global state periodically at interval given by broadcastInterval constant
 func SendGlobalStatePeriodically(
 	elev *management.Elevator,
 	globalState *state.GlobalState,
@@ -69,7 +65,7 @@ func SendGlobalStatePeriodically(
 	}
 }
 
-// Sends global state once.
+// Sends global state once
 func SendGlobalState(
 	elev *management.Elevator,
 	globalState *state.GlobalState,

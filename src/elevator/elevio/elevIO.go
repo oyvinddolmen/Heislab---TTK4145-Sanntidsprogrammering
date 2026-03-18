@@ -34,13 +34,6 @@ type ButtonEvent struct {
 	Button ButtonType
 }
 
-// TODO: brukes ikke
-type CabFloorLights struct {
-	Floor  int
-	Button ButtonType
-	Value  bool
-}
-
 func InitElevatorIO(elevAddress string, totalFloors int) {
 	if initialized {
 		fmt.Println("Driver already initialized!")
@@ -116,20 +109,6 @@ func PollFloorSensor(newFloorChannel chan<- int) {
 	}
 }
 
-// TODO: Function not in use
-func PollStopButton(receiver chan<- bool) {
-	previousStopPressed := false
-
-	for {
-		time.Sleep(pollRate)
-		currentStopPressed := GetStop()
-		if currentStopPressed != previousStopPressed {
-			receiver <- currentStopPressed
-		}
-		previousStopPressed = currentStopPressed
-	}
-}
-
 // Constantly checks state of the obstruction switch and sends changes on channel.
 func PollObstructionSwitch(obstructionChannel chan<- bool) {
 	previousObstructionState := false
@@ -161,13 +140,6 @@ func GetFloor() int {
 		return floor
 	}
 	return -1
-}
-
-// TODO: Also not in use
-func GetStop() bool {
-	response := read([4]byte{8, 0, 0, 0})
-	stopPressed := toBool(response[1])
-	return stopPressed
 }
 
 // Reads and returns obstruction switch state.
@@ -207,7 +179,6 @@ func write(input [4]byte) {
 	}
 }
 
-// Transforms boolean to byte.
 func toByte(inputBool bool) byte {
 	var outputByte byte = 0
 	if inputBool {
@@ -216,7 +187,6 @@ func toByte(inputBool bool) byte {
 	return outputByte
 }
 
-// Transforms byte to boolean.
 func toBool(inputByte byte) bool {
 	var outputBool bool = false
 	if inputByte != 0 {

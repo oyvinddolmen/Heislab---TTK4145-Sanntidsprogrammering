@@ -20,7 +20,7 @@ func InitLights() {
 	}
 }
 
-// Sets the hall light based on global state.
+// Sets the hall lights based on global state.
 func setHallLight(globalState *state.GlobalState) {
 	globalStateCopy := globalState.GetCopy()
 
@@ -62,11 +62,7 @@ func SetAllLights(elev *management.Elevator, globalState *state.GlobalState) {
 	}
 }
 
-// TODO: Unødvendig? elevIO er inkludert der denne brukes
-func setFloorIndicator(floor int) {
-	elevIO.SetFloorIndicator(floor)
-}
-
+// checks that elevator is not between floors before setting door open lamp
 func setDoorOpenLamp() {
 	if elevIO.GetFloor() != -1 {
 		elevIO.SetDoorOpenLamp(true)

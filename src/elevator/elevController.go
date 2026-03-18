@@ -35,7 +35,6 @@ func GoToNearestFloorUnder(elev *management.Elevator) {
 	elev.SetState(management.ElevIdle)
 }
 
-
 // -------------------------------------------------------------------------------------------
 // Elevator helper functions
 // -------------------------------------------------------------------------------------------
