@@ -39,18 +39,15 @@ func setElevState(elev *management.Elevator, globalState *state.GlobalState, new
 
 // Turns off door open and stop lamp, and sets motor dir based on next order.
 func onIdleEntry(elev *management.Elevator, globalState *state.GlobalState) {
-	fmt.Println("SetterDoorOpenTILFALSE")
 	elevIO.SetDoorOpenLamp(false)
-	updateAssignments(elev, globalState)
 	UpdateCurrentOrderAndDrive(elev, globalState)
-	SetAllLights(elev, globalState)
 	turnOffCanTakeOrdersTimer()
 	elev.SetCanTakeOrders(true)
-	startIdleTimer()
+	if !elev.GetCurrentOrderActiveStatus() {
+		startIdleTimer()
+	}
 }
 
-// Turns off stop and door open lamp, and sets elevIO motor direction.
-// TODO: Hvor settes elevIO motor direction ?
 func onMovingEntry(elev *management.Elevator) {
 	elevIO.SetDoorOpenLamp(false)
 	elev.SetFloor(-1)
@@ -69,7 +66,6 @@ func onObstructionEntry(elev *management.Elevator) {
 // FSM stopping and moving logic
 // -------------------------------------------------------------------------------------------
 
-// Creates order, updates global state and runs hall order assigner.
 func registerOrder(elev *management.Elevator,
 		globalState *state.GlobalState,
 		button elevIO.ButtonEvent){
@@ -110,7 +106,6 @@ func atButtonFloor(elev *management.Elevator, button elevIO.ButtonEvent) bool {
 	return false
 }
 
-// Determines if elevator should stop at current floor.
 func ShouldStop(elev *management.Elevator, floor int) bool {
 	if !elev.GetCurrentOrderActiveStatus() || orderManagement.CabOrderAtFloor(elev, floor) {
 		return true
@@ -157,7 +152,6 @@ func ShouldStop(elev *management.Elevator, floor int) bool {
 	return false
 }
 
-// Updates current order and sets motor direction.
 func UpdateCurrentOrderAndDrive(elev *management.Elevator, globalState *state.GlobalState) {
 	updateCurrentOrderAndMoveDir(elev, globalState)
 	setMotorFromDir(elev)
@@ -166,7 +160,6 @@ func UpdateCurrentOrderAndDrive(elev *management.Elevator, globalState *state.Gl
 	}
 }
 
-// Runs hall order assigner and sets all order lights.
 func updateAssignments(elev *management.Elevator, globalState *state.GlobalState) {
 	orderManagement.RunHallAssignerAndApplyAssignments(elev, globalState)
 	SetAllLights(elev, globalState)
@@ -176,8 +169,6 @@ func updateCurrentOrderAndMoveDir(elev *management.Elevator, globalState *state.
 	orderManagement.UpdateCurrentOrder(elev, globalState)
 	UpdateMoveDir(elev)
 }
-
-
 
 // Checks if there are any hall orders at the same floor as elevator.
 func needToOpenDoors(elev *management.Elevator, globalState *state.GlobalState) bool {

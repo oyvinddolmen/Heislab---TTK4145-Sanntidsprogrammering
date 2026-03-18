@@ -14,7 +14,6 @@ func ClearOrdersAtCurrentFloor(elev *management.Elevator, globalState *state.Glo
 		elev.SetCurrentOrderActiveStatus(false)
 		elev.SetLastOrder(elev.GetCurrentOrder())
 	}
-
 	if elev.GetOrderActiveStatus(currentFloor, int(elevIO.CabButton)) {
 		RemoveCabOrder(globalState, elev, currentFloor)
 	}
