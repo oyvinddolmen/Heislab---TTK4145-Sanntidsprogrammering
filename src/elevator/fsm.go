@@ -1,7 +1,6 @@
 package elevator
 
 import (
-	"fmt"
 	"heislab/elevator/elevIO"
 	"heislab/management"
 	"heislab/network"
@@ -42,38 +41,30 @@ func runFSM(
 			case <-networkChannels.WorldViewUpdateChannel:
 				if needToOpenDoors(elev, globalState) {
 					orderManagement.ServeHallOrdersAtCurrentFloor(elev, globalState) 
-					setElevState(elev, globalState, management.ElevObstruction)
-				} else {
-					updateAssignments(elev, globalState)
-					UpdateCurrentOrderAndDrive(elev, globalState)
+					setElevState(elev, globalState, management.ElevObstruction) 
+					continue
 				}
+				updateAssignments(elev, globalState)
+				UpdateCurrentOrderAndDrive(elev, globalState)
 			case button := <-elevChannels.ButtonPressChannel:
 				if atButtonFloor(elev, button){
-					setElevState(elev, globalState, management.ElevObstruction)
+					setElevState(elev, globalState, management.ElevObstruction) 
 					continue
 				}
 				registerOrder(elev, globalState, button)
 				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
-				orderManagement.RunHallAssignerAndApplyAssignments(elev, globalState)
-				SetAllLights(elev, globalState)
-				if elev.GetFloor() != -1 {
-					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
-					updateAssignments(elev, globalState)
-				}
+				updateAssignments(elev, globalState)
 				if isCabOrderAtDifferentDir(elev) {
+					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 					setElevState(elev, globalState, management.ElevObstruction)
-				} else {
-					UpdateCurrentOrderAndDrive(elev, globalState)
-				}
+					continue
+				} 
+				UpdateCurrentOrderAndDrive(elev, globalState)
 			case <-elevChannels.ObstructionChannel:
 				setElevState(elev, globalState, management.ElevObstruction)
-			case <-idleTimer.C:
-				updateAssignments(elev, globalState)
+			case <-idleTimer.C: // Tells the elevator to take any order
 				elev.SetLastOrderButtonType(elevIO.CabButton)
 				UpdateCurrentOrderAndDrive(elev, globalState)
-				if !elev.GetCurrentOrderActiveStatus() {
-					startIdleTimer()
-				}
 			}
 
 		// ----------------- Case: MOVING -------------------------
@@ -138,7 +129,6 @@ func runFSM(
 				
 			case <-doorTimer.C:
 				if !elevIO.GetObstruction() {
-					fmt.Println("doorTimer!!!!!!")
 					setElevState(elev, globalState, management.ElevIdle)
 					continue
 				} 
