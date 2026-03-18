@@ -13,29 +13,8 @@ We were tasked with creating software for controlling n elevators working in par
 
 
 ## Our system
-Our system is designed based on a peer-to-peer solution. 
+In our implementation each elevator runs as an independent peer with its own local finite state machine, while also sharing a common view of the global system state over the network.
 
-Elevators communicate through UDP broadcasts containing each elevators view of the global state. Upon changes in an elevators view of the global state, a broadcast is sent to the other elevators. In addition, each elevator periodically broadcasts their view. This periodic broadcast works as a heartbeat, with each elevator tracking the time since the last heartbeat of its peers, and setting them to offline if they take too long. 
+The solution is based on peer-to-peer communication using UDP broadcast. Elevators continuously exchange their current state and hall requests, allowing the system to coordinate order distribution without a central controller. To handle failures, each elevator monitors heartbeats from the others and marks missing peers as offline if they stop responding.
 
-Our system is mostly implemented in Go.
-
-### Modules
-#### Main
-
-
-#### State
-
-
-#### Network
-
-
-#### Elevator
-
-
-#### ElevIO ?
-
-
-#### OrderManagement
-
-
-#### Management
+Hall orders are assigned to the most suitable active elevator, while cab orders are handled locally by each elevator. This gives a fault-tolerant and efficient system where no requests are lost, button lights act as a service guarantee, and the elevators continue to operate sensibly even if one or more peers disconnects.
