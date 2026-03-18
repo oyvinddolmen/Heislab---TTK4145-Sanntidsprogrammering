@@ -14,7 +14,7 @@ const bufferSize = 1024
 // Global state transmitter and receiver
 // -------------------------------------------------------------------------------------------
 
-// TODO: Comment
+// Broadcasts global state with UDP
 func GlobalStateTransmitter(port int, outgoingGlobalStateChannel <-chan state.GlobalStateData) {
 	udpConnection := connection.DialBroadcastUDP(port)
 	broadcastAddress, err := net.ResolveUDPAddr("udp4", fmt.Sprintf("255.255.255.255:%d", port))
@@ -43,7 +43,7 @@ func GlobalStateTransmitter(port int, outgoingGlobalStateChannel <-chan state.Gl
 	}
 }
 
-// TODO: Comment
+// Receives global state from other elevator and sends it on incomingGlobalStateChannel
 func GlobalStateReceiver(port int, incomingGlobalStateChannel chan<- state.GlobalStateData) {
 	var receiveBuffer [bufferSize]byte
 	udpConnection := connection.DialBroadcastUDP(port)

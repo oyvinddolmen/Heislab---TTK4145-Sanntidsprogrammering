@@ -39,6 +39,7 @@ func main() {
 
 		- FØR INNLEVERING:
 		- fjerne alle print-og debugfunksjoner.
+		- fjerne alt utenom linux filene
 		- README i src med beskrivelse av koden, P2P og UDP osv..
 		- fjerne packet loss, simulator, start_simulators, gitignore, README i simulator,
 		  hall request og evt. andre steder
@@ -47,24 +48,22 @@ func main() {
 
 	*/
 
-	// --------------- Get elevator ID, address and port from terminal input -------------------
-	elevID, elevAddress, broadcastPort := inputFromTerminal()
-
 	// --------------------- Initialize elevator, network and globalState ----------------------
+	elevID, elevAddress, broadcastPort := inputFromTerminal()
 	networkChannels := network.InitNetwork(*broadcastPort)
 	elevator.InitHardware(elevAddress)
 	elev, elevChannels := management.InitElevator(elevID)
 	globalState := state.InitGlobalState(&elev, elevID)
 	fmt.Println("elevID fra startup: ", globalState.GetLocalID(), elev.GetID())
+
 	// --------------------- Recover on startup ----------------------
-	// TODO: Flytte inn i RunElevator. Må også gå an å få logikken under inn i RecoverOnStartup.
 	recoveredElev := network.RecoverOnStartup(&elev, globalState, networkChannels.IncomingGlobalStateChannel)
 	elevator.GoToNearestFloorUnder(&elev)
 	globalState.UpdateGlobalState(&elev)
 	if recoveredElev {
 		elevator.UpdateCurrentOrderAndDrive(&elev, globalState)
 	}
-	fmt.Println("elevID etter recovered: ", globalState.GetLocalID(), elev.GetID())
+
 	// ------------------- Communication ---------------------
 	network.InitCommunication(&elev, globalState, networkChannels)
 
@@ -73,10 +72,10 @@ func main() {
 	select {}
 }
 
-// takes inputs as ID, broadcast ports and  from terminal on startup
+// Lets you specify ID, simulator port and communication port in terminal when running the program
 func inputFromTerminal() (string, string, *int) {
 	simPort := flag.Int("simPort", 15657, "Simulator port")
-	broadcastPort := flag.Int("bcastPort", 20001, "UDP port for global state broadcast")
+	broadcastPort := flag.Int("bcastPort", 20001, "UDP port communication")
 	elevIDFlag := flag.String("id", "1", "Elevator ID")
 	flag.Parse()
 

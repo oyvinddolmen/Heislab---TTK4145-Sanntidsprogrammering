@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// Polls sensors and buttons from elevIO and runs FSM
 func RunElevator(
 	elev *management.Elevator,
 	globalState *state.GlobalState,
@@ -44,7 +45,7 @@ func runFSM(
 					orderManagement.ServeHallOrdersAtCurrentFloor(elev, globalState) 
 					setElevState(elev, globalState, management.ElevObstruction)
 				} else {
-					updateAssignments(elev, globalState)
+					updateAssignmentsAndSetLights(elev, globalState)
 					UpdateCurrentOrderAndDrive(elev, globalState)
 				}
 			case button := <-elevChannels.ButtonPressChannel:
@@ -58,7 +59,7 @@ func runFSM(
 				SetAllLights(elev, globalState)
 				if elev.GetFloor() != -1 {
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
-					updateAssignments(elev, globalState)
+					updateAssignmentsAndSetLights(elev, globalState)
 				}
 				if isCabOrderAtDifferentDir(elev) {
 					setElevState(elev, globalState, management.ElevObstruction)
@@ -68,7 +69,7 @@ func runFSM(
 			case <-elevChannels.ObstructionChannel:
 				setElevState(elev, globalState, management.ElevObstruction)
 			case <-idleTimer.C:
-				updateAssignments(elev, globalState)
+				updateAssignmentsAndSetLights(elev, globalState)
 				elev.SetLastOrderButtonType(elevIO.CabButton)
 				UpdateCurrentOrderAndDrive(elev, globalState)
 				if !elev.GetCurrentOrderActiveStatus() {
@@ -80,9 +81,9 @@ func runFSM(
 		case management.ElevMoving:
 			select {
 			case <-networkChannels.WorldViewUpdateChannel:
-				updateAssignments(elev, globalState)
+				updateAssignmentsAndSetLights(elev, globalState)
 			case floor := <-elevChannels.NewFloorChannel:
-				setFloorIndicator(floor)
+				elevIO.SetFloorIndicator(floor)
 				elev.SetLastFloor(floor)
 				elev.SetCanTakeOrders(true)
 				resetCanTakeOrdersTimer()
@@ -91,7 +92,7 @@ func runFSM(
 					elev.SetFloor(floor)
 					ChooseDirectionAfterStop(elev, floor)
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
-					updateAssignments(elev, globalState)
+					updateAssignmentsAndSetLights(elev, globalState)
 					if elev.GetCurrentOrderActiveStatus() {
 						orderManagement.UpdateCurrentOrder(elev, globalState)
 						UpdateMoveDir(elev)
@@ -101,7 +102,7 @@ func runFSM(
 			case button := <-elevChannels.ButtonPressChannel:
 				registerOrder(elev, globalState, button)
 				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
-				updateAssignments(elev, globalState)
+				updateAssignmentsAndSetLights(elev, globalState)
 			case <-elevChannels.ObstructionChannel:
 				setElevState(elev, globalState, management.ElevObstruction)
 			case <-canTakeOrdersTimer.C:
@@ -116,7 +117,7 @@ func runFSM(
 					orderManagement.ServeHallOrdersAtCurrentFloor(elev, globalState)
 					setElevState(elev, globalState, management.ElevObstruction)
 				} else {
-					updateAssignments(elev, globalState)
+					updateAssignmentsAndSetLights(elev, globalState)
 					updateCurrentOrderAndMoveDir(elev, globalState)
 				}
 			case button := <-elevChannels.ButtonPressChannel:
@@ -126,10 +127,10 @@ func runFSM(
 				}
 				registerOrder(elev, globalState, button)
 				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
-				updateAssignments(elev, globalState)
+				updateAssignmentsAndSetLights(elev, globalState)
 				if elev.GetFloor() != -1 {
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
-					updateAssignments(elev, globalState)
+					updateAssignmentsAndSetLights(elev, globalState)
 				}
 				if isCabOrderAtDifferentDir(elev) || needToOpenDoors(elev, globalState) {
 					doorTimer = time.NewTimer(doorOpenDuration)

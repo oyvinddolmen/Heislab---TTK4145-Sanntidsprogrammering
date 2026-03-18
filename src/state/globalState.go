@@ -1,32 +1,31 @@
 package state
 
 import (
-	"fmt"
 	"heislab/elevator/elevIO"
 	"heislab/management"
 	"sync"
 )
 
 type GlobalStateData struct {
-	HallOrders          [][management.NumHallButtonTypes]bool 	// [floor][0=up,1=down]
-	HallOrderVersion    [][management.NumHallButtonTypes]int  	// incremented by one when matching hallOrder is updated
-	States              map[string]ElevatorStateJSON            // elevatorID -> state
-	LocalID             string
+	HallOrders       [][management.NumHallButtonTypes]bool // [floor][0=up,1=down]
+	HallOrderVersion [][management.NumHallButtonTypes]int  // incremented by one when matching hallOrder is updated
+	States           map[string]ElevatorStateJSON          // elevatorID -> state
+	LocalID          string
 }
 
 type GlobalState struct {
-	mutex       sync.Mutex
-	data        GlobalStateData
+	mutex sync.Mutex
+	data  GlobalStateData
 }
 
+// Creates and initializes a GlobalState for the local elevator.
 func InitGlobalState(elev *management.Elevator, elevID string) *GlobalState {
 	globalState := &GlobalState{}
-
 	globalState.data.HallOrders = make([][management.NumHallButtonTypes]bool, management.NumFloors)
 	globalState.data.HallOrderVersion = make([][management.NumHallButtonTypes]int, management.NumFloors)
 	globalState.data.States = make(map[string]ElevatorStateJSON)
 	globalState.data.LocalID = elevID
-	globalState.data.States[elevID] = ConvertElevatorToJSON(elev) 
+	globalState.data.States[elevID] = ConvertElevatorToJSON(elev)
 	return globalState
 }
 
@@ -52,21 +51,18 @@ func (globalState *GlobalState) IncrementHallOrderVersion(floor int, button elev
 	globalState.data.HallOrderVersion[floor][button]++
 }
 
-// SetElevatorState setter en spesifikk elevator state i globalState
 func (globalState *GlobalState) SetElevatorGlobalState(elevID string, elevState ElevatorStateJSON) {
 	globalState.mutex.Lock()
 	defer globalState.mutex.Unlock()
 	globalState.data.States[elevID] = elevState
 }
 
-// GetElevatorState henter state for en spesifikk heis
 func (globalState *GlobalState) GetElevatorState(elevID string) (ElevatorStateJSON, bool) {
 	globalState.mutex.Lock()
 	defer globalState.mutex.Unlock()
 	elevState, exists := globalState.data.States[elevID]
 	return elevState, exists
 }
-
 
 func (globalState *GlobalState) GetCopy() GlobalStateData {
 	globalState.mutex.Lock()
@@ -88,9 +84,9 @@ func (globalState *GlobalState) GetCopy() GlobalStateData {
 }
 
 func (globalState *GlobalState) GetLocalID() string {
-    globalState.mutex.Lock()
-    defer globalState.mutex.Unlock()
-    return globalState.data.LocalID
+	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
+	return globalState.data.LocalID
 }
 
 func (globalState *GlobalState) RemoveHallOrder(floor int, button elevIO.ButtonType) {
@@ -155,48 +151,4 @@ func (globalState *GlobalState) AllOtherElevatorsOffline() bool {
 		}
 	}
 	return true
-}
-
-
-
-// TODO: Fjern
-func (globalState *GlobalState) PrintGlobalState() {
-	globalState.mutex.Lock()
-	defer globalState.mutex.Unlock()
-
-	fmt.Println("\n========== GLOBAL STATE ==========")
-	fmt.Printf("LocalID: %s\n", globalState.data.LocalID)
-
-	// ---------------- Hall Orders ----------------
-	fmt.Println("\nHall Orders:")
-	for floor := 0; floor < len(globalState.data.HallOrders); floor++ {
-		hallUp := globalState.data.HallOrders[floor][0]
-		hallDown := globalState.data.HallOrders[floor][1]
-		hallUpVersion := globalState.data.HallOrderVersion[floor][0]
-		hallDownVersion := globalState.data.HallOrderVersion[floor][1]
-
-		fmt.Printf("Floor %d | Up: %v (v%d) | Down: %v (v%d)\n",
-			floor, hallUp, hallUpVersion, hallDown, hallDownVersion)
-	}
-
-	// ---------------- Elevator States ----------------
-	fmt.Println("\nElevator States:")
-
-	for elevID, state := range globalState.data.States {
-
-		fmt.Printf("\nElevator %s\n", elevID)
-		fmt.Printf("  Behavior:  %s\n", state.Behavior)
-		fmt.Printf("  Floor:     %d\n", state.Floor)
-		fmt.Printf("  Direction: %s\n", state.Direction)
-
-		fmt.Printf("  CabOrders: ")
-		for floor, active := range state.CabOrders {
-			if active {
-				fmt.Printf("[%d] ", floor)
-			}
-		}
-		fmt.Println()
-	}
-
-	fmt.Println("==================================")
 }

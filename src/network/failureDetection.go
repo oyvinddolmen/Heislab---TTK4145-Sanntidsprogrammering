@@ -11,7 +11,7 @@ import (
 
 const HeartbeatTimeout = 2 * time.Second
 
-// Track last time we heard from each elevator
+// Track last time we heard from each elevator.
 var (
 	lastSeen = make(map[string]time.Time)
 	mutex sync.Mutex
