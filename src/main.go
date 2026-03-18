@@ -34,6 +34,7 @@ func main() {
 		TODO:
 		- Må sende på worldViewUpdate når heisen går offline
 		- fjerne case OBSTRUCTION under MOVING
+		- fjerne unødvendig ting i inputFromTerminal()
 		- Gå gjennom FAT test
 
 		- FØR INNLEVERING:
@@ -72,19 +73,14 @@ func main() {
 	select {}
 }
 
-// Takes input from terminal on startup and returns elevator ID, network address and state broadcast port.
+// takes inputs as ID, broadcast ports and  from terminal on startup
 func inputFromTerminal() (string, string, *int) {
-	simHost := flag.String("simHost", "localhost", "Simulator host")
 	simPort := flag.Int("simPort", 15657, "Simulator port")
-	simAddress := flag.String("simAddr", "", "Full simulator address host:port (overrides simHost/simPort)")
-	broadcastPort := flag.Int("bcastPort", 15668, "UDP port for global state broadcast")
-	elevIDFlag := flag.String("id", "1", "Elevator ID (optional)")
+	broadcastPort := flag.Int("bcastPort", 20001, "UDP port for global state broadcast")
+	elevIDFlag := flag.String("id", "1", "Elevator ID")
 	flag.Parse()
 
-	elevAddress := *simAddress
-	if elevAddress == "" {
-		elevAddress = fmt.Sprintf("%s:%d", *simHost, *simPort)
-	}
+	elevAddress := fmt.Sprintf("%s:%d", "localhost", *simPort)
 	elevID := *elevIDFlag
 
 	return elevID, elevAddress, broadcastPort
