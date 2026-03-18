@@ -182,7 +182,7 @@ func updateCurrentOrderAndMoveDir(elev *management.Elevator, globalState *state.
 // Checks if there are any hall orders at the same floor as elevator.
 func needToOpenDoors(elev *management.Elevator, globalState *state.GlobalState) bool {
 	currentFloor := elev.GetFloor()
-	if currentFloor == -1 {
+	if !elev.IsAtFloor() {
 		return false
 	}
 
@@ -211,9 +211,6 @@ func ChooseDirectionAfterStop(elev *management.Elevator, floor int) {
 }
 
 func UpdateMoveDir(elev *management.Elevator) {
-	currentOrderFloor := elev.GetCurrentOrderFloor()
-	elevFloor := elev.GetFloor()
-
 	// If elev has no assigned orders.
 	if !elev.GetCurrentOrderActiveStatus() {
 		// TODO remove print
@@ -221,13 +218,16 @@ func UpdateMoveDir(elev *management.Elevator) {
 		elev.SetMoveDir(management.DirIdle)
 		return
 	}
-	if elevFloor == -1 {
-		elevFloor = elev.GetLastFloor()
+
+	currentOrderFloor := elev.GetCurrentOrderFloor()
+	currentFloor := elev.GetFloor()
+	if !elev.IsAtFloor() {
+		currentFloor = elev.GetLastFloor()
 	}
 
-	if currentOrderFloor > elevFloor {
+	if currentOrderFloor > currentFloor {
 		elev.SetMoveDir(management.DirUp)
-	} else if currentOrderFloor < elevFloor {
+	} else if currentOrderFloor < currentFloor {
 		elev.SetMoveDir(management.DirDown)
 	} else {
 		elev.SetMoveDir(management.DirIdle)

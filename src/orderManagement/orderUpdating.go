@@ -7,10 +7,11 @@ import (
 	"heislab/state"
 )
 
+// TODO floor og elev.GetFloor() brukes litt om hverandre, kommenter
 func UpdateCurrentOrder(elev *management.Elevator, globalState *state.GlobalState) {
 	elev.PrintOrdersDebug()
 	floor := elev.GetFloor()
-	if elev.GetFloor() == -1 {
+	if !elev.IsAtFloor() {
 		return
 	}
 

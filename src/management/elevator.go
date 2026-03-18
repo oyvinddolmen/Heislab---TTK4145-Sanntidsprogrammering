@@ -97,7 +97,6 @@ func (elev *Elevator) SetCurrentOrderActiveStatus(active bool) { elev.currentOrd
 func (elev *Elevator) SetLastOrderButtonType(button elevIO.ButtonType) { elev.lastOrder.SetButtonType(button) }
 func (elev *Elevator) SetOrderActiveStatus(floor, button int, active bool) { elev.orders[floor][button].SetActiveStatus(active) }
 
-
 // -------------------------------------------------------------------------------------------
 // Get functions for elevator
 // -------------------------------------------------------------------------------------------
@@ -116,6 +115,7 @@ func (elev *Elevator) GetCurrentOrderActiveStatus() bool { return elev.currentOr
 func (elev *Elevator) GetCurrentOrderFloor() int { return elev.currentOrder.GetFloor() }
 func (elev *Elevator) GetOrderActiveStatus(floor, button int) bool { return elev.orders[floor][button].GetActiveStatus() }
 
+func (elev *Elevator) IsAtFloor() bool { return elev.floor != -1 }
 
 // Printer alle relevante ordre- og tilstandsinformasjon for heisen
 // TODO: remove before handing in code

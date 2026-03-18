@@ -56,7 +56,7 @@ func runFSM(
 				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
 				orderManagement.RunHallAssignerAndApplyAssignments(elev, globalState)
 				SetAllLights(elev, globalState)
-				if elev.GetFloor() != -1 {
+				if elev.IsAtFloor() {
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 					updateAssignments(elev, globalState)
 				}
@@ -127,7 +127,7 @@ func runFSM(
 				registerOrder(elev, globalState, button)
 				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
 				updateAssignments(elev, globalState)
-				if elev.GetFloor() != -1 {
+				if elev.IsAtFloor() {
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 					updateAssignments(elev, globalState)
 				}
