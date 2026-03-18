@@ -66,9 +66,12 @@ func onObstructionEntry(elev *management.Elevator) {
 // FSM stopping and moving logic
 // -------------------------------------------------------------------------------------------
 
-func registerOrder(elev *management.Elevator,
-		globalState *state.GlobalState,
-		button elevIO.ButtonEvent){
+// Creates order, updates global state and runs hall order assigner.
+func registerOrder(
+	elev *management.Elevator,
+	globalState *state.GlobalState,
+	button elevIO.ButtonEvent,
+){
 	order := management.CreateOrder(button)
 	if order.IsCabOrder() {
 		elev.SetOrder(order)
