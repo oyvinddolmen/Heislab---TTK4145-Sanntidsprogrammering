@@ -32,14 +32,18 @@ func main() {
 
 	/*
 		TODO:
-		- obstruction mens den beveger seg i en etasje skal ikke skje, når heisen kjører på floor sensor skal ikke døra åpne seg
-		- fjern obstruction under case moving
-		- legg å sende og oppdatere worldView hvert sekund
-		- hvert sekund må den kjøre run hallassigner og drive to destination uansett når idle (FIXED IDLE TIMER)
-		- vi har to hallUpAndHallDownAndCabAtDifDir variabler, en med stor første bokstav og den andre ikke (FIXED)
-		- Kutte power når heisen er mellom etasjer (tror den er good, men må teste på fysisk heis)
-		- sjeke ut specsa til oppgaven hva heisen skal gjøre dersom obstruksjon går på mens heisen kjører
-		- før innlevering: fjerne alle print-og debugfunksjoner. Fjerne README fra utlevert kode
+		- Må sende på worldViewUpdate når heisen går offline
+		- fjerne case OBSTRUCTION under MOVING
+		- Gå gjennom FAT test
+
+		- FØR INNLEVERING:
+		- fjerne alle print-og debugfunksjoner.
+		- README i src med beskrivelse av koden, P2P og UDP osv..
+		- fjerne packet loss, simulator, start_simulators, gitignore, README i simulator,
+		  hall request og evt. andre steder
+		- Kun kommentarer der man ikke skjønenr hva en funksjon gjør eller annen del av koden
+		- fjerne kommentarene i main.go
+
 	*/
 
 	// --------------- Get elevator ID, address and port from terminal input -------------------
@@ -67,8 +71,6 @@ func main() {
 	go elevator.RunElevator(&elev, globalState, elevChannels, networkChannels)
 	select {}
 }
-
-
 
 // Takes input from terminal on startup and returns elevator ID, network address and state broadcast port.
 func inputFromTerminal() (string, string, *int) {
