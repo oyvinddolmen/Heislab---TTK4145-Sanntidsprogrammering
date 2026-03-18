@@ -83,6 +83,26 @@ func registerOrder(elev *management.Elevator,
 	}
 }
 
+// Checks if the elevator is currently at a floor with hall up and halldown order, 
+// and the button press is in a different direction than the cleared hallorder
+func isCabOrderAtDifferentDir(elev *management.Elevator) bool {
+	if elev.GetMoveDir() != management.DirIdle{
+		return false
+	}
+	currentFloor := elev.GetFloor()
+	if elev.GetOrderActiveStatus(currentFloor, int(elevIO.HallUpButton)) &&
+		elev.GetLastOrder().IsHallDownOrder() && 
+		orderManagement.CabOrderAbove(elev, currentFloor) {
+		return true
+		
+	} else if elev.GetOrderActiveStatus(currentFloor, int(elevIO.HallDownButton)) &&
+		elev.GetLastOrder().IsHallUpOrder() &&
+		orderManagement.CabOrderBelow(elev, currentFloor) {
+		return true
+	}
+	return false
+}
+
 func atButtonFloor(elev *management.Elevator, button elevIO.ButtonEvent) bool {
 	if button.Floor == elev.GetFloor() {
 		return true

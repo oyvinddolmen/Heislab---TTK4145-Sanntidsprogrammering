@@ -48,8 +48,6 @@ func runFSM(
 					UpdateCurrentOrderAndDrive(elev, globalState)
 				}
 			case button := <-elevChannels.ButtonPressChannel:
-				hallOrderConflict := false // Becomes true if HallUp and HallDown active at current floor and
-										   // Caborder is pressed at a different direction then the current dirction
 				if atButtonFloor(elev, button){
 					setElevState(elev, globalState, management.ElevObstruction)
 					continue
@@ -59,10 +57,10 @@ func runFSM(
 				orderManagement.RunHallAssignerAndApplyAssignments(elev, globalState)
 				SetAllLights(elev, globalState)
 				if elev.GetFloor() != -1 {
-					hallOrderConflict = orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
+					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 					updateAssignments(elev, globalState)
 				}
-				if hallOrderConflict {
+				if isCabOrderAtDifferentDir(elev) {
 					setElevState(elev, globalState, management.ElevObstruction)
 				} else {
 					UpdateCurrentOrderAndDrive(elev, globalState)
@@ -122,8 +120,6 @@ func runFSM(
 					updateCurrentOrderAndMoveDir(elev, globalState)
 				}
 			case button := <-elevChannels.ButtonPressChannel:
-				mixedHallOrders := false
-
 				if atButtonFloor(elev, button){
 					setElevState(elev, globalState, management.ElevObstruction)
 					continue
@@ -132,10 +128,10 @@ func runFSM(
 				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
 				updateAssignments(elev, globalState)
 				if elev.GetFloor() != -1 {
-					mixedHallOrders = orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
+					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 					updateAssignments(elev, globalState)
 				}
-				if mixedHallOrders || needToOpenDoors(elev, globalState) {
+				if isCabOrderAtDifferentDir(elev) || needToOpenDoors(elev, globalState) {
 					doorTimer = time.NewTimer(doorOpenDuration)
 				} 
 				updateCurrentOrderAndMoveDir(elev, globalState)

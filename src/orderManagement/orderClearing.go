@@ -8,7 +8,7 @@ import (
 
 // TODO: Burde dette vært to forskjellige funksjoner?
 // Clears orders at current floor and returns true if there is a HallOrder conflict ()
-func ClearOrdersAtCurrentFloor(elev *management.Elevator, globalState *state.GlobalState) bool {
+func ClearOrdersAtCurrentFloor(elev *management.Elevator, globalState *state.GlobalState){
 	currentFloor := elev.GetFloor()
 	if elev.GetCurrentOrderFloor() == currentFloor {
 		elev.SetCurrentOrderActiveStatus(false)
@@ -39,18 +39,14 @@ func ClearOrdersAtCurrentFloor(elev *management.Elevator, globalState *state.Glo
 			elev.GetLastOrder().IsHallDownOrder() && 
 			CabOrderAbove(elev, currentFloor) {
 			RemoveHallUp(globalState, elev, currentFloor)
-			return true
 		
 		// Else if active HallDown order at current floor and active Cab order below, and last order was HallUp.
 		} else if elev.GetOrderActiveStatus(currentFloor, int(elevIO.HallDownButton)) &&
 			elev.GetLastOrder().IsHallUpOrder() &&
 			CabOrderBelow(elev, currentFloor) {
 			RemoveHallDown(globalState, elev, currentFloor)
-			return true
 		}
 	}
-
-	return false
 }
 
 func CabOrderAbove(elev *management.Elevator, currentFloor int) bool {
