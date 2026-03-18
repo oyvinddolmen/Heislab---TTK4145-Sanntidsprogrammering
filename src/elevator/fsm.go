@@ -84,9 +84,6 @@ func runFSM(
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 					network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
 					updateAssignments(elev, globalState)
-					if !elev.GetCurrentOrderActiveStatus() {
-						updateCurrentOrderAndMoveDir(elev, globalState)
-					}
 					setElevState(elev, globalState, management.ElevObstruction)
 				} 
 			case button := <-elevChannels.ButtonPressChannel:
