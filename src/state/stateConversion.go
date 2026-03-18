@@ -19,7 +19,7 @@ func ConvertElevatorToJSON(elev *management.Elevator) ElevatorStateJSON {
 	}
 
 	return ElevatorStateJSON{
-		Behavior:      convertState(elev.GetState()),
+		Behavior:      ConvertState(elev.GetState()),
 		Floor:         elev.GetLastFloor(),
 		Direction:     convertDirection(elev.GetMoveDir()),
 		CabOrders:     cabOrders,
@@ -27,7 +27,7 @@ func ConvertElevatorToJSON(elev *management.Elevator) ElevatorStateJSON {
 	}
 }
 
-func convertState(state management.State) string {
+func ConvertState(state management.State) string {
 	switch state {
 	case management.ElevIdle:
 		return "idle"

@@ -96,11 +96,15 @@ func (elev *Elevator) SetCanTakeOrders(canTakeOrders bool) { elev.canTakeOrders 
 func (elev *Elevator) SetOrder(order Order) {
 	elev.orders[order.GetFloor()][int(order.GetButtonType())] = order
 }
-func (elev *Elevator) SetCurrentOrderActiveStatus(active bool) { elev.currentOrder.SetActiveStatus(active) }
-func (elev *Elevator) SetLastOrderButtonType(button elevIO.ButtonType) { elev.lastOrder.SetButtonType(button) }
-func (elev *Elevator) SetOrderActiveStatus(floor, button int, active bool) { elev.orders[floor][button].SetActiveStatus(active) }
-
-
+func (elev *Elevator) SetCurrentOrderActiveStatus(active bool) {
+	elev.currentOrder.SetActiveStatus(active)
+}
+func (elev *Elevator) SetLastOrderButtonType(button elevIO.ButtonType) {
+	elev.lastOrder.SetButtonType(button)
+}
+func (elev *Elevator) SetOrderActiveStatus(floor, button int, active bool) {
+	elev.orders[floor][button].SetActiveStatus(active)
+}
 
 // -------------------------------------------------------------------------------------------
 // Get functions for elevator

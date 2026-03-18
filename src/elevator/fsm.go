@@ -39,7 +39,7 @@ func runFSM(
 		case management.ElevIdle:
 			select {
 			case <-networkChannels.WorldViewUpdateChannel:
-				if needToOpenDoors(elev, globalState) {
+				if hallOrderAtFloor(elev, globalState) {
 					orderManagement.ServeHallOrdersAtCurrentFloor(elev, globalState)
 					setElevState(elev, globalState, management.ElevObstruction)
 					continue
@@ -76,7 +76,7 @@ func runFSM(
 				elev.SetLastFloor(floor)
 				elev.SetCanTakeOrders(true)
 				resetCanTakeOrdersTimer()
-				if ShouldStop(elev, floor) {
+				if shouldStop(elev, floor) {
 					setMotorStop()
 					elev.SetFloor(floor)
 					ChooseDirectionAfterStop(elev, floor)
@@ -97,7 +97,7 @@ func runFSM(
 		case management.ElevObstruction:
 			select {
 			case <-networkChannels.WorldViewUpdateChannel:
-				if needToOpenDoors(elev, globalState) {
+				if hallOrderAtFloor(elev, globalState) {
 					orderManagement.ServeHallOrdersAtCurrentFloor(elev, globalState)
 					setElevState(elev, globalState, management.ElevObstruction)
 					continue

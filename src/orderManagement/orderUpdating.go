@@ -15,33 +15,33 @@ func UpdateCurrentOrder(elev *management.Elevator, globalState *state.GlobalStat
 
 	switch elev.GetMoveDir() {
 	case management.DirUp:
-		if assignUp(globalState, elev, floor) {
+		if assignCurrentOrderAbove(globalState, elev, floor) {
 			return
 		}
 
 		if OrdersBelow(elev, elev.GetFloor()) {
-			assignDown(globalState, elev, floor)
+			assignCurrentOrderBelow(globalState, elev, floor)
 			elev.SetMoveDir(management.DirDown)
 			return
 		}
 
 	case management.DirDown:
-		if assignDown(globalState, elev, floor) {
+		if assignCurrentOrderBelow(globalState, elev, floor) {
 			return
 		}
 
 		if OrdersAbove(elev, elev.GetFloor()) {
-			assignUp(globalState, elev, floor)
+			assignCurrentOrderAbove(globalState, elev, floor)
 			elev.SetMoveDir(management.DirUp)
 			return
 		}
 
 	default: // Idle
-		if assignUp(globalState, elev, floor) {
+		if assignCurrentOrderAbove(globalState, elev, floor) {
 			elev.SetMoveDir(management.DirUp)
 			return
 		}
-		if assignDown(globalState, elev, floor) {
+		if assignCurrentOrderBelow(globalState, elev, floor) {
 			elev.SetMoveDir(management.DirDown)
 			return
 		}
@@ -51,7 +51,8 @@ func UpdateCurrentOrder(elev *management.Elevator, globalState *state.GlobalStat
 }
 
 // Scans floors above startFloor and assigns the next upward-reachable order.
-func assignUp(globalState *state.GlobalState, elev *management.Elevator, startFloor int) bool {
+// Returns true if it sets new current order.
+func assignCurrentOrderAbove(globalState *state.GlobalState, elev *management.Elevator, startFloor int) bool {
 
 	for floor := startFloor + 1; floor < management.NumFloors; floor++ {
 
@@ -86,7 +87,8 @@ func assignUp(globalState *state.GlobalState, elev *management.Elevator, startFl
 }
 
 // Scans floors below startFloor and assigns the next downward-reachable order.
-func assignDown(globalState *state.GlobalState, elev *management.Elevator, startFloor int) bool {
+// Returns true if it sets new current order.
+func assignCurrentOrderBelow(globalState *state.GlobalState, elev *management.Elevator, startFloor int) bool {
 	for floor := startFloor - 1; floor >= 0; floor-- {
 		// CAB priority
 		if CabOrderAtFloor(elev, floor) {

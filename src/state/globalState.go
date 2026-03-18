@@ -9,7 +9,7 @@ import (
 type GlobalStateData struct {
 	HallOrders       [][management.NumHallButtonTypes]bool // [floor][0=up,1=down]
 	HallOrderVersion [][management.NumHallButtonTypes]int  // incremented by one when matching hallOrder is updated
-	States           map[string]ElevatorStateJSON          // elevatorID -> state
+	States           map[string]ElevatorStateJSON          // map[elevID] = state
 	LocalID          string
 }
 
@@ -132,7 +132,7 @@ func (globalState *GlobalState) SetSelfToOnline(elev *management.Elevator) {
 	if !exists {
 		return
 	}
-	state.Behavior = convertState(elev.GetState())
+	state.Behavior = ConvertState(elev.GetState())
 	globalState.data.States[localID] = state
 }
 
@@ -142,11 +142,11 @@ func (globalState *GlobalState) AllOtherElevatorsOffline() bool {
 
 	localID := globalState.data.LocalID
 
-	for id, s := range globalState.data.States {
-		if id == localID {
+	for elevID, state := range globalState.data.States {
+		if elevID == localID {
 			continue
 		}
-		if s.Behavior != "offline" {
+		if state.Behavior != "offline" {
 			return false
 		}
 	}

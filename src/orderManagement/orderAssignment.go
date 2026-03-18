@@ -19,26 +19,31 @@ type AssignerInput struct {
 func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *state.GlobalState) {
 	globalStateCopy := globalState.GetCopy()
 
-	ids := make([]string, 0, len(globalStateCopy.States))
-	for id := range globalStateCopy.States {
-		ids = append(ids, id)
+	localElevState, exists := globalStateCopy.States[elev.GetID()]
+	if exists {
+		localElevState.Behavior = state.ConvertState(elev.GetState())
+		globalStateCopy.States[elev.GetID()] = localElevState
 	}
-	sort.Strings(ids)
 
-	for _, id := range ids {
-		s := globalStateCopy.States[id]
-		fmt.Printf(
-			"before assigner: id=%s floor=%d behavior=%s dir=%s canTakeOrders=%v\n",
-			id, s.Floor, s.Behavior, s.Direction, s.CanTakeOrders,
-		)
+	elevIDList := make([]string, 0, len(globalStateCopy.States))
+	for id := range globalStateCopy.States {
+		elevIDList = append(elevIDList, id)
 	}
+	sort.Strings(elevIDList)
 
 	activeElevatorStates := make(map[string]state.ElevatorStateJSON)
-	for _, elevID := range ids {
+	for _, elevID := range elevIDList {
 		elevState := globalStateCopy.States[elevID]
 		if elevState.Behavior != "offline" && elevState.CanTakeOrders {
 			activeElevatorStates[elevID] = elevState
+			fmt.Println("Added elevator" + elevID + "to activeElevatorStates")
 		}
+	}
+
+	// always set local elevator active
+	if elev.GetCanTakeOrders() {
+		activeElevatorStates[elev.GetID()] = globalStateCopy.States[elev.GetID()]
+		fmt.Printf("View self as active elevator")
 	}
 
 	assignments, err := AssignHallOrders(globalStateCopy.HallOrders, activeElevatorStates)

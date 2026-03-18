@@ -3,21 +3,10 @@ package elevator
 import (
 	"heislab/elevator/elevIO"
 	"heislab/management"
+	"heislab/network"
 	"heislab/orderManagement"
 	"heislab/state"
-	"time"
-	"heislab/network"
 )
-
-// Timer variables
-var doorTimer *time.Timer
-var canTakeOrdersTimer *time.Timer // for detecting motor power loss in elev
-var idleTimer *time.Timer          // safety measurement in case elevator don't drive to next order
-
-// time durations
-const doorOpenDuration = 3 * time.Second
-const canTakeOrdersCountdown = 4 * time.Second
-const IdleTimeOut = 2 * time.Second
 
 // -------------------------------------------------------------------------------------------
 // Setting state and on-state-entry functions
@@ -66,7 +55,6 @@ func onObstructionEntry(elev *management.Elevator) {
 // FSM stopping and moving logic
 // -------------------------------------------------------------------------------------------
 
-
 // Checks if the elevator is currently at a floor with hall up and halldown order,
 // and the button press is in a different direction than the cleared hallorder
 func isCabOrderAtDifferentDir(elev *management.Elevator) bool {
@@ -95,7 +83,8 @@ func atButtonFloor(elev *management.Elevator, button elevIO.ButtonEvent) bool {
 	return false
 }
 
-func ShouldStop(elev *management.Elevator, floor int) bool {
+// called when elevator reaches a new floor
+func shouldStop(elev *management.Elevator, floor int) bool {
 	if !elev.GetCurrentOrderActiveStatus() || orderManagement.CabOrderAtFloor(elev, floor) {
 		return true
 	}
@@ -150,7 +139,7 @@ func UpdateCurrentOrderAndDrive(elev *management.Elevator, globalState *state.Gl
 }
 
 // Checks if there are any hall orders at the same floor as elevator.
-func needToOpenDoors(elev *management.Elevator, globalState *state.GlobalState) bool {
+func hallOrderAtFloor(elev *management.Elevator, globalState *state.GlobalState) bool {
 	currentFloor := elev.GetFloor()
 	if !elev.IsAtFloor() {
 		return false
@@ -240,41 +229,4 @@ func clearOrdersAndBroadcast(
 ) {
 	orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 	network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
-}
-
-// -------------------------------------------------------------------------------------------
-// Timer functions
-// -------------------------------------------------------------------------------------------
-
-func startNewDoorTimer() {
-	if doorTimer != nil {
-		doorTimer.Stop()
-	}
-	doorTimer = time.NewTimer(doorOpenDuration)
-}
-
-func startNewCanTakeOrdersTimer() {
-	if canTakeOrdersTimer != nil {
-		canTakeOrdersTimer.Stop()
-	}
-	canTakeOrdersTimer = time.NewTimer(canTakeOrdersCountdown)
-}
-
-func turnOffCanTakeOrdersTimer() {
-	if canTakeOrdersTimer != nil {
-		canTakeOrdersTimer.Stop()
-	}
-}
-
-func resetCanTakeOrdersTimer() {
-	if canTakeOrdersTimer != nil {
-		canTakeOrdersTimer.Reset(canTakeOrdersCountdown)
-	}
-}
-
-func startIdleTimer() {
-	if idleTimer != nil {
-		idleTimer.Stop()
-	}
-	idleTimer = time.NewTimer(IdleTimeOut)
 }

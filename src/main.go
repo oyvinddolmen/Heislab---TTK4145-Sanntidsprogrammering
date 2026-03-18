@@ -11,43 +11,6 @@ import (
 
 func main() {
 
-	/*
-		RUNNING MULTIPLE SIMULATORS
-		.\SimElevatorServer.exe --port 15657
-		.\SimElevatorServer.exe --port 15667
-		.\SimElevatorServer.exe --port 15677
-
-		MAC: ./SimElevatorServer --port 15657
-		     go run main.go --id=1 --simPort=15657
-
-
-		RUNNING MULTIPLE ELEVATORS
-		go run . -simPort 15657 -bcastPort 20002 -id 1
-		go run . -simPort 15667 -bcastPort 20002 -id 2
-		go run . -simPort 15677 -bcastPort 20002 -id 3
-
-
-		På lab: begge programmene skal ha samme simPort 15657
-	*/
-
-	/*
-		TODO:
-		- Må sende på worldViewUpdate når heisen går offline
-		- fjerne case OBSTRUCTION under MOVING
-		- fjerne unødvendig ting i inputFromTerminal()
-		- Gå gjennom FAT test
-
-		- FØR INNLEVERING:
-		- fjerne alle print-og debugfunksjoner.
-		- fjerne alt utenom linux filene
-		- README i src med beskrivelse av koden, P2P og UDP osv..
-		- fjerne packet loss, simulator, start_simulators, gitignore, README i simulator,
-		  hall request og evt. andre steder
-		- Kun kommentarer der man ikke skjønenr hva en funksjon gjør eller annen del av koden
-		- fjerne kommentarene i main.go
-
-	*/
-
 	// --------------------- Initialize elevator, network and globalState ----------------------
 	elevID, elevAddress, broadcastPort := inputFromTerminal()
 	networkChannels := network.InitNetwork(*broadcastPort)
@@ -64,11 +27,11 @@ func main() {
 		elevator.UpdateCurrentOrderAndDrive(&elev, globalState)
 	}
 
-	// ------------------- Communication ---------------------
+	// ----------------- Initialize communication ---------------------
 	network.InitCommunication(&elev, globalState, networkChannels)
 
 	// ----------------- Start elevator FSM -------------------
-	go elevator.RunElevator(&elev, globalState, elevChannels, networkChannels)
+	elevator.RunElevator(&elev, globalState, elevChannels, networkChannels)
 	select {}
 }
 

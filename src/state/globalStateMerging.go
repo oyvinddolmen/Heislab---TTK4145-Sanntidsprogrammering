@@ -4,12 +4,12 @@ import (
 	"heislab/management"
 )
 
-// Checks if incoming worldView differ from current worldView
+// Checks if incoming worldView differs from current worldView.
 func (localGlobalState *GlobalState) NewWorldView(remoteGlobalState GlobalStateData) bool {
 	localGlobalState.mutex.Lock()
 	defer localGlobalState.mutex.Unlock()
 
-	// hall order changes
+	// Checks hall order differences.
 	for floor := 0; floor < management.NumFloors; floor++ {
 		for button := 0; button < management.NumHallButtonTypes; button++ {
 			localVersion := localGlobalState.data.HallOrderVersion[floor][button]
@@ -19,7 +19,7 @@ func (localGlobalState *GlobalState) NewWorldView(remoteGlobalState GlobalStateD
 				return true
 			}
 
-			// same version but remote has orders we don't
+			// Same version, but remote has orders we don't.
 			if remoteVersion == localVersion &&
 				remoteGlobalState.HallOrders[floor][button] &&
 				!localGlobalState.data.HallOrders[floor][button] {
@@ -28,7 +28,6 @@ func (localGlobalState *GlobalState) NewWorldView(remoteGlobalState GlobalStateD
 		}
 	}
 
-	// elevator state changes
 	remoteID := remoteGlobalState.LocalID
 	if remoteID == "" || remoteID == localGlobalState.data.LocalID {
 		return false
@@ -67,7 +66,7 @@ func (localGlobalState *GlobalState) NewWorldView(remoteGlobalState GlobalStateD
 	return false
 }
 
-// merges new global view by choosing newest version available
+// Merges new global state by choosing newest version available.
 func (localGlobalState *GlobalState) Merge(remoteGlobalState GlobalStateData) {
 	localGlobalState.mutex.Lock()
 	defer localGlobalState.mutex.Unlock()
