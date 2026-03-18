@@ -21,6 +21,7 @@ func InitCommunication(
 	go StartFailureDetector(globalState, networkChannels.WorldViewUpdateChannel)
 	go SendGlobalStatePeriodically(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
 	go ListenAndMergeGlobalState(
+		elev,
 		globalState,
 		networkChannels.IncomingGlobalStateChannel,
 		networkChannels.WorldViewUpdateChannel,
@@ -29,6 +30,7 @@ func InitCommunication(
 
 // Listens for incoming worldViews, updates globalState and sends on worldViewUpdate channel.
 func ListenAndMergeGlobalState(
+	elev *management.Elevator,
 	globalState *state.GlobalState,
 	incomingGlobalStateChannel <-chan state.GlobalStateData,
 	worldViewUpdateChannel chan bool,
@@ -43,7 +45,10 @@ func ListenAndMergeGlobalState(
 
 		RegisterHeartbeat(localID, remoteGlobalState.LocalID)
 		if globalState.NewWorldView(remoteGlobalState) {
-			globalState.Merge(remoteGlobalState) // Need to merge global view before sending on worldViewupdate for lights to be correct.
+			if globalState.IsOffline(){
+				globalState.SetSelfToOnline(elev)
+			}
+			globalState.Merge(remoteGlobalState) 
 			worldViewUpdateChannel <- true
 			continue
 		}

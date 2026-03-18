@@ -52,7 +52,7 @@ func runFSM(
 										   // Caborder is pressed at a different direction then the current dirction
 				if atButtonFloor(elev, button){
 					setElevState(elev, globalState, management.ElevObstruction)
-					return
+					continue
 				}
 				registerOrder(elev, globalState, button)
 				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
@@ -126,7 +126,7 @@ func runFSM(
 
 				if atButtonFloor(elev, button){
 					setElevState(elev, globalState, management.ElevObstruction)
-					return
+					continue
 				}
 				registerOrder(elev, globalState, button)
 				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
@@ -144,7 +144,7 @@ func runFSM(
 				if !elevIO.GetObstruction() {
 					fmt.Println("doorTimer!!!!!!")
 					setElevState(elev, globalState, management.ElevIdle)
-					return
+					continue
 				} 
 				startNewDoorTimer()
 				

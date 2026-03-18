@@ -53,6 +53,9 @@ func checkForDeadElevators(globalState *state.GlobalState, worldViewUpdateChanne
 		if now.Sub(t) > HeartbeatTimeout {
 			fmt.Println("---------- ELEV", elevID, "went offline -------------")
 			globalState.SetElevatorToOffline(elevID)
+			if globalState.AllOtherElevatorsOffline(){
+				globalState.SetElevatorToOffline(localID)
+			}
 			delete(lastSeen, elevID)
 			worldViewUpdateChannel <- true
 		}

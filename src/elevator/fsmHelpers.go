@@ -16,7 +16,7 @@ var idleTimer *time.Timer
 
 // time durations
 const doorOpenDuration = 3 * time.Second
-const canTakeOrdersCountdown = 7 * time.Second
+const canTakeOrdersCountdown = 4 * time.Second
 const IdleTimeOut = 2 * time.Second
 
 // -------------------------------------------------------------------------------------------
@@ -95,6 +95,9 @@ func ShouldStop(elev *management.Elevator, floor int) bool {
 	if !elev.GetCurrentOrderActiveStatus() || orderManagement.CabOrderAtFloor(elev, floor) {
 		return true
 	}
+	if elev.GetCurrentOrderFloor() == floor{
+		return true
+	}
 
 	switch elev.GetMoveDir() {
 	case management.DirUp:
@@ -119,7 +122,6 @@ func ShouldStop(elev *management.Elevator, floor int) bool {
 		if orderManagement.HallOrderDownAtFloor(elev, floor) {
 			currentOrderIsHallUp := elev.GetCurrentOrder().IsHallUpOrder()
 			currentOrderAtBottomFloor := elev.GetCurrentOrderFloor() == 0
-
 			if !currentOrderIsHallUp || currentOrderAtBottomFloor {
 				return true
 			}

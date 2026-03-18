@@ -7,6 +7,7 @@ import (
 	"heislab/state"
 	"os/exec"
 	"runtime"
+	"sort"
 )
 
 type AssignerInput struct {
@@ -14,19 +15,28 @@ type AssignerInput struct {
 	ElevatorStates map[string]state.ElevatorStateJSON    `json:"states"`
 }
 
-// Assigns hall orders and applies assigned hall orders to the local elevator.
 func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *state.GlobalState) {
 	globalStateCopy := globalState.GetCopy()
 
-	for id, s := range globalStateCopy.States {
+	//Hent og sorter keys
+	ids := make([]string, 0, len(globalStateCopy.States))
+	for id := range globalStateCopy.States {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+
+	for _, id := range ids {
+		s := globalStateCopy.States[id]
 		fmt.Printf(
 			"before assigner: id=%s floor=%d behavior=%s dir=%s canTakeOrders=%v\n",
 			id, s.Floor, s.Behavior, s.Direction, s.CanTakeOrders,
 		)
 	}
 
+	//Bygg activeElevatorStates i samme rekkefølge
 	activeElevatorStates := make(map[string]state.ElevatorStateJSON)
-	for elevID, elevState := range globalStateCopy.States {
+	for _, elevID := range ids {
+		elevState := globalStateCopy.States[elevID]
 		if elevState.Behavior != "offline" && elevState.CanTakeOrders {
 			activeElevatorStates[elevID] = elevState
 		}
@@ -34,8 +44,9 @@ func RunHallAssignerAndApplyAssignments(elev *management.Elevator, globalState *
 
 	assignments, err := AssignHallOrders(globalStateCopy.HallOrders, activeElevatorStates)
 	if err != nil {
-		fmt.Println("assigner failed: %w", err)
+		fmt.Printf("assigner failed: %v\n", err)
 	}
+
 	applyAssignments(elev, assignments)
 }
 

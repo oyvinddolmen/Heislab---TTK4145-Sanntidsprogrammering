@@ -8,9 +8,9 @@ import (
 )
 
 type GlobalStateData struct {
-	HallOrders          [][management.NumHallButtonTypes]bool 		 // [floor][0=up,1=down]
-	HallOrderVersion    [][management.NumHallButtonTypes]int  		 // incremented by one when matching hallOrder is updated
-	States              map[string]ElevatorStateJSON // elevatorID -> state
+	HallOrders          [][management.NumHallButtonTypes]bool 	// [floor][0=up,1=down]
+	HallOrderVersion    [][management.NumHallButtonTypes]int  	// incremented by one when matching hallOrder is updated
+	States              map[string]ElevatorStateJSON            // elevatorID -> state
 	LocalID             string
 }
 
@@ -50,17 +50,6 @@ func (globalState *GlobalState) IncrementHallOrderVersion(floor int, button elev
 	globalState.mutex.Lock()
 	defer globalState.mutex.Unlock()
 	globalState.data.HallOrderVersion[floor][button]++
-}
-
-func (globalState *GlobalState) SetElevatorToOffline(deadID string) {
-	globalState.mutex.Lock()
-	defer globalState.mutex.Unlock()
-	elevState, exists := globalState.data.States[deadID]
-	if !exists {
-		return
-	}
-	elevState.Behavior = "offline"
-	globalState.data.States[deadID] = elevState
 }
 
 // SetElevatorState setter en spesifikk elevator state i globalState
@@ -110,6 +99,65 @@ func (globalState *GlobalState) RemoveHallOrder(floor int, button elevIO.ButtonT
 	globalState.data.HallOrders[floor][button] = false
 	globalState.data.HallOrderVersion[floor][button]++
 }
+
+// -------------------------------------------------------------------------------------------
+// Failure Detection Helpers
+// -------------------------------------------------------------------------------------------
+
+func (globalState *GlobalState) SetElevatorToOffline(deadID string) {
+	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
+	elevState, exists := globalState.data.States[deadID]
+	if !exists {
+		return
+	}
+	elevState.Behavior = "offline"
+	globalState.data.States[deadID] = elevState
+}
+
+func (globalState *GlobalState) IsOffline() bool {
+	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
+
+	localID := globalState.data.LocalID
+	state, exists := globalState.data.States[localID]
+	if !exists {
+		return false
+	}
+	return state.Behavior == "offline"
+}
+
+func (globalState *GlobalState) SetSelfToOnline(elev *management.Elevator) {
+	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
+
+	localID := globalState.data.LocalID
+	state, exists := globalState.data.States[localID]
+	if !exists {
+		return
+	}
+	state.Behavior = convertState(elev.GetState())
+	globalState.data.States[localID] = state
+}
+
+func (globalState *GlobalState) AllOtherElevatorsOffline() bool {
+	globalState.mutex.Lock()
+	defer globalState.mutex.Unlock()
+
+	localID := globalState.data.LocalID
+
+	for id, s := range globalState.data.States {
+		if id == localID {
+			continue
+		}
+		if s.Behavior != "offline" {
+			return false
+		}
+	}
+	return true
+}
+
+
 
 // TODO: Fjern
 func (globalState *GlobalState) PrintGlobalState() {
