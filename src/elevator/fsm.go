@@ -6,7 +6,6 @@ import (
 	"heislab/network"
 	"heislab/orderManagement"
 	"heislab/state"
-	"time"
 )
 
 func RunElevator(
@@ -56,6 +55,7 @@ func runFSM(
 				updateAssignments(elev, globalState)
 				if isCabOrderAtDifferentDir(elev) {
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
+					network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
 					setElevState(elev, globalState, management.ElevObstruction)
 					continue
 				} 
@@ -82,10 +82,10 @@ func runFSM(
 					elev.SetFloor(floor)
 					ChooseDirectionAfterStop(elev, floor)
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
+					network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
 					updateAssignments(elev, globalState)
-					if elev.GetCurrentOrderActiveStatus() {
-						orderManagement.UpdateCurrentOrder(elev, globalState)
-						UpdateMoveDir(elev)
+					if !elev.GetCurrentOrderActiveStatus() {
+						updateCurrentOrderAndMoveDir(elev, globalState)
 					}
 					setElevState(elev, globalState, management.ElevObstruction)
 				} 
@@ -106,34 +106,38 @@ func runFSM(
 				if needToOpenDoors(elev, globalState) {
 					orderManagement.ServeHallOrdersAtCurrentFloor(elev, globalState)
 					setElevState(elev, globalState, management.ElevObstruction)
-				} else {
-					updateAssignments(elev, globalState)
-					updateCurrentOrderAndMoveDir(elev, globalState)
-				}
+					continue
+				} 
+				updateAssignments(elev, globalState)
+				updateCurrentOrderAndMoveDir(elev, globalState)
 			case button := <-elevChannels.ButtonPressChannel:
 				if atButtonFloor(elev, button){
-					setElevState(elev, globalState, management.ElevObstruction)
+					startNewDoorTimer()
 					continue
 				}
 				registerOrder(elev, globalState, button)
 				network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
 				updateAssignments(elev, globalState)
-				if elev.GetFloor() != -1 {
+				if isCabOrderAtDifferentDir(elev) {
 					orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
-					updateAssignments(elev, globalState)
-				}
-				if isCabOrderAtDifferentDir(elev) || needToOpenDoors(elev, globalState) {
-					doorTimer = time.NewTimer(doorOpenDuration)
+					network.SendGlobalState(elev, globalState, networkChannels.OutgoingGlobalStateChannel)
+					startNewDoorTimer()
+					continue
 				} 
 				updateCurrentOrderAndMoveDir(elev, globalState)
-				
 			case <-doorTimer.C:
 				if !elevIO.GetObstruction() {
 					setElevState(elev, globalState, management.ElevIdle)
 					continue
 				} 
 				startNewDoorTimer()
-				
+			case obstructed := <-elevChannels.ObstructionChannel:
+				if obstructed {
+					doorTimer.Stop()
+					elevIO.SetDoorOpenLamp(true)
+				} else {
+					startNewDoorTimer()
+				}
 			case <-canTakeOrdersTimer.C:
 				elev.SetCanTakeOrders(false)
 			}
