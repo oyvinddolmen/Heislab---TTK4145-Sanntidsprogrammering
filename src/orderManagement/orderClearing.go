@@ -123,7 +123,7 @@ func RemoveHallUp(globalState *state.GlobalState, elev *management.Elevator, flo
 // Clears hall orders from the shared state for the floor the elevator is currently at
 func ServeHallOrdersAtCurrentFloor(elev *management.Elevator, globalState *state.GlobalState) {
 	currentFloor := elev.GetFloor()
-	if currentFloor != -1 {
+	if elev.IsAtFloor() {
 		hallOrders := globalState.GetCopy().HallOrders
 
 		if hallOrders[currentFloor][elevIO.HallUpButton] {

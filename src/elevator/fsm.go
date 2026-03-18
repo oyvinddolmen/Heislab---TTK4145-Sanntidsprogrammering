@@ -53,7 +53,7 @@ func runFSM(
 										   // Caborder is pressed at a different direction then the current dirction
 				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, button, networkChannels)
 				if !OrderWasAtCurrentFloor {
-					if elev.GetFloor() != -1 {
+					if elev.IsAtFloor() {
 						hallOrderConflict = orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 						updateAssignments(elev, globalState)
 					}
@@ -124,7 +124,7 @@ func runFSM(
 				OrderWasAtCurrentFloor := handleButtonPress(elev, globalState, button, networkChannels)
 				if !OrderWasAtCurrentFloor {
 
-					if elev.GetFloor() != -1 {
+					if elev.IsAtFloor() {
 						mixedHallOrders = orderManagement.ClearOrdersAtCurrentFloor(elev, globalState)
 						updateAssignments(elev, globalState)
 					}
