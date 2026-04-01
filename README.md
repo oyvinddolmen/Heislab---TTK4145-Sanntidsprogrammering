@@ -1,44 +1,29 @@
 # Heislab---TTK4145-Sanntidsprogrammering
-Bombesikkert system for tre heiser
+    
+Project Description:
 
-for å starte på opp den fysiske heisen skriv: 
-    "elevatorserver" i terminalen
+We were tasked with creating software for controlling n elevators working in parallel across m floors. Details about the implementation of the solution were not specified, but the system had to fulfill some main requirements, as well as a secondary requirement regarding system efficiency. Main requirements:
 
-for å starte opp simulatoren: 
+    The button lights are a service guarantee.
+    No calls are lost.
+    The lights and buttons should function as expected.
+    The door should function as expected.
+    An individual elevator should behave sensibly and efficiently.
+
+Secondary requirements:
+
+    Calls should be served as efficiently as possible.
+
+Our system
+
+In our implementation each elevator runs as an independent peer with its own local finite state machine, while also sharing a common view of the global system state over the network.
+
+The solution is based on peer-to-peer communication using UDP broadcast. Elevators continuously exchange their current state and hall requests, allowing the system to coordinate order distribution without a central controller. To handle failures, each elevator monitors heartbeats from the others and marks missing peers as offline if they stop responding.
+
+Hall orders are assigned to the most suitable active elevator, while cab orders are handled locally by each elevator. This gives a fault-tolerant and efficient system where no requests are lost, button lights act as a service guarantee, and the elevators continue to operate sensibly even if one or more peers disconnects.
+
+
+For å starte opp simulatoren: 
     In terminal inside Simulator folder: 
     dmd -w -g src\sim_server.d src\timer_event.d -ofSimElevatorServer.exe
     .\SimElevatorServer.exe
- 
- for å kjøre simulatoren MAC: 
-    ./SimElevatorServer --port 15657
-    go run main.go -simPort 15657 -bcastPort 20002 -id 1 
-
-Linux:
-
-
-
-Hvordan jobbe i branches og merge:
-
-VIKtIG: start med å hente nye endringer i main
-- git pull main
-
-gå til ny branch:
-- git checkout Tobias
-
-merge med main:
-- git merge main
-
-hvis konflikt: 
-- løs konfliktene i filene
-- git add .
-- git rebase --continue
-
-gjør arbeid .... deretter legge til endringene i main:
-- git add .
-- git commit -m meldingen din
-
-bytt over til main og pull inn endringene fra branchen din
-- git checkout main
-- git pull
-- git merge Tobias
-- git push
