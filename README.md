@@ -26,4 +26,13 @@ Hall orders are assigned to the most suitable active elevator, while cab orders 
 For å starte opp simulatoren: 
     In terminal inside Simulator folder: 
     dmd -w -g src\sim_server.d src\timer_event.d -ofSimElevatorServer.exe
-    .\SimElevatorServer.exe
+    .\SimElevatorServer.exe --port 15657
+    .\SimElevatorServer.exe --port 15667
+
+Starte programmet:
+    go run . -simPort 15657 -bcastPort 20002 -id 1
+    go run . -simPort 15667 -bcastPort 20002 -id 2
+
+
+
+
